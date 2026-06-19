@@ -11,20 +11,23 @@
 **/node_modules/
 **/vendor/
 
-# ----- MySQL binary data -----
-# Raw binary data changes on every write; use PackAIO-V4.sql for DB backup
-xampp/mysql/data/
+# ----- XAMPP Runtime & Database Binaries -----
+# Exclude the XAMPP runtime programs entirely
+xampp/*
+# EXCEPT htdocs which contains our custom code
+!xampp/htdocs/
+
+# ----- Heavy Binary Assets (SWF / Nitro) -----
+# We exclude these so the repo stays light and pushable. 
+# They contain 300,000+ files and we only care about code.
+xampp/htdocs/public/nitro-assets/
+xampp/htdocs/public/swf/
+xampp/htdocs/swf/
+xampp/htdocs/nitro-assets/
 
 # ----- Build artifacts -----
 **/dist/
 **/build/
-
-# ----- XAMPP runtime & logs -----
-xampp/tmp/
-xampp/xampp-control.log
-xampp/apache/logs/
-xampp/mysql/logs/
-xampp/php/logs/
 
 # ----- OS files -----
 Thumbs.db
