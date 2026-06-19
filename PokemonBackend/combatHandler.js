@@ -227,8 +227,11 @@ function processBattleAttack(ws, db, data) {
         p.hp = 0;
         ws.battle.ended = true;
         battleLog += `\n¡Tu ${p.name} cayó debilitado! Has perdido. 💀`;
-        // 🛡️ CORREGIDO: Inyectado callback vacío obligatorio () => {} para evitar caídas por desbordamiento
-        db.execute('UPDATE pokemon_storage SET hp = 0 WHERE id = ?', [p.id], () => { });
+
+        // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Tu bicho cayó debilitado, informamos al inventario inmediatamente
+        db.execute('UPDATE pokemon_storage SET hp = 0 WHERE id = ?', [p.id], () => {
+            ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+        });
         ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
         return;
     }
@@ -241,6 +244,9 @@ function processBattleAttack(ws, db, data) {
         [p.hp, p.id],
         (err) => {
             if (!err) {
+                // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Ha recibido daño, refrescamos el inventario en tiempo real
+                ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+
                 ws.battle.turn = 'player';
                 ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
             }
@@ -265,7 +271,7 @@ function processThrowBall(ws, db, data) {
 
     ball.quantity--;
 
-    // 🛡️ CORREGIDO: Envolvemos secuencialmente el flujo dentro del callback de la actualización del inventario
+    // 🛡️ Envolvemos secuencialmente el flujo dentro del callback de la actualización del inventario
     db.execute('UPDATE pokemon_inventory SET quantity = quantity - 1 WHERE user_id = ? AND item_id = ?', [ws.battle.userId, itemId], (errInventory) => {
         if (errInventory) {
             console.error('[DATABASE ERROR] Error al restar bola de la mochila:', errInventory);
@@ -293,7 +299,6 @@ function processThrowBall(ws, db, data) {
                 const destinationSlot = teamCount < 6 ? teamCount + 1 : 0;
                 const destinationText = destinationSlot > 0 ? 'tu EQUIPO ACTIVO' : 'el ALMACÉN del PC de Bill';
 
-                // 🌟 Query adaptada milimétricamente sin el campo 'name', mapeando los IVs reales, 'is_shiny' y 'ability_id'
                 const insertQuery = `
                     INSERT INTO pokemon_storage (user_id, pokemon_id, level, hp, max_hp, slot, gender, nature, iv_hp, iv_attack, iv_defense, iv_sp_attack, iv_sp_defense, iv_speed, is_shiny, ability_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -313,6 +318,9 @@ function processThrowBall(ws, db, data) {
 
                     ws.battle.ended = true;
                     ws.battle.log = battleLog;
+
+                    // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Bicho capturado, enviamos refresco inmediato para el PC
+                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
 
                     // Limpieza de memoria post-captura: el bicho deja de existir en la baldosa del hotel
                     ws.lastWildPokemon = null;
@@ -337,7 +345,11 @@ function processThrowBall(ws, db, data) {
                 p.hp = 0;
                 ws.battle.ended = true;
                 battleLog += `\n¡Tu ${p.name} cayó debilitado! Has perdido el combate. 💀`;
-                db.execute('UPDATE pokemon_storage SET hp = 0 WHERE id = ?', [p.id], () => { });
+
+                // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Caíste debilitado tras fallo de captura, refrescamos inventario
+                db.execute('UPDATE pokemon_storage SET hp = 0 WHERE id = ?', [p.id], () => {
+                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                });
                 ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
                 return;
             }
@@ -345,6 +357,9 @@ function processThrowBall(ws, db, data) {
             // Si sobreviviste, actualiza tu vida en la BD y devuélvele el turno al jugador
             db.execute('UPDATE pokemon_storage SET hp = ? WHERE id = ?', [p.hp, p.id], (err) => {
                 if (!err) {
+                    // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Recibiste daño del contraataque salvaje, refrescamos inventario
+                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+
                     ws.battle.turn = 'player';
                     ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
                 }
