@@ -354,3 +354,85 @@ java.lang.NumberFormatException: For input string: "1094.1089.1088.1073"
 12:51:54.198 [HabExec-1-7] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
 12:52:34.793 [HabExec-1-8] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
 12:52:34.794 [HabExec-1-8] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
+16:09:43.610 [main] ERROR com.eu.habbo.habbohotel.gameclients.GameClient - Could not pass event com.eu.habbo.plugin.events.emulator.EmulatorLoadItemsManagerEvent to Custom Wired
+16:09:43.612 [main] ERROR com.eu.habbo.habbohotel.gameclients.GameClient - Caught exception
+java.lang.reflect.InvocationTargetException: null
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at com.eu.habbo.plugin.PluginManager.fireEvent(PluginManager.java:397)
+	at com.eu.habbo.habbohotel.items.ItemManager.load(ItemManager.java:96)
+	at com.eu.habbo.habbohotel.GameEnvironment.load(GameEnvironment.java:67)
+	at com.eu.habbo.Emulator.main(Emulator.java:140)
+Caused by: java.lang.RuntimeException: Interaction Types must be unique. An class with type: com.eu.habbo.habbohotel.items.ItemInteraction was already added OR the key: wf_cnd_not_battlebz is already in use.
+	at com.eu.habbo.habbohotel.items.ItemManager.addItemInteraction(ItemManager.java:354)
+	at com.krews.plugin.customwired.main.onLoadItemsManager(main.java:47)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 5 common frames omitted
+16:09:43.869 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Failed to load Item (996661129)
+16:09:43.870 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Caught exception
+java.lang.NumberFormatException: For input string: "c19"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:588)
+	at java.base/java.lang.Integer.parseInt(Integer.java:685)
+	at com.eu.habbo.habbohotel.items.Item.load(Item.java:106)
+	at com.eu.habbo.habbohotel.items.Item.<init>(Item.java:44)
+	at com.eu.habbo.habbohotel.items.ItemManager.loadItems(ItemManager.java:393)
+	at com.eu.habbo.habbohotel.items.ItemManager.load(ItemManager.java:101)
+	at com.eu.habbo.habbohotel.GameEnvironment.load(GameEnvironment.java:67)
+	at com.eu.habbo.Emulator.main(Emulator.java:140)
+16:09:44.124 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Failed to load Item (56561623)
+16:09:44.126 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Caught exception
+java.lang.NumberFormatException: For input string: "1094.1089.1088.1073"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:588)
+	at java.base/java.lang.Integer.parseInt(Integer.java:685)
+	at com.eu.habbo.habbohotel.items.Item.load(Item.java:106)
+	at com.eu.habbo.habbohotel.items.Item.<init>(Item.java:44)
+	at com.eu.habbo.habbohotel.items.ItemManager.loadItems(ItemManager.java:393)
+	at com.eu.habbo.habbohotel.items.ItemManager.load(ItemManager.java:101)
+	at com.eu.habbo.habbohotel.GameEnvironment.load(GameEnvironment.java:67)
+	at com.eu.habbo.Emulator.main(Emulator.java:140)
+16:09:44.982 [main] ERROR com.eu.habbo.util.imager.badges.BadgeImager - BadgeImager output folder: C:/inetpub/wwwroot/public/swf/usercontent/badgeparts does not exist!
+16:11:09.307 [HabExec-1-6] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
+16:11:09.307 [HabExec-1-6] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
+16:13:00.998 [main] ERROR com.eu.habbo.habbohotel.gameclients.GameClient - Could not pass event com.eu.habbo.plugin.events.emulator.EmulatorLoadItemsManagerEvent to Custom Wired
+16:13:01.000 [main] ERROR com.eu.habbo.habbohotel.gameclients.GameClient - Caught exception
+java.lang.reflect.InvocationTargetException: null
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:118)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at com.eu.habbo.plugin.PluginManager.fireEvent(PluginManager.java:397)
+	at com.eu.habbo.habbohotel.items.ItemManager.load(ItemManager.java:96)
+	at com.eu.habbo.habbohotel.GameEnvironment.load(GameEnvironment.java:67)
+	at com.eu.habbo.Emulator.main(Emulator.java:140)
+Caused by: java.lang.RuntimeException: Interaction Types must be unique. An class with type: com.eu.habbo.habbohotel.items.ItemInteraction was already added OR the key: wf_cnd_not_battlebz is already in use.
+	at com.eu.habbo.habbohotel.items.ItemManager.addItemInteraction(ItemManager.java:354)
+	at com.krews.plugin.customwired.main.onLoadItemsManager(main.java:47)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	... 5 common frames omitted
+16:13:01.348 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Failed to load Item (996661129)
+16:13:01.355 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Caught exception
+java.lang.NumberFormatException: For input string: "c19"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:588)
+	at java.base/java.lang.Integer.parseInt(Integer.java:685)
+	at com.eu.habbo.habbohotel.items.Item.load(Item.java:106)
+	at com.eu.habbo.habbohotel.items.Item.<init>(Item.java:44)
+	at com.eu.habbo.habbohotel.items.ItemManager.loadItems(ItemManager.java:393)
+	at com.eu.habbo.habbohotel.items.ItemManager.load(ItemManager.java:101)
+	at com.eu.habbo.habbohotel.GameEnvironment.load(GameEnvironment.java:67)
+	at com.eu.habbo.Emulator.main(Emulator.java:140)
+16:13:01.689 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Failed to load Item (56561623)
+16:13:01.690 [main] ERROR com.eu.habbo.habbohotel.items.ItemManager - Caught exception
+java.lang.NumberFormatException: For input string: "1094.1089.1088.1073"
+	at java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:67)
+	at java.base/java.lang.Integer.parseInt(Integer.java:588)
+	at java.base/java.lang.Integer.parseInt(Integer.java:685)
+	at com.eu.habbo.habbohotel.items.Item.load(Item.java:106)
+	at com.eu.habbo.habbohotel.items.Item.<init>(Item.java:44)
+	at com.eu.habbo.habbohotel.items.ItemManager.loadItems(ItemManager.java:393)
+	at com.eu.habbo.habbohotel.items.ItemManager.load(ItemManager.java:101)
+	at com.eu.habbo.habbohotel.GameEnvironment.load(GameEnvironment.java:67)
+	at com.eu.habbo.Emulator.main(Emulator.java:140)
+16:13:02.475 [main] ERROR com.eu.habbo.util.imager.badges.BadgeImager - BadgeImager output folder: C:/inetpub/wwwroot/public/swf/usercontent/badgeparts does not exist!
+16:13:02.709 [HabExec-1-8] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
+16:13:02.710 [HabExec-1-8] ERROR com.eu.habbo.core.ConfigurationManager - Config key not found encryption.forced
