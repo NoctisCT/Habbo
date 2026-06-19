@@ -1,0 +1,175 @@
+This is the best facilitated content you will find in the whole world involving Habbo, updated, complete and easily
+Pack, tutorial and 'fixes' made entirely by joaowars776, with contributions from others for the catalog and visuals (special thanks to everyone in my Inner World group) https://discord.gg/D7HGD9EHR9
+
+Summary (for you to use CTRL + F to find what you want, more easily):
+   1-   Tutorial:
+   2-   Updating the CMS:
+   3-   Updating the CMS Manually:
+   4-   General tips:
+   5-   All Updates:
+
+Text learning methods:
+   contents inside ' ' (Apostrophe) will be files or commands
+   you have to use what's inside them, not copying ' '
+   example: 'renderer-config.json', 'http://localhost' you use renderer-config.json and http://localhost, without apostrophe
+   you following the text tutorial below you will understand everything that is to do, this is just for you to be aware
+.......................................................................................................................
+Tutorial:
+Install both programs in "1- programs"
+
+go to "xampp" and run setup_xampp.bat
+   two options will appear to type, you type "1" (refresh) and press Enter, it will update the location
+      (whenever you move the xampp folder to another folder, HD or pendrive, you must execute this)
+   run .bat and be happy execute xampp-control.exe start mysql and apache, and now you can fire up the emulator and play
+
+if you want friends to join use CTRL + H and change 'http://localhost' to 'http://your.IP.hamachi' in this configuration locations:
+ - xampp/htdocs/atomcms/.env
+ - xampp/htdocs/atomcms/public/nitro-react/build/renderer-config.json
+
+After configuring .env and renderer, go to the database and look for:
+   websockets.whitelist - put '*.your.hamachi.ip' (*. before the IP/domain, example: *.habblive.in)
+   ws.nitro.ip.header - in case you use Cloudflare in addition to the domain, put 'CF-Connection-IP'
+      (without quotes, just 'CF-Connection-IP') and save, also 'open port 2096' on the firewall and everything should work fine (UDP TCP)
+
+About per domain on Cloudflare, as I remember you need to connect Cloudflare by putting Cloudflare DNS on your domain
+   after that, creating a 'Type A' subdomain, with any name, with 'SSL disabled'
+
+When you've done all that, go to 'renderer-config.json' and change 'ws://localhost:2096' to 'wss://subdomain.domain.com:2096'
+
+example of someone who created a subdomain called curl and has the habblive.in domain as an example:
+   wss://curl.habblive.in:2096
+.......................................................................................................................
+Updating the CMS:
+
+just use these commands:
+ - git pull
+ - php artisan migrate
+ - php artisan db:seed --class=WebsiteWordfilterSeeder
+.
+.
+.
+Updating the CMS Manually:
+
+install GIT, Composer and NodeJS from latest version
+   in the installation, connect Composer to the php that is in the folder: \xampp\php
+   (it will appear for you to select a file, when entering that folder you will have only one to choose from, that's it)
+
+remove everything inside htdocs (but save the game content that is in the /public folder, which is: 'swf, nitro-react and nitro-assets' cut them from there and save somewhere)
+
+'git clone https://github.com/ObjectRetros/atomcms.git'
+   the contents that are inside the folder atomcms, you will put in /htdocs, after that, rename .env.example to .en
+   (configure with your information using database name 'habbo', configure NITRO_PATH and the others
+
+after that, use the 'composer install' command inside the CMS folder (in the folder where .env is)
+
+everything previously working
+   use: 'npm install && npm run build:atom'
+
+after everything works, use both commands below (first one, then another):
+   php artisan key:generate
+   php artisan migrate --seed
+
+ready, you will have your updated CMS, just remember and paste the nitro-react, nitro-assets and swf
+.......................................................................................................................
+General tips:
+
+Text learning methods:
+   Database: accessed by Navicat or HeidiSQL
+   Table = initial options when entering the Database, example: emulator_settings, website_settings, users, bans and others
+   Column = appears when entering a Table, example: you enter the Users table and inside there are id, username, password, mail, motto, gender, rank, these are columns
+   In case there is something involving deactivating or activating, or disallowing and allowing
+      0 = disabled 1 = enabled, example: Column 'hidden_staff' in the 'users' Table, when putting '1' you will be hidden from the "Community > Staffs" tab in the CMS
+
+Database:
+   'Users' (inside the Database
+      You can rank a user (staff) by going to the 'Users' table in the Database, look for 'Rank' by clicking on Edit in the desired user (you must put the rank ID, you can find it in the 'Permissions' table )
+         example: put 7 in Rank in Users because 7 is the highest ranking, being the CEO (you can also add more ranks by cloning them and adding own IDs in Columns for them, 0 = negative 1 = positive)
+		 
+      You can add coins, change username and whatever you want there, just be careful to change some column you don't understand
+	  
+   'Website_settings' (inside the Database)
+      You can modify the amount of coins, duckets, diamonds and points that a person earns when registering in 'website_settings' in the Database:
+	  -  'start_credits' 'start_duckets' 'start_diamonds' 'start_points'
+	  
+      You can edit the user's initial "mission/description" by changing
+	  -  'start_motto'
+	  
+	  You can enable maintenance by putting number 1 in
+	  -  'maintenance_enabled'
+	  
+	  If your CMS looks like your game character is invisible or has a problem, you can change the avatarimage in
+	  -  'avatar_imager'
+	  
+   'catalog_pages' (inside the Database) is where you translate all pages in your catalog
+	  
+CMS:
+   '.env' (xampp/htdocs/atomcms/.env)
+      # Find retros settings = you must put your registered 'nickname' and you must put 'true' instead of false in the option below
+	  
+	  # Recaptcha settings = as the name says, you must put your two keys the way they are named, first 'site_key' and second 'secret_key'
+	  
+	  # Default language for the site = you change the default language of your CMS (which everyone will see when entering for the first time) putting the acronym of your country example:
+	     Portuguese = BR, Spanish = ES
+		    the list of languages with their acronyms you can find in '/xampp/htdocs/atomcms/lang'
+
+Client:
+   use ':commands' to list the commands available to you
+.......................................................................................................................
+All Updates:
+
+# 12/20/2022 - 20/12/2022 14:02BR = Tutorial completed & File being zipped
+# 05/11/2023 - 11/05/2023 12:12BR = Version V2
+# 08/28/2024 - 28/08/2024 14:14BR/2:14PM = Version V3
+# 03/16/2025 - 16/03/2025 15:49BR = Version V4
+
+Version V2:
+	What's new in this update?	
+• Arcturus 3.5.2
+• Custom Clothes 04/2023
+• Latest AtomCMS update (probably you can update CMS directly in htdocs now)
+• AtomHK included (you need to configure it for your domain, it is already installed, also the most current version)
+• Updated Visual C and Java
+• PHP 8.1.17 (latest on Xampp)
+• Now Database included in the Pack to facilitate 10x the transfer to IIS or others, also serving for those who have problems with wordfilter or symbols (possibly it will not have it again, but it also works if it occurs)
+
+Version V3:
+	What's new in this update?
+All above, and:
+• Arcturus 3.5.3 (from 3.5.2)
+• Custom Clothes 08/2024 (from 04/2023)
+• Latest AtomCMS && Latest AtomHK update [08/28/2024-28/08/2024)
+• Updated Visual C and Java
+• PHP 8.2.12 (latest on Xampp)
+• New catalogue, updated 2024 (previously all items cost 0 coins, now the prices are correct)
+• Pack Plugins added
+
+Version V4: (if you'll use this Pack in IIS, I recommend using PHP 8.3+)
+	What's new in this update?
+• Arcturus 3.6.0 (Extended, from Duckietm)
+• Custom Clothes 03/2025 (Lella.com.br)
+• Latest AtomCMS (Now with Housekeeping integrated into the CMS, no need to do anything more)
+• Pack now use Java SDK
+• New catalogue (from 21.000+ to 44.000+ furnis and probably more than 2000/3000+ rares)
+• Pack Plugins updated (500+ one)
+• Nitro-Cool added, and Nitro-React Default with NitroCommunication already added (needed for Extended)
+• Added Start-4GB.bat for Emulator (4GB RAM Start)
+• Fixed Encoding issue (start.bat/start-4GB.bat)
+• Fixed Catalog min_rank, now you will see all staffs stores using the default Rank 7
+• Fixed allow_walk in all Sports ADS in the new Catalog
+• Added Catalog translation for (BR, ES, FR, IT, NL and TR. Also ENGLISH ORIGINAL included) + Tutorial texts in ReadME.txt
+• Added New Plugins by default, Camera base also added and configured (for IIS)
+• Added New Enables/Effects Pack
+• Added New Pets
+• Added Habbopages (and configured, working)
+	Other changes:
+• Changed some 'Zabbo' names to 'Habbo' in all Catalogs (catalog_pages)
+• Changed the ExternalTexts & UITexts.json to a organized one (also, Wardrobe 'Use' fixed)
+• Max bots in room is now 20 (from 10)
+• Max bots in inventory is now 40 (from 25)
+• Wired From 5 to 50 selections (emulator_settings - hotel.wired.furni.selection.count)
+• Max items in inventary is now 15000 (from 7500)
+• Handitem will last longer
+• Daily respects is now 5 (from 3)
+• Daily pet respects is now 5 (from 3)
+• Furni max in room is now 5000 (from 2500)
+• Bubblealerts notif changed to habbo.com/habbo-imaging

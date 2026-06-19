@@ -1,0 +1,5 @@
+{
+    "name": "BHRPG-Stats",
+    "version": "1.0.0",
+    "main": "com.eu.habbo.bhrpg.stats.StatsPlugin"
+}
