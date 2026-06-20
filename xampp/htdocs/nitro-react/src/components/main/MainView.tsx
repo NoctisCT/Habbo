@@ -36,6 +36,9 @@ import { PokemonPCView } from '../PokemonPCView';
 import { PokemonEncounterManager } from '../PokemonEncounterManager';
 import { PokemonHealingView } from '../PokemonHealingView'; // 🏥 Añadimos tu vista médica desacoplada
 
+// 🌟 RUTA CORREGIDA: Apunta a la raíz de components igual que las otras vistas
+import { PokemonMenu } from '../PokemonMenu';
+
 export const MainView: FC<{}> = props => {
     const [isReady, setIsReady] = useState(false);
     const [landingViewVisible, setLandingViewVisible] = useState(true);
@@ -129,6 +132,9 @@ export const MainView: FC<{}> = props => {
                 isOpen={isHealingOpen}
                 onClose={() => setIsHealingOpen(false)}
             />
+
+            {/* 🌟 BARRA VERTICAL: Añadida al final para que flote a la izquierda fijada en pantalla */}
+            <PokemonMenu />
         </Base>
     );
 }

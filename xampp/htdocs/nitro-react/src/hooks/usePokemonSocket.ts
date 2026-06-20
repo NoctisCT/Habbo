@@ -5,12 +5,14 @@ let globalSocket: WebSocket | null = null;
 const stateListeners = new Set<() => void>();
 
 let globalPokemonList: any[] = [];
+let globalInventoryList: any[] = []; // 🎒 NUEVO: Inventario unificado global
 let globalWildEncounter: any | null = null;
 let globalBattleState: any | null = null;
 
 export const usePokemonSocket = (userId: number) => {
     // Inicializamos los estados locales apuntando a las referencias globales compartidas
     const [pokemonList, setPokemonList] = useState<any[]>(globalPokemonList);
+    const [inventoryList, setInventoryList] = useState<any[]>(globalInventoryList); // 🎒 NUEVO
     const [wildEncounter, setWildEncounter] = useState<any | null>(globalWildEncounter);
     const [battleState, setBattleState] = useState<any | null>(globalBattleState);
 
@@ -18,6 +20,7 @@ export const usePokemonSocket = (userId: number) => {
     useEffect(() => {
         const updateLocalStates = () => {
             setPokemonList([...globalPokemonList]); // 🌟 Rompe la referencia para forzar el re-renderizado
+            setInventoryList([...globalInventoryList]); // 🎒 NUEVO
             setWildEncounter(globalWildEncounter);
             setBattleState(globalBattleState);
         };
@@ -40,6 +43,7 @@ export const usePokemonSocket = (userId: number) => {
             ws.onopen = () => {
                 console.log('[POKÉMON] Conectado al backend de WebSockets (Canal Unificado)');
                 ws.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
+                ws.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId })); // 🎒 NUEVO: Pedimos la mochila al conectar
             };
 
             ws.onmessage = (event) => {
@@ -47,6 +51,14 @@ export const usePokemonSocket = (userId: number) => {
 
                 if (data.type === 'PC_DATA_RESPONSE') {
                     globalPokemonList = [...data.pokemon]; // 🌟 Forzamos nueva referencia limpia
+                    broadcastStateChange();
+                }
+
+                // =========================================================================
+                // 🎒 NUEVO ESCUCHADOR: RECEPCIÓN DE INVENTARIO DESDE NODE
+                // =========================================================================
+                if (data.type === 'INVENTORY_DATA_RESPONSE') {
+                    globalInventoryList = [...data.items];
                     broadcastStateChange();
                 }
 
@@ -78,7 +90,6 @@ export const usePokemonSocket = (userId: number) => {
                 // 🏥 NUEVOS ESCUCHADORES DE ASISTENCIA MÉDICA Y FARMACIA
                 // =========================================================================
                 if (data.type === 'TEAM_HEALED_BY_BOT') {
-                    // Avisamos de forma fluida a la ventana para la cinemática
                     window.dispatchEvent(new CustomEvent('pokemon:team_healed', { detail: data.message }));
                 }
 
@@ -87,7 +98,6 @@ export const usePokemonSocket = (userId: number) => {
                 }
 
                 if (data.type === 'HEAL_ERROR') {
-                    // Avisamos de forma fluida a la ventana si hay un fallo
                     window.dispatchEvent(new CustomEvent('pokemon:heal_error', { detail: data.message }));
                 }
 
@@ -99,6 +109,7 @@ export const usePokemonSocket = (userId: number) => {
                 if (data.type === 'REFRESH_PC_DATA') {
                     if (globalSocket?.readyState === WebSocket.OPEN) {
                         globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
+                        globalSocket.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId })); // 🎒 NUEVO: Refresca también mochila
                     }
                 }
             };
@@ -111,6 +122,7 @@ export const usePokemonSocket = (userId: number) => {
             // Si el canal ya existe y se monta un nuevo componente, refrescamos sus datos al instante
             if (globalSocket.readyState === WebSocket.OPEN) {
                 globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
+                globalSocket.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId })); // 🎒 NUEVO: Sincroniza al montar componentes tardíos
             }
         }
     }, [userId]);
@@ -202,6 +214,7 @@ export const usePokemonSocket = (userId: number) => {
 
     return {
         pokemonList,
+        inventoryList, // 🎒 NUEVO: Exportamos la lista en tiempo real para el inventario
         movePokemon,
         wildEncounter,
         setWildEncounter: (val: any) => { globalWildEncounter = val; broadcastStateChange(); },

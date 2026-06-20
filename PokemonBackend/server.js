@@ -39,6 +39,15 @@ wss.on('connection', (ws) => {
                     });
                     break;
 
+                // =========================================================================
+                // 🎒 ESCUCHADOR QUE TRAE LOS ÍTEMS DE LA BASE DE DATOS A TU MOCHILA
+                // =========================================================================
+                case 'GET_INVENTORY_DATA':
+                    getUserInventory(data.userId, (err, inventoryList) => {
+                        if (!err) ws.send(JSON.stringify({ type: 'INVENTORY_DATA_RESPONSE', items: inventoryList }));
+                    });
+                    break;
+
                 case 'SWAP_SLOT':
                     updatePokemonSlot(data.pokemonStorageId, data.newSlot, (err) => {
                         if (!err) ws.send(JSON.stringify({ type: 'SWAP_SUCCESS', id: data.pokemonStorageId, slot: data.newSlot }));
@@ -200,7 +209,7 @@ wss.on('connection', (ws) => {
     });
 });
 
-// 📋 REFACTORIZACIÓN COMPLETA DEL SISTEMA DE CONSULTA DEL PC (Sincronización de variables reales)
+// 📋 REFACTORIZACIÓN COMPLETA DEL SISTEMA DE CONSULTA DEL PC
 function getUserPokemon(userId, callback) {
     const query = `
         SELECT s.*, p.name, p.type_1, p.type_2, p.base_hp, p.base_attack, p.base_defense, p.base_sp_attack, p.base_sp_defense, p.base_speed 
@@ -239,7 +248,7 @@ function getUserPokemon(userId, callback) {
                 level: poke.level,
                 exp: poke.exp,
                 hp: poke.hp,              // Vida actual exacta guardada tras los combates
-                max_hp: realStats.maxHp,     // 🌟 AGREGA ESTA LÍNEA: Compatibilidad total con tu interfaz actual del PC
+                max_hp: realStats.maxHp,     // 🌟 Compatibilidad total con tu interfaz actual del PC
                 maxHp: realStats.maxHp,     // Mapeado con el valor genético oficial calculado
                 slot: poke.slot,
                 gender: poke.gender,         // 0: Macho, 1: Hembra, 2: Sin Género
@@ -251,6 +260,50 @@ function getUserPokemon(userId, callback) {
         });
 
         callback(null, processedList);
+    });
+}
+
+// =========================================================================
+// 🎒 FUNCIÓN CORREGIDA: CONSULTA RELACIONAL DEL INVENTARIO JUNTANDO AMBAS TABLAS
+// =========================================================================
+function getUserInventory(userId, callback) {
+    const query = `
+        SELECT 
+            p.item_id AS id, 
+            p.name, 
+            p.description, 
+            s.quantity, 
+            CASE 
+                WHEN p.type = 'potion' THEN 'HEALING'
+                WHEN p.type = 'revive' THEN 'REVIVE'
+                WHEN p.type = 'ball' THEN 'BALL'
+                ELSE UPPER(p.type)
+            END AS type,
+            CASE 
+                WHEN p.item_id = 1 THEN 'hw_pokeball_icon.png'
+                WHEN p.item_id = 2 THEN 'superball_icon.png'
+                WHEN p.item_id = 3 THEN 'ultraball_icon.png'
+                WHEN p.item_id = 10 THEN 'potion_icon.png'
+                WHEN p.item_id = 11 THEN 'superpotion_icon.png'
+                WHEN p.item_id = 12 THEN 'hyperpotion_icon.png'
+                WHEN p.item_id = 13 THEN 'maxpotion_icon.png'
+                WHEN p.item_id = 14 THEN 'fullrestore_icon.png'
+                WHEN p.item_id = 15 THEN 'revive_icon.png'
+                WHEN p.item_id = 16 THEN 'maxrevive_icon.png'
+                ELSE 'hw_pokeball_icon.png'
+            END AS iconName
+        FROM pokemon_inventory s
+        INNER JOIN pokemon_items p ON s.item_id = p.item_id
+        WHERE s.user_id = ?
+    `;
+
+    db.execute(query, [userId], (err, rows) => {
+        if (err) {
+            console.error('[POKÉMON DB ERROR] Fallo al extraer mochila:', err);
+            callback(err, null);
+            return;
+        }
+        callback(null, rows);
     });
 }
 

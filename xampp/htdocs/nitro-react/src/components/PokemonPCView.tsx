@@ -9,14 +9,14 @@ const POKEMON_DICTIONARY: Record<number, string> = {
     25: 'Pikachu',
 };
 
-// 🎨 Paleta de colores oficial para los Badges de Tipo
+// 🎨 Paleta de colores oficial adaptada para los Badges sobre fondo claro
 const TYPE_COLORS: Record<string, string> = {
-    'Planta': '#22c55e', // Verde
-    'Veneno': '#a855f7', // Morado
-    'Fuego': '#ef4444', // Rojo
-    'Agua': '#3b82f6', // Azul
-    'Eléctrico': '#eab308', // Amarillo
-    'Normal': '#78716c', // Gris/Piedra
+    'Planta': '#2ecc71', // Verde claro
+    'Veneno': '#9b59b6', // Morado claro
+    'Fuego': '#e74c3c', // Rojo claro
+    'Agua': '#3498db', // Azul claro
+    'Eléctrico': '#f1c40f', // Amarillo claro
+    'Normal': '#95a5a6', // Gris/Piedra
 };
 
 export const PokemonPCView: FC = () => {
@@ -31,7 +31,7 @@ export const PokemonPCView: FC = () => {
 
     const safePokemonList = Array.isArray(pokemonList) ? pokemonList : [];
     const team = safePokemonList.filter(p => p && p.slot >= 1 && p.slot <= 6);
-    const pcBox = safePokemonList.filter(p => p.slot === 0);
+    const pcBox = safePokemonList.filter(p => p && p.slot === 0);
 
     const getPokemonName = (poke: any) => poke.name || POKEMON_DICTIONARY[poke.pokemon_id] || `Pokémon #${poke.pokemon_id}`;
 
@@ -62,6 +62,14 @@ export const PokemonPCView: FC = () => {
         setDragOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
     };
 
+    // 🌟 ESCUCHADOR: Conecta el PC al botón "Equipo" de tu barra vertical izquierda
+    useEffect(() => {
+        const handleTogglePC = () => setVisible(prev => !prev);
+
+        window.addEventListener('pokemon:open_pc', handleTogglePC);
+        return () => window.removeEventListener('pokemon:open_pc', handleTogglePC);
+    }, []);
+
     useEffect(() => {
         const handleMouseMove = (e: globalThis.MouseEvent) => {
             if (!isDragging) return;
@@ -79,115 +87,233 @@ export const PokemonPCView: FC = () => {
         };
     }, [isDragging, dragOffset]);
 
+    if (!visible) return null;
+
     return (
-        <>
-            <button
-                onClick={() => setVisible(prev => !prev)}
-                className="position-fixed btn btn-sm btn-dark border-info text-info fw-bold"
-                style={{ zIndex: 99999, top: '10px', left: '10px', fontSize: '11px', fontFamily: 'monospace', boxShadow: '0 4px 6px rgba(0,0,0,0.4)' }}
-            >
-                💻 {visible ? 'OCULTAR PC' : 'SISTEMA PC'}
-            </button>
+        <div
+            style={{
+                ...styles.modalWindow,
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                cursor: isDragging ? 'grabbing' : 'default'
+            }}
+        >
+            {/* Cabecera */}
+            <div onMouseDown={startDragging} style={styles.modalHeader}>
+                <span>💻 Sistema de Almacenamiento Pokémon</span>
+                <button onClick={() => setVisible(false)} style={styles.closeButton}>X</button>
+            </div>
 
-            {visible && (
-                <div
-                    className="position-fixed card p-3"
-                    style={{
-                        zIndex: 99999, width: '640px', height: '420px', left: `${position.x}px`, top: `${position.y}px`,
-                        backgroundColor: '#111827', borderColor: '#374151', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9)',
-                        color: '#ffffff', fontFamily: 'monospace', userSelect: 'none'
-                    }}
-                >
-                    <div onMouseDown={startDragging} className="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2" style={{ fontSize: '12px', color: '#22d3ee', fontWeight: 'bold', cursor: isDragging ? 'grabbing' : 'grab' }}>
-                        <span>💻 ALMACENAMIENTO (SISTEMA BILL PC)</span>
-                        <div className="d-flex align-items-center gap-2">
-                            <span className="badge bg-dark border border-info text-info">CAJA: {pcBox.length}</span>
-                            <button onClick={() => setVisible(false)} className="btn btn-sm btn-danger py-0 px-2 fw-bold" style={{ fontSize: '10px', cursor: 'pointer' }}>X</button>
-                        </div>
-                    </div>
+            {/* Panel de Doble Columna estilo Nitro */}
+            <div style={styles.modalBody}>
 
-                    <div className="d-flex h-100 gap-2" style={{ overflow: 'hidden', paddingBottom: '30px' }}>
-                        {/* EQUIPO ACTIVO */}
-                        <div className="d-flex flex-column gap-1 pr-2 border-end border-secondary" style={{ width: '45%' }}>
-                            <div className="text-center fw-bold mb-1 text-warning" style={{ fontSize: '11px' }}>EQUIPO EN MANO</div>
-                            <div className="d-flex flex-column gap-1 overflow-y-auto pr-1">
-                                {Array.from({ length: 6 }).map((_, index) => {
-                                    const currentSlot = index + 1;
-                                    const poke = team.find(p => p.slot === currentSlot);
-                                    return (
-                                        <div
-                                            key={currentSlot} onClick={() => poke && handlePokeClick(poke.id, poke.slot)}
-                                            className="p-1 rounded d-flex align-items-center justify-content-between"
-                                            style={{ backgroundColor: poke ? '#1f2937' : '#030712', border: `1px solid ${poke ? '#22d3ee' : '#1f2937'}`, cursor: poke ? 'pointer' : 'default', fontSize: '11px', height: '52px', transition: 'all 0.15s ease', opacity: poke ? 1 : 0.6 }}
-                                            onMouseEnter={(e) => { if (poke) e.currentTarget.style.backgroundColor = '#374151'; }}
-                                            onMouseLeave={(e) => { if (poke) e.currentTarget.style.backgroundColor = '#1f2937'; }}
-                                        >
-                                            {poke ? (
-                                                <>
-                                                    <div className="d-flex align-items-center gap-1" style={{ maxWidth: '70%' }}>
-                                                        <img src={getPokemonSprite(poke.pokemon_id)} alt="sprite" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
-                                                        <div className="d-flex flex-column" style={{ overflow: 'hidden' }}>
-                                                            {/* Nombre + Icono de Género */}
-                                                            <span className="fw-bold text-white d-flex align-items-center gap-1" style={{ whiteSpace: 'nowrap' }}>
-                                                                {getPokemonName(poke)}
-                                                                {poke.gender === 0 && <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>♂</span>}
-                                                                {poke.gender === 1 && <span style={{ color: '#f472b6', fontWeight: 'bold' }}>♀</span>}
-                                                            </span>
-
-                                                            {/* Fila secundaria: Nivel + Medallas de Tipo inline */}
-                                                            <div className="d-flex align-items-center gap-1 flex-wrap mt-0.5">
-                                                                <span className="text-muted" style={{ fontSize: '9px' }}>Nv.{poke.level}</span>
-                                                                <span style={{ backgroundColor: TYPE_COLORS[poke.type1] || '#4b5563', padding: '0px 4px', borderRadius: '2px', color: '#fff', fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase' }}>{poke.type1}</span>
-                                                                {poke.type2 && (
-                                                                    <span style={{ backgroundColor: TYPE_COLORS[poke.type2] || '#4b5563', padding: '0px 4px', borderRadius: '2px', color: '#fff', fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase' }}>{poke.type2}</span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {/* Vida Sincronizada con max_hp */}
-                                                    <span className="text-success fw-bold text-end pr-1" style={{ fontSize: '10px', lineHeight: '11px' }}>
-                                                        {poke.hp}/{poke.max_hp}<br />
-                                                        <span className="text-muted" style={{ fontSize: '8px' }}>HP</span>
+                {/* 🎒 COLUMNA IZQUIERDA: EQUIPO EN MANO */}
+                <div style={styles.leftColumn}>
+                    <div style={styles.columnTitle}>EQUIPO EN MANO</div>
+                    <div style={styles.teamListContainer}>
+                        {Array.from({ length: 6 }).map((_, index) => {
+                            const currentSlot = index + 1;
+                            const poke = team.find(p => p.slot === currentSlot);
+                            return (
+                                <div
+                                    key={currentSlot}
+                                    onClick={() => poke && handlePokeClick(poke.id, poke.slot)}
+                                    style={{
+                                        ...styles.pokemonRow,
+                                        backgroundColor: poke ? '#fff' : '#e2e2e2',
+                                        border: poke ? '1px solid #ccc' : '1px dashed #b2b2b2',
+                                        cursor: poke ? 'pointer' : 'default',
+                                        opacity: poke ? 1 : 0.7
+                                    }}
+                                >
+                                    {poke ? (
+                                        <>
+                                            <div style={styles.rowInfoArea}>
+                                                <img src={getPokemonSprite(poke.pokemon_id)} alt="sprite" style={styles.pokemonSpriteMini} />
+                                                <div style={styles.nameAndTypeRow}>
+                                                    <span style={styles.pokemonNameText}>
+                                                        {getPokemonName(poke)}
+                                                        {/* 🌟 Símbolos con silueta de contorno negra pixelada gruesa para la lista */}
+                                                        {poke.gender === 0 && <span style={{ ...styles.listGenderIcon, color: '#3498db' }}>♂</span>}
+                                                        {poke.gender === 1 && <span style={{ ...styles.listGenderIcon, color: '#ff3385' }}>♀</span>}
                                                     </span>
-                                                </>
-                                            ) : (
-                                                <span className="text-secondary italic m-auto" style={{ fontSize: '10px' }}>- Vacío -</span>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* CAJA GENERAL */}
-                        <div className="d-flex flex-column gap-1 pl-1" style={{ width: '55%', height: '100%' }}>
-                            <div className="text-center fw-bold mb-1 text-info" style={{ fontSize: '11px' }}>ALMACÉN DE POKÉMON</div>
-                            <div className="d-flex flex-wrap gap-1 p-2 rounded overflow-y-auto align-content-start" style={{ backgroundColor: '#030712', border: '1px solid #111827', height: '295px' }}>
-                                {pcBox.map((poke) => (
-                                    <div
-                                        key={poke.id} onClick={() => handlePokeClick(poke.id, poke.slot)}
-                                        className="rounded d-flex flex-column align-items-center justify-content-center cursor-pointer text-center p-1"
-                                        style={{ width: '54px', height: '58px', backgroundColor: '#1f2937', border: '1px solid #4b5563', fontSize: '9px', transition: 'all 0.15s ease' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#374151'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1f2937'}
-                                    >
-                                        <img src={getPokemonSprite(poke.pokemon_id)} alt="ico" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-                                        {/* Nivel + Género mini en cuadrícula */}
-                                        <span className="text-warning fw-bold d-flex align-items-center justify-content-center" style={{ fontSize: '8px', lineHeight: '8px' }}>
-                                            Nv.{poke.level}
-                                            {poke.gender === 0 && <span style={{ color: '#38bdf8', marginLeft: '1px', fontSize: '8px' }}>♂</span>}
-                                            {poke.gender === 1 && <span style={{ color: '#f472b6', marginLeft: '1px', fontSize: '8px' }}>♀</span>}
-                                        </span>
-                                    </div>
-                                ))}
-                                {Array.from({ length: Math.max(0, 24 - pcBox.length) }).map((_, index) => (
-                                    <div key={`empty-${index}`} className="rounded d-flex align-items-center justify-content-center text-muted" style={{ width: '54px', height: '58px', backgroundColor: 'rgba(31, 41, 55, 0.1)', border: '1px dashed #1f2937', fontSize: '12px' }}>+</div>
-                                ))}
-                            </div>
-                        </div>
+                                                    <div style={styles.badgeGroup}>
+                                                        <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[poke.type1] || '#7f8c8d' }}>{poke.type1}</span>
+                                                        {poke.type2 && (
+                                                            <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[poke.type2] || '#7f8c8d' }}>{poke.type2}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style={styles.hpTextBadgeBox}>
+                                                <span style={{ color: '#27ae60', fontWeight: 'bold' }}>{poke.hp}/{poke.max_hp}</span>
+                                                <span style={{ color: '#7f8c8d', fontSize: '8px' }}>HP</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <span style={styles.emptySlotText}>- Slot Libre -</span>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
-        </>
+
+                {/* 💻 COLUMNA DERECHA: REJILLA DEL PC BOX */}
+                <div style={styles.rightColumn}>
+                    <div style={styles.rightHeaderRow}>
+                        <div style={styles.columnTitle}>ALMACÉN GENERAL</div>
+                        <span style={styles.boxCountBadge}>Caja: {pcBox.length} Pokémon</span>
+                    </div>
+
+                    <div style={styles.pcGridContainer}>
+                        {pcBox.map((poke) => (
+                            <div
+                                key={poke.id}
+                                onClick={() => handlePokeClick(poke.id, poke.slot)}
+                                title={`${getPokemonName(poke)} (Nv.${poke.level})`}
+                                style={styles.gridItemCard}
+                                onMouseEnter={(e) => e.currentTarget.style.border = '2px solid #c72e2e'}
+                                onMouseLeave={(e) => e.currentTarget.style.border = '1px solid #ccc'}
+                            >
+                                {/* 🌟 Icono de género flotante con contorno negro puro de 1px */}
+                                {poke.gender === 0 && <span style={{ ...styles.floatingGenderIcon, color: '#3498db' }}>♂</span>}
+                                {poke.gender === 1 && <span style={{ ...styles.floatingGenderIcon, color: '#ff3385' }}>♀</span>}
+
+                                <img src={getPokemonSprite(poke.pokemon_id)} alt="ico" style={styles.gridSprite} />
+                                <span style={styles.gridLevelText}>Nv.{poke.level}</span>
+                            </div>
+                        ))}
+
+                        {/* Slots vacíos */}
+                        {Array.from({ length: Math.max(0, 24 - pcBox.length) }).map((_, index) => (
+                            <div key={`empty-${index}`} style={styles.gridItemEmpty}>+</div>
+                        ))}
+                    </div>
+                </div>
+
+            </div>
+        </div>
     );
+};
+
+// 🎨 Estilos Inline refinados con siluetas de trazo pixel art
+const styles = {
+    modalWindow: {
+        position: 'fixed' as const,
+        backgroundColor: '#f1f1f1',
+        borderRadius: '6px',
+        border: '2px solid #4a4a4a',
+        width: '640px',
+        height: '420px',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+        fontFamily: 'Verdana, Arial, sans-serif',
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        userSelect: 'none' as const
+    },
+    modalHeader: {
+        backgroundColor: '#34495e',
+        color: 'white',
+        padding: '8px 12px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontWeight: 'bold' as const,
+        fontSize: '13px',
+        cursor: 'grab'
+    },
+    closeButton: { background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' as const, fontSize: '13px' },
+    modalBody: { padding: '15px', display: 'flex', gap: '15px', flex: 1, overflow: 'hidden' },
+
+    // Bloques
+    leftColumn: { width: '45%', display: 'flex', flexDirection: 'column' as const, gap: '6px' },
+    rightColumn: { width: '55%', display: 'flex', flexDirection: 'column' as const, gap: '6px' },
+    columnTitle: { fontSize: '11px', fontWeight: 'bold' as const, color: '#333', marginBottom: '2px' },
+
+    // Lista izquierda (Equipo)
+    teamListContainer: { display: 'flex', flexDirection: 'column' as const, gap: '5px', overflowY: 'auto' as const, flex: 1, paddingRight: '2px' },
+    pokemonRow: {
+        borderRadius: '4px',
+        height: '52px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '4px 8px',
+        boxSizing: 'border-box' as const,
+        transition: 'all 0.1s ease'
+    },
+    rowInfoArea: { display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '75%', overflow: 'hidden' },
+    pokemonSpriteMini: { width: '38px', height: '38px', objectFit: 'contain' as const, imageRendering: 'pixelated' as const },
+    nameAndTypeRow: { display: 'flex', flexDirection: 'column' as const, gap: '2px', overflow: 'hidden' },
+    pokemonNameText: { fontSize: '11px', fontWeight: 'bold' as const, color: '#333', whiteSpace: 'nowrap' as const, display: 'flex', alignItems: 'center' },
+
+    // 🌟 Símbolo del género en lista con delineado negro de alto contraste
+    listGenderIcon: {
+        marginLeft: '6px',
+        fontSize: '14px',
+        fontWeight: 'bold' as const,
+        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+    },
+
+    badgeGroup: { display: 'flex', gap: '3px' },
+    typeBadge: { color: 'white', fontSize: '7px', fontWeight: 'bold' as const, padding: '1px 4px', borderRadius: '2px', textTransform: 'uppercase' as const },
+    hpTextBadgeBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', fontSize: '10px' },
+    emptySlotText: { color: '#888', fontStyle: 'italic', fontSize: '11px', margin: 'auto' },
+
+    // Rejilla derecha (Almacén)
+    rightHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    boxCountBadge: { backgroundColor: '#7f8c8d', color: 'white', fontSize: '9px', padding: '1px 6px', borderRadius: '3px', fontWeight: 'bold' as const },
+    pcGridContainer: {
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '6px',
+        padding: '10px',
+        overflowY: 'auto' as const,
+        alignContent: 'start'
+    },
+    gridItemCard: {
+        backgroundColor: '#e2e2e2',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        height: '62px',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center',
+        alignItems: 'center',
+        cursor: 'pointer',
+        position: 'relative' as const,
+        boxSizing: 'border-box' as const
+    },
+
+    // 🌟 Símbolo flotante en la rejilla con delineado perimetral negro de 1px (Efecto Sprite grueso)
+    floatingGenderIcon: {
+        position: 'absolute' as const,
+        top: '3px',
+        right: '6px',
+        fontSize: '14px',
+        fontWeight: 'bold' as const,
+        lineHeight: '14px',
+        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+    },
+
+    gridSprite: { width: '32px', height: '32px', objectFit: 'contain' as const, imageRendering: 'pixelated' as const, marginTop: '4px' },
+    gridLevelText: { fontSize: '8px', fontWeight: 'bold' as const, color: '#e67e22', marginTop: '1px' },
+
+    gridItemEmpty: {
+        backgroundColor: 'rgba(226, 226, 226, 0.3)',
+        border: '1px solid #e2e2e2',
+        borderRadius: '4px',
+        height: '62px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: '#aaa',
+        fontSize: '14px'
+    }
 };

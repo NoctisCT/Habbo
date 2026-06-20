@@ -8,31 +8,32 @@ interface InventoryItem {
     description: string;
     quantity: number;
     type: 'HEALING' | 'REVIVE' | 'BALL'; // Categoría del ítem
-    iconUrl: string;     // Tu ruta de XAMPP para el icono del objeto
+    iconUrl?: string;    // Ruta web completa opcional
+    iconName?: string;   // Nombre del archivo plano opcional (.png)
 }
 
 interface PokemonInventoryViewProps {
     isOpen: boolean;
     onClose: () => void;
-    // Aquí puedes pasarle los ítems reales desde tus props, tu estado o context.
-    // Te dejo este mock de ejemplo para que veas cómo mapea la estructura:
-    items?: InventoryItem[];
 }
+
+// 📦 Peso de organización: Controla el orden de aparición en la mochila
+const TYPE_ORDER: Record<string, number> = {
+    'BALL': 1,     // Primero todas las Poké Balls
+    'HEALING': 2,  // Luego las pociones y elixires
+    'REVIVE': 3    // Al final los revivir
+};
 
 export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
     isOpen,
-    onClose,
-    items = [
-        { id: 101, name: 'Poción', description: 'Restaura 20 PS de un Pokémon.', quantity: 5, type: 'HEALING', iconUrl: '/swf/dcr/hof_furni/icons/potion_icon.png' },
-        { id: 102, name: 'Superpoción', description: 'Restaura 50 PS de un Pokémon.', quantity: 2, type: 'HEALING', iconUrl: '/swf/dcr/hof_furni/icons/superpotion_icon.png' },
-        { id: 103, name: 'Revivir', description: 'Debilita el estado debilitado con 50% de HP.', quantity: 1, type: 'REVIVE', iconUrl: '/swf/dcr/hof_furni/icons/revive_icon.png' }
-    ]
+    onClose
 }) => {
     if (!isOpen) return null;
 
     const userId = GetSessionDataManager().userId;
-    // Extraemos la lista de Pokémon activa y la función emisora
-    const { pokemonList, sendUseHealingItem } = usePokemonSocket(userId);
+
+    // 🌟 CONEXIÓN REAL: Extraemos los datos que llegan vivos de Node a través del socket
+    const { pokemonList, inventoryList, sendUseHealingItem } = usePokemonSocket(userId);
 
     // 🌟 Filtrar equipo activo (Slots del 1 al 6)
     const activeTeam = pokemonList.filter(p => p.slot >= 1 && p.slot <= 6);
@@ -41,13 +42,29 @@ export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
     const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
     const [isTargeting, setIsTargeting] = useState<boolean>(false);
 
+    // =========================================================================
+    // 📊 FILTRADO Y ORGANIZACIÓN LÓGICA INTELEGENTE
+    // =========================================================================
+    const organizedItems = inventoryList
+        .filter((item: InventoryItem) => item.quantity > 0) // ❌ Mejora 1: Oculta los objetos agotados (Cantidad 0)
+        .sort((a, b) => {
+            // 📖 Mejora 3: Clasifica por categorías (Balls -> Healing -> Revive) y luego por ID interno
+            const orderA = TYPE_ORDER[a.type] || 99;
+            const orderB = TYPE_ORDER[b.type] || 99;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.id - b.id;
+        });
+
     const handleItemClick = (item: InventoryItem) => {
         if (item.quantity <= 0) return;
 
-        // Si es un objeto curativo, abrimos el selector de objetivos
+        // Si es un objeto curativo o revivir, abrimos el selector de objetivos
         if (item.type === 'HEALING' || item.type === 'REVIVE') {
             setSelectedItem(item);
             setIsTargeting(true);
+        } else {
+            setSelectedItem(item);
+            setIsTargeting(false);
         }
     };
 
@@ -57,7 +74,7 @@ export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
         // Emitimos la orden directa a Node con el ítem y el Pokémon elegido
         sendUseHealingItem(selectedItem.id, pokemonStorageId);
 
-        // Opcional: Cerramos el selector o restamos cantidad localmente si no quieres esperar al refresh
+        // Reseteamos el selector tras confirmar el envío
         setIsTargeting(false);
         setSelectedItem(null);
     };
@@ -74,19 +91,28 @@ export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
                 {/* Doble panel: Izquierda lista de ítems, Derecha detalle */}
                 <div style={styles.modalBody}>
                     <div style={styles.inventoryGrid}>
-                        {items.map((item) => (
+                        {organizedItems.map((item: InventoryItem) => (
                             <div
                                 key={item.id}
+                                title={item.name} // 👁️ Mejora 2: Muestra el nombre al poner el ratón encima (Tooltip nativo)
                                 style={{
                                     ...styles.itemCard,
                                     border: selectedItem?.id === item.id ? '2px solid #c72e2e' : '1px solid #ccc'
                                 }}
                                 onClick={() => handleItemClick(item)}
                             >
-                                <img src={item.iconUrl} alt={item.name} style={styles.itemIcon} />
+                                {/* 🌟 Soporta tanto la URL completa del ítem como el nombre del icono plano en la carpeta de las Poké Balls */}
+                                <img
+                                    src={item.iconUrl || `/swf/dcr/hof_furni/icons/${item.iconName || 'hw_pokeball_icon.png'}`}
+                                    alt={item.name}
+                                    style={styles.itemIcon}
+                                />
                                 <span style={styles.badgeCount}>X{item.quantity}</span>
                             </div>
                         ))}
+                        {organizedItems.length === 0 && (
+                            <p style={{ gridColumn: 'span 4', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>No tienes objetos utilizables en tu mochila.</p>
+                        )}
                     </div>
 
                     {/* Panel de detalles del objeto */}
@@ -94,7 +120,7 @@ export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
                         {selectedItem ? (
                             <>
                                 <h4 style={{ margin: '0 0 5px 0' }}>{selectedItem.name}</h4>
-                                <p style={{ margin: 0, color: '#555', fontSize: '11px' }}>{selectedItem.description}</p>
+                                <p style={{ margin: 0, color: '#555', fontSize: '11px', lineHeight: '1.4' }}>{selectedItem.description}</p>
 
                                 {isTargeting && (
                                     <div style={styles.targetZone}>
@@ -106,16 +132,15 @@ export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
                                                     style={styles.btnPokemonTarget}
                                                     onClick={() => handleApplyItem(pkmn.id)}
                                                 >
-                                                    {/* Puedes meter su sprite aquí si lo tienes mapeado */}
-                                                    <span>Slot {pkmn.slot}: {pkmn.name || 'Pokémon'}</span>
+                                                    <span>Slot {pkmn.slot}: <b>{pkmn.name || 'Pokémon'}</b></span>
                                                     <span style={styles.hpIndicator}>HP: {pkmn.currentHp}/{pkmn.maxHp}</span>
                                                 </button>
                                             ))}
                                             {activeTeam.length === 0 && (
-                                                <p style={{ fontStyle: 'italic', fontSize: '11px' }}>No tienes Pokémon en tu equipo activo.</p>
+                                                <p style={{ fontStyle: 'italic', fontSize: '11px', color: '#777' }}>No tienes Pokémon en tu equipo activo.</p>
                                             )}
                                         </div>
-                                        <button onClick={() => setIsTargeting(false)} style={styles.btnCancel}>Cancelar</button>
+                                        <button onClick={() => { setIsTargeting(false); setSelectedItem(null); }} style={styles.btnCancel}>Cancelar</button>
                                     </div>
                                 )}
                             </>
@@ -145,7 +170,7 @@ const styles = {
     targetZone: { marginTop: '10px', borderTop: '1px dashed #ccc', paddingTop: '10px', display: 'flex', flexDirection: 'column' as const, flex: 1 },
     targetTitle: { margin: '0 0 6px 0', fontWeight: 'bold' as const, color: '#c72e2e', fontSize: '11px' },
     teamSelectContainer: { display: 'flex', flexDirection: 'column' as const, gap: '4px', overflowY: 'auto' as const, maxHeight: '130px', marginBottom: '8px' },
-    btnPokemonTarget: { display: 'flex', justifyContent: 'space-between', width: '100%', padding: '5px 8px', backgroundColor: '#f8f9fa', border: '1px solid #ccc', borderRadius: '3px', cursor: 'pointer', fontSize: '10px', textAlign: 'left' as const },
+    btnPokemonTarget: { display: 'flex', justifyContent: 'space-between', width: '100%', padding: '6px 8px', backgroundColor: '#f8f9fa', border: '1px solid #ccc', borderRadius: '3px', cursor: 'pointer', fontSize: '10px', textAlign: 'left' as const },
     hpIndicator: { fontWeight: 'bold' as const, color: '#27ae60' },
-    btnCancel: { backgroundColor: '#7f8c8d', color: 'white', border: 'none', padding: '4px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', marginTop: 'auto' }
+    btnCancel: { backgroundColor: '#7f8c8d', color: 'white', border: 'none', padding: '5px', borderRadius: '3px', cursor: 'pointer', fontSize: '11px', marginTop: 'auto', textAlign: 'center' as const }
 };
