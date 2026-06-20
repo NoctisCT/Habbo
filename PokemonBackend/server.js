@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const mysql = require('mysql2');
 const combatHandler = require('./combatHandler'); // 📦 Importamos tu módulo de combate
 const statCalculator = require('./statCalculator'); // 🧠 Importamos el motor matemático relacional
+const healingHandler = require('./healingHandler'); // 🏥 Importamos el gestor de curación unificado (Joy + Mochila)
 
 // 1. CONEXIÓN A TU BASE DE DATOS HABBO
 const db = mysql.createPool({
@@ -176,6 +177,17 @@ wss.on('connection', (ws) => {
                     combatHandler.processThrowBall(ws, db, data);
                     break;
 
+                // =========================================================================
+                // 🏥 SISTEMA DE ASISTENCIA MÉDICA UNIFICADO
+                // =========================================================================
+                case 'HEAL_TEAM_BOT': // 🏥 ESCUCHADOR: Interacción con el bot del Centro Pokémon
+                    healingHandler.healTeamAtBot(ws, db, data);
+                    break;
+
+                case 'USE_HEALING_ITEM': // 🎒 ESCUCHADOR: Uso de pociones/revivir de la mochila
+                    healingHandler.processUseHealingItem(ws, db, data);
+                    break;
+
                 case 'CLOSE_BATTLE':
                     console.log(`[COMBATE] Batalla finalizada o abandono voluntario. Socket liberado.`);
                     ws.battle = null;
@@ -226,7 +238,7 @@ function getUserPokemon(userId, callback) {
                 type2: poke.type_2,
                 level: poke.level,
                 exp: poke.exp,
-                hp: poke.hp,             // Vida actual exacta guardada tras los combates
+                hp: poke.hp,              // Vida actual exacta guardada tras los combates
                 max_hp: realStats.maxHp,     // 🌟 AGREGA ESTA LÍNEA: Compatibilidad total con tu interfaz actual del PC
                 maxHp: realStats.maxHp,     // Mapeado con el valor genético oficial calculado
                 slot: poke.slot,

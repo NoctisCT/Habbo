@@ -2,6 +2,7 @@
  * Motor de Combate por Interfaz (Modo Privado) - Módulo de Movimientos, PP, Stats y Captura Oficial
  */
 const statCalculator = require('./statCalculator');
+const { getRequiredExpForLevel, calculateNewStats } = require('./CombatExperience');
 
 // Diccionario estático de movimientos oficiales con su categoría elemental
 const MOVES_DICTIONARY = {
@@ -80,7 +81,7 @@ function startPrivateBattle(ws, db, data) {
         // 🧮 PASO 2: Calculamos los stats reales en combate del jugador mediante la fórmula oficial
         const playerRealStats = statCalculator.calculateStats(playerBase, myActivePoke);
 
-        // Mapeo e inyección de los PP y movimientos reales en memoria
+        // Mapeo e inyección de los PP and movimientos reales en memoria
         const moveKeys = POKEMON_MOVES[myActivePoke.pokemon_id] || ['placaje'];
         const playerMoves = moveKeys.map(key => ({
             key: key,
@@ -133,6 +134,7 @@ function startPrivateBattle(ws, db, data) {
                 ws.battle = {
                     userId: data.userId,
                     ended: false,
+                    participants: [myActivePoke.id], // 👁️ REGISTRO BASE: Guardamos el ID del Pokémon inicial que entra a pelear
                     player: {
                         id: myActivePoke.id,
                         pokemonId: myActivePoke.pokemon_id,
@@ -207,8 +209,90 @@ function processBattleAttack(ws, db, data) {
     if (r.hp <= 0) {
         r.hp = 0;
         ws.battle.ended = true;
-        battleLog += `\n¡El ${r.name} salvaje se ha debilitado! Has ganado. 🎉`;
-        ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+        battleLog += `\n¡El ${r.name} salvaje se ha debilitado! Has ganado. 🎉\n`;
+
+        // 1. Consultamos la base_experience del rival en la Pokédex
+        db.execute('SELECT base_experience FROM pokemon_pokedex WHERE pokemon_id = ?', [r.pokemonId], (errMax, pokedexRows) => {
+            const baseExp = (!errMax && pokedexRows.length > 0) ? pokedexRows[0].base_experience : 50;
+
+            const participantIds = ws.battle.participants || [p.id];
+
+            // 2. Consultamos todos los participantes en una sola query optimizada relacional mediante IN
+            const placeholders = participantIds.map(() => '?').join(',');
+            const pQuery = `
+                SELECT s.*, p.growth_rate, p.base_hp, p.base_attack, p.base_defense, p.base_sp_attack, p.base_sp_defense, p.base_speed
+                FROM pokemon_storage s
+                INNER JOIN pokemon_pokedex p ON s.pokemon_id = p.pokemon_id
+                WHERE s.id IN (${placeholders})
+            `;
+
+            db.execute(pQuery, participantIds, (errP, pRows) => {
+                if (errP || !pRows || pRows.length === 0) {
+                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                    ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                    return;
+                }
+
+                // 🛡️ FILTRO OFICIAL DE DEBILITADOS: Solo los Pokémon con HP actual mayor que 0 participan en el reparto
+                const livingPokemons = pRows.filter(poke => poke.hp > 0);
+
+                let completed = 0;
+
+                if (livingPokemons.length === 0) {
+                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                    ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                    return;
+                }
+
+                livingPokemons.forEach(currentPoke => {
+                    // 📈 FÓRMULA DE EXPERIENCIA ESCALADA INTEGRADA (5ª GENERACIÓN EN ADELANTE)
+                    const baseCalculated = (baseExp * r.level) / 7;
+                    const participantShare = baseCalculated / livingPokemons.length;
+
+                    // Multiplicador de escala: (2 * L_rival + 10) / (L_rival + L_propio + 10)
+                    const levelRatio = (2 * r.level + 10) / (r.level + currentPoke.level + 10);
+                    // Elevamos a la potencia de 2.5 oficial de los juegos modernos
+                    const expPerPokemon = Math.floor(participantShare * Math.pow(levelRatio, 2.5)) + 1;
+
+                    let newExp = currentPoke.exp + expPerPokemon;
+                    let newLevel = currentPoke.level;
+                    let leveledUp = false;
+
+                    // Bucle de nivelación usando las 6 curvas de CombatExperience.js
+                    while (newExp >= getRequiredExpForLevel(newLevel + 1, currentPoke.growth_rate)) {
+                        newLevel++;
+                        leveledUp = true;
+                    }
+
+                    battleLog += `\n¡${currentPoke.name || 'Tu Pokémon'} ganó ${expPerPokemon} puntos de EXP!`;
+
+                    if (leveledUp) {
+                        battleLog += ` ¡Subió al nivel ${newLevel}! 📈`;
+                        const stats = calculateNewStats(currentPoke, newLevel);
+
+                        db.execute(
+                            'UPDATE pokemon_storage SET level = ?, exp = ?, max_hp = ?, hp = ? WHERE id = ?',
+                            [newLevel, newExp, stats.hp, stats.hp, currentPoke.id],
+                            () => { handleCallbackCompletion(); }
+                        );
+                    } else {
+                        db.execute(
+                            'UPDATE pokemon_storage SET exp = ? WHERE id = ?',
+                            [newExp, currentPoke.id],
+                            () => { handleCallbackCompletion(); }
+                        );
+                    }
+                });
+
+                function handleCallbackCompletion() {
+                    completed++;
+                    if (completed === livingPokemons.length) {
+                        ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                        ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                    }
+                }
+            });
+        });
         return;
     }
 
@@ -217,7 +301,7 @@ function processBattleAttack(ws, db, data) {
     // -------------------------------------------------------------------------
     ws.battle.turn = 'rival';
     let rivalAtkStat = r.moveCategory === 'special' ? r.stats.spAttack : r.stats.attack;
-    let rivalDefStat = r.moveCategory === 'special' ? p.stats.spDefense : p.stats.defense;
+    let rivalDefStat = r.moveCategory === 'special' ? r.stats.spDefense : r.stats.defense;
 
     const rivalDmg = calculateOfficialDamage(r.level, r.movePower, rivalAtkStat, rivalDefStat);
     p.hp -= rivalDmg;
@@ -314,18 +398,97 @@ function processThrowBall(ws, db, data) {
                         return;
                     }
 
-                    battleLog += `¡Chof... Chof... Chof... ¡Yatach!\n¡El ${r.name} salvaje ha sido capturado con éxito! 🎉\n\nSe ha guardado en ${destinationText}.`;
+                    battleLog += `¡Chof... Chof... Chof... ¡Yatach!\n¡El ${r.name} salvaje ha sido capturado con éxito! 🎉\n\nSe ha guardado en ${destinationText}.\n`;
 
-                    ws.battle.ended = true;
-                    ws.battle.log = battleLog;
+                    // 📈 SISTEMA INYECTADO: Distribución de EXP Escalada Moderna por captura exitosa
+                    db.execute('SELECT base_experience FROM pokemon_pokedex WHERE pokemon_id = ?', [r.pokemonId], (errMax, pokedexRows) => {
+                        const baseExp = (!errMax && pokedexRows.length > 0) ? pokedexRows[0].base_experience : 50;
 
-                    // 🔄 SINCRONIZACIÓN AUTOMÁTICA: Bicho capturado, enviamos refresco inmediato para el PC
-                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                        const participantIds = ws.battle.participants || [p.id];
 
-                    // Limpieza de memoria post-captura: el bicho deja de existir en la baldosa del hotel
-                    ws.lastWildPokemon = null;
+                        // Consultamos todos los participantes relacionales para filtrar por salud
+                        const placeholders = participantIds.map(() => '?').join(',');
+                        const pQuery = `
+                            SELECT s.*, p.growth_rate, p.base_hp, p.base_attack, p.base_defense, p.base_sp_attack, p.base_sp_defense, p.base_speed
+                            FROM pokemon_storage s
+                            INNER JOIN pokemon_pokedex p ON s.pokemon_id = p.pokemon_id
+                            WHERE s.id IN (${placeholders})
+                        `;
 
-                    ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                        db.execute(pQuery, participantIds, (errP, pRows) => {
+                            if (errP || !pRows || pRows.length === 0) {
+                                ws.battle.ended = true;
+                                ws.battle.log = battleLog;
+                                ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                                ws.lastWildPokemon = null;
+                                ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                                return;
+                            }
+
+                            // 🛡️ FILTRO OFICIAL DE DEBILITADOS: Solo los Pokémon con HP > 0 cobran experiencia tras la captura
+                            const livingPokemons = pRows.filter(poke => poke.hp > 0);
+
+                            let completedExp = 0;
+
+                            if (livingPokemons.length === 0) {
+                                ws.battle.ended = true;
+                                ws.battle.log = battleLog;
+                                ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                                ws.lastWildPokemon = null;
+                                ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                                return;
+                            }
+
+                            livingPokemons.forEach(currentPoke => {
+                                // 📈 FÓRMULA DE EXPERIENCIA ESCALADA INTEGRADA (5ª GENERACIÓN EN ADELANTE)
+                                const baseCalculated = (baseExp * r.level) / 7;
+                                const participantShare = baseCalculated / livingPokemons.length;
+
+                                const levelRatio = (2 * r.level + 10) / (r.level + currentPoke.level + 10);
+                                const expPerPokemon = Math.floor(participantShare * Math.pow(levelRatio, 2.5)) + 1;
+
+                                let newExp = currentPoke.exp + expPerPokemon;
+                                let newLevel = currentPoke.level;
+                                let leveledUp = false;
+
+                                while (newExp >= getRequiredExpForLevel(newLevel + 1, currentPoke.growth_rate)) {
+                                    newLevel++;
+                                    leveledUp = true;
+                                }
+
+                                battleLog += `\n¡${currentPoke.name || 'Tu Pokémon'} ganó ${expPerPokemon} puntos de EXP!`;
+
+                                if (leveledUp) {
+                                    battleLog += ` ¡Subió al nivel ${newLevel}! 📈`;
+                                    const stats = calculateNewStats(currentPoke, newLevel);
+
+                                    db.execute(
+                                        'UPDATE pokemon_storage SET level = ?, exp = ?, max_hp = ?, hp = ? WHERE id = ?',
+                                        [newLevel, newExp, stats.hp, stats.hp, currentPoke.id],
+                                        () => { handleCaptureExpCompletion(); }
+                                    );
+                                } else {
+                                    db.execute(
+                                        'UPDATE pokemon_storage SET exp = ? WHERE id = ?',
+                                        [newExp, currentPoke.id],
+                                        () => { handleCaptureExpCompletion(); }
+                                    );
+                                }
+                            });
+
+                            function handleCaptureExpCompletion() {
+                                completedExp++;
+                                if (completedExp === livingPokemons.length) {
+                                    ws.battle.ended = true;
+                                    ws.battle.log = battleLog;
+
+                                    ws.send(JSON.stringify({ type: 'REFRESH_PC_DATA', userId: ws.battle.userId }));
+                                    ws.lastWildPokemon = null;
+                                    ws.send(JSON.stringify({ type: 'BATTLE_UPDATE', battle: ws.battle, log: battleLog }));
+                                }
+                            }
+                        });
+                    });
                 });
             });
         } else {
@@ -334,7 +497,7 @@ function processThrowBall(ws, db, data) {
             ws.battle.turn = 'rival';
 
             let rivalAtkStat = r.moveCategory === 'special' ? r.stats.spAttack : r.stats.attack;
-            let rivalDefStat = r.moveCategory === 'special' ? p.stats.spDefense : p.stats.defense;
+            let rivalDefStat = r.moveCategory === 'special' ? r.stats.spDefense : r.stats.defense;
 
             const rivalDmg = calculateOfficialDamage(r.level, r.movePower, rivalAtkStat, rivalDefStat);
             p.hp -= rivalDmg;

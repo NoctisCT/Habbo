@@ -1,64 +1,123 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+
+// 🌍 INSTANCIA ÚNICA GLOBAL (Compartida por todos los componentes del ecosistema)
+let globalSocket: WebSocket | null = null;
+const stateListeners = new Set<() => void>();
+
+let globalPokemonList: any[] = [];
+let globalWildEncounter: any | null = null;
+let globalBattleState: any | null = null;
 
 export const usePokemonSocket = (userId: number) => {
-    const [pokemonList, setPokemonList] = useState<any[]>([]);
-    const [wildEncounter, setWildEncounter] = useState<any | null>(null);
+    // Inicializamos los estados locales apuntando a las referencias globales compartidas
+    const [pokemonList, setPokemonList] = useState<any[]>(globalPokemonList);
+    const [wildEncounter, setWildEncounter] = useState<any | null>(globalWildEncounter);
+    const [battleState, setBattleState] = useState<any | null>(globalBattleState);
 
-    // 🚨 NUEVO: Estado modular para almacenar la información de la batalla activa
-    const [battleState, setBattleState] = useState<any | null>(null);
+    // 🔄 Sincronizador radial: Propaga los cambios de red a todos los componentes activos
+    useEffect(() => {
+        const updateLocalStates = () => {
+            setPokemonList([...globalPokemonList]); // 🌟 Rompe la referencia para forzar el re-renderizado
+            setWildEncounter(globalWildEncounter);
+            setBattleState(globalBattleState);
+        };
+        stateListeners.add(updateLocalStates);
+        return () => {
+            stateListeners.delete(updateLocalStates);
+        };
+    }, []);
 
-    const socketRef = useRef<WebSocket | null>(null);
+    const broadcastStateChange = () => stateListeners.forEach(listener => listener());
 
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:8085');
-        socketRef.current = ws;
+        if (!userId) return;
 
-        ws.onopen = () => {
-            console.log('[POKÉMON] Conectado al backend de WebSockets');
-            ws.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
-        };
+        // Si no hay ninguna conexión global activa, levantamos el socket rey
+        if (!globalSocket) {
+            const ws = new WebSocket('ws://localhost:8085');
+            globalSocket = ws;
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+            ws.onopen = () => {
+                console.log('[POKÉMON] Conectado al backend de WebSockets (Canal Unificado)');
+                ws.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
+            };
 
-            if (data.type === 'PC_DATA_RESPONSE') {
-                setPokemonList(data.pokemon);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'PC_DATA_RESPONSE') {
+                    globalPokemonList = [...data.pokemon]; // 🌟 Forzamos nueva referencia limpia
+                    broadcastStateChange();
+                }
+
+                if (data.type === 'SWAP_SUCCESS') {
+                    globalPokemonList = globalPokemonList.map(p => p.id === data.id ? { ...p, slot: data.slot } : p);
+                    broadcastStateChange();
+                }
+
+                if (data.type === 'WILD_ENCOUNTER') {
+                    console.log('[POKÉMON] ¡Encuentro salvaje recibido del servidor!', data);
+                    globalWildEncounter = data;
+                    broadcastStateChange();
+                }
+
+                // =========================================================================
+                // ⚔️ NUEVOS ESCUCHADORES ENTRANTE DE COMBATE
+                // =========================================================================
+                if (data.type === 'BATTLE_STARTED' || data.type === 'BATTLE_UPDATE') {
+                    if (data.log) data.battle.log = data.log;
+                    globalBattleState = data.battle;
+                    broadcastStateChange();
+                }
+
+                if (data.type === 'BATTLE_ERROR') {
+                    alert(data.message);
+                }
+
+                // =========================================================================
+                // 🏥 NUEVOS ESCUCHADORES DE ASISTENCIA MÉDICA Y FARMACIA
+                // =========================================================================
+                if (data.type === 'TEAM_HEALED_BY_BOT') {
+                    // Avisamos de forma fluida a la ventana para la cinemática
+                    window.dispatchEvent(new CustomEvent('pokemon:team_healed', { detail: data.message }));
+                }
+
+                if (data.type === 'ITEM_CONSUMED_SUCCESS') {
+                    alert(data.message);
+                }
+
+                if (data.type === 'HEAL_ERROR') {
+                    // Avisamos de forma fluida a la ventana si hay un fallo
+                    window.dispatchEvent(new CustomEvent('pokemon:heal_error', { detail: data.message }));
+                }
+
+                if (data.type === 'ITEM_ERROR') {
+                    alert(data.message);
+                }
+
+                // Al recibir la orden de refresco, auto-solicitamos los datos limpios a Node
+                if (data.type === 'REFRESH_PC_DATA') {
+                    if (globalSocket?.readyState === WebSocket.OPEN) {
+                        globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('[POKÉMON] Conexión cerrada de WebSockets. Limpiando canal.');
+                globalSocket = null;
+            };
+        } else {
+            // Si el canal ya existe y se monta un nuevo componente, refrescamos sus datos al instante
+            if (globalSocket.readyState === WebSocket.OPEN) {
+                globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
             }
-
-            if (data.type === 'SWAP_SUCCESS') {
-                setPokemonList(prevList =>
-                    prevList.map(p => p.id === data.id ? { ...p, slot: data.slot } : p)
-                );
-            }
-
-            if (data.type === 'WILD_ENCOUNTER') {
-                console.log('[POKÉMON] ¡Encuentro salvaje recibido del servidor!', data);
-                setWildEncounter(data);
-            }
-
-            // =========================================================================
-            // ⚔️ NUEVOS ESCUCHADORES ENTRANTES DE COMBATE
-            // =========================================================================
-            if (data.type === 'BATTLE_STARTED' || data.type === 'BATTLE_UPDATE') {
-                // Si el servidor envía un log específico de los golpes, lo acoplamos al estado
-                if (data.log) data.battle.log = data.log;
-                setBattleState(data.battle);
-            }
-
-            if (data.type === 'BATTLE_ERROR') {
-                alert(data.message);
-            }
-        };
-
-        return () => {
-            ws.close();
-            socketRef.current = null;
-        };
+        }
     }, [userId]);
 
     const movePokemon = useCallback((pokemonStorageId: number, newSlot: number) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({
                 type: 'SWAP_SLOT',
                 pokemonStorageId,
                 newSlot
@@ -67,16 +126,16 @@ export const usePokemonSocket = (userId: number) => {
     }, []);
 
     const sendRoomEntry = useCallback((roomId: number) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({ type: 'ENTERED_ROOM', roomId }));
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({ type: 'ENTERED_ROOM', roomId }));
             return true;
         }
         return false;
     }, []);
 
     const sendStep = useCallback(() => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({ type: 'USER_STEP' }));
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({ type: 'USER_STEP' }));
         }
     }, []);
 
@@ -84,10 +143,9 @@ export const usePokemonSocket = (userId: number) => {
     // ⚔️ NUEVAS EMISIONES DE EVENTOS DE COMBATE HACIA NODE
     // =========================================================================
 
-    // Solicita a Node instanciar una nueva batalla privada usando los datos del spawn
     const startPrivateBattle = useCallback((pokemonId: number, level: number, routeName: string) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({
                 type: 'START_PRIVATE_BATTLE',
                 userId,
                 pokemonId,
@@ -97,46 +155,65 @@ export const usePokemonSocket = (userId: number) => {
         }
     }, [userId]);
 
-    // Reemplaza únicamente tu función sendBattleAttack dentro de usePokemonSocket.ts:
     const sendBattleAttack = useCallback((moveIndex: number) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({
                 type: 'BATTLE_ATTACK',
-                moveIndex // Enviamos la ranura del ataque pulsado (0, 1, 2 o 3)
+                moveIndex
             }));
         }
     }, []);
 
-    // 🔴 NUEVO EMISOR: Envía la Pokéball seleccionada al backend para procesar la captura
     const sendThrowBall = useCallback((itemId: number) => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({
                 type: 'THROW_POKEBALL',
                 itemId
             }));
         }
     }, []);
 
-    // 🚨 NUEVO EMISOR: Envía el paquete de fuga o cierre definitivo al socket de Node
     const sendLeaveBattle = useCallback(() => {
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({ type: 'CLOSE_BATTLE' }));
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({ type: 'CLOSE_BATTLE' }));
         }
     }, []);
+
+    // =========================================================================
+    // 🏥 NUEVAS EMISIONES MÉDICAS (BOT JOY + USO MOCHILA)
+    // =========================================================================
+
+    const sendHealTeam = useCallback(() => {
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({ type: 'HEAL_TEAM_BOT', userId }));
+        }
+    }, [userId]);
+
+    const sendUseHealingItem = useCallback((itemId: number, pokemonStorageId: number) => {
+        if (globalSocket?.readyState === WebSocket.OPEN) {
+            globalSocket.send(JSON.stringify({
+                type: 'USE_HEALING_ITEM',
+                userId,
+                itemId,
+                pokemonStorageId
+            }));
+        }
+    }, [userId]);
 
     return {
         pokemonList,
         movePokemon,
         wildEncounter,
-        setWildEncounter,
+        setWildEncounter: (val: any) => { globalWildEncounter = val; broadcastStateChange(); },
         sendRoomEntry,
         sendStep,
-        // Exportamos las variables y controladores del motor de lucha
         battleState,
-        setBattleState,
+        setBattleState: (val: any) => { globalBattleState = val; broadcastStateChange(); },
         startPrivateBattle,
         sendBattleAttack,
-        sendThrowBall, // <--- 🎒 EXPORTADO OFICIALMENTE PARA LA INTERFAZ
-        sendLeaveBattle
+        sendThrowBall,
+        sendLeaveBattle,
+        sendHealTeam,
+        sendUseHealingItem
     };
 };

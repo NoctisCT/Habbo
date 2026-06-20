@@ -31,13 +31,15 @@ import { WiredView } from '../wired/WiredView';
 import { YoutubeTvView } from '../youtube-tv/YoutubeTvView';
 import { CombatMenuView } from '../combat/CombatMenuView';
 
-// 🚀 INYECCIÓN DE TU PC DE POKÉMON SALVAJE
+// 🚀 INYECCIÓN DE TU PC DE POKÉMON SALVAJE Y ELEMENTOS MÉDICOS
 import { PokemonPCView } from '../PokemonPCView';
 import { PokemonEncounterManager } from '../PokemonEncounterManager';
+import { PokemonHealingView } from '../PokemonHealingView'; // 🏥 Añadimos tu vista médica desacoplada
 
 export const MainView: FC<{}> = props => {
     const [isReady, setIsReady] = useState(false);
     const [landingViewVisible, setLandingViewVisible] = useState(true);
+    const [isHealingOpen, setIsHealingOpen] = useState(false); // 🏥 Estado aislado de visibilidad de la Enfermera
 
     useRoomSessionManagerEvent<RoomSessionEvent>(RoomSessionEvent.CREATED, event => setLandingViewVisible(false));
     useRoomSessionManagerEvent<RoomSessionEvent>(RoomSessionEvent.ENDED, event => setLandingViewVisible(event.openLandingView));
@@ -67,6 +69,13 @@ export const MainView: FC<{}> = props => {
                                     HabboWebTools.openHabblet(name);
                                 }
                             }
+                        }
+                        return;
+
+                    // 🏥 ESCUCHADOR: Permite a tu Java abrir el menú médico ejecutando un "event:pokemon/healing"
+                    case 'pokemon':
+                        if (parts.length > 2 && parts[2] === 'healing') {
+                            setIsHealingOpen(true);
                         }
                         return;
                 }
@@ -114,6 +123,12 @@ export const MainView: FC<{}> = props => {
             {/* Renderizado directo en el DOM por encima de la interfaz nativa */}
             <PokemonPCView />
             <PokemonEncounterManager />
+
+            {/* 🏥 Renderizado de tu servicio de salud desacoplado */}
+            <PokemonHealingView
+                isOpen={isHealingOpen}
+                onClose={() => setIsHealingOpen(false)}
+            />
         </Base>
     );
 }
