@@ -17,3 +17,4 @@
 15:01:06.653 [HabExec-1-2] DEBUG com.eu.habbo.messages.incoming.handshake.MachineIDEvent - Setting client MachineId to IID-25624994
 19:50:09.298 [main] DEBUG com.eu.habbo.Emulator - Debugging enabled.
 19:50:28.727 [HabExec-1-8] DEBUG com.eu.habbo.messages.incoming.handshake.MachineIDEvent - Setting client MachineId to IID-25624994
+19:50:55.761 [HabExec-1-2] DEBUG com.eu.habbo.messages.incoming.handshake.MachineIDEvent - Setting client MachineId to IID-25624994

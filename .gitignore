@@ -43,3 +43,4 @@ Desktop.ini
 # ----- Misc -----
 *.log
 *.cache
+Emulator/logging/debug.txt
