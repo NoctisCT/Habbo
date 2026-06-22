@@ -1,0 +1,18 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package com.eu.habbo.habbohotel.wired.highscores;
+
+public enum WiredHighscoreClearType {
+    ALLTIME(0),
+    DAILY(1),
+    WEEKLY(2),
+    MONTHLY(3);
+
+    public final int type;
+
+    private WiredHighscoreClearType(int type) {
+        this.type = type;
+    }
+}
+

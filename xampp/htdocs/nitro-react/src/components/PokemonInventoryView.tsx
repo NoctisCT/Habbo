@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, MouseEvent } from 'react';
 import { GetSessionDataManager } from '../api';
 import { usePokemonSocket } from '../hooks/usePokemonSocket'; // 🔌 Tu hook unificado rey
 
@@ -15,6 +15,7 @@ interface InventoryItem {
 interface PokemonInventoryViewProps {
     isOpen: boolean;
     onClose: () => void;
+    isInBattle?: boolean; // ⚔️ Contexto automático desde el Encounter Manager
 }
 
 // 📦 Peso de organización: Controla el orden de aparición en la mochila
@@ -26,29 +27,78 @@ const TYPE_ORDER: Record<string, number> = {
 
 export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
     isOpen,
-    onClose
+    onClose,
+    isInBattle = false
 }) => {
     if (!isOpen) return null;
 
     const userId = GetSessionDataManager().userId;
 
-    // 🌟 CONEXIÓN REAL: Extraemos los datos que llegan vivos de Node a través del socket
-    const { pokemonList, inventoryList, sendUseHealingItem } = usePokemonSocket(userId);
+    // 🌟 SINCRONIZACIÓN REAL: Extraemos sendThrowBall y battleState del socket unificado
+    const { pokemonList, inventoryList, sendUseHealingItem, sendThrowBall, battleState } = usePokemonSocket(userId);
 
     // 🌟 Filtrar equipo activo (Slots del 1 al 6)
     const activeTeam = pokemonList.filter(p => p.slot >= 1 && p.slot <= 6);
 
-    // Estados de selección
+    // Estados de selección y puntería
     const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
     const [isTargeting, setIsTargeting] = useState<boolean>(false);
 
+    // 🗺️ ESTADOS DE DESPLAZAMIENTO: Para hacer la mochila libremente arrastrable estilo Habbo UI
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+    // 🚨 ANTICHEAT / CONTROL DE FLUJO: Si intentan abrir la mochila desde el menú natural (lateral/externo)
+    // estando en mitad de un combate activo, la cerramos fulminantemente de inmediato.
+    useEffect(() => {
+        if (isOpen && battleState && !isInBattle) {
+            console.log("[MOCHILA BLINDADA] Intento de exploit bloqueado: Cerrando inventario externo en batalla.");
+            onClose();
+        }
+    }, [isOpen, battleState, isInBattle, onClose]);
+
+    // Auto-centrar la mochila en la pantalla del usuario en el momento exacto de su apertura legítima
+    useEffect(() => {
+        if (isOpen) {
+            setPosition({
+                x: Math.max(10, window.innerWidth / 2 - 250),
+                y: Math.max(10, window.innerHeight / 2 - 150)
+            });
+            setSelectedItem(null);
+            setIsTargeting(false);
+        }
+    }, [isOpen]);
+
+    // Manejador del arrastre por ratón
+    useEffect(() => {
+        const handleMouseMove = (e: globalThis.MouseEvent) => {
+            if (!isDragging) return;
+            setPosition({ x: e.clientX - dragOffset.x, y: e.clientY - dragOffset.y });
+        };
+        const handleMouseUp = () => setIsDragging(false);
+
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, dragOffset]);
+
+    const startDragging = (e: MouseEvent) => {
+        setIsDragging(true);
+        setDragOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
+    };
+
     // =========================================================================
-    // 📊 FILTRADO Y ORGANIZACIÓN LÓGICA INTELEGENTE
+    // 📊 FILTRADO Y ORGANIZACIÓN LÓGICA INTELIGENTE
     // =========================================================================
     const organizedItems = inventoryList
-        .filter((item: InventoryItem) => item.quantity > 0) // ❌ Mejora 1: Oculta los objetos agotados (Cantidad 0)
+        .filter((item: InventoryItem) => item.quantity > 0)
         .sort((a, b) => {
-            // 📖 Mejora 3: Clasifica por categorías (Balls -> Healing -> Revive) y luego por ID interno
             const orderA = TYPE_ORDER[a.type] || 99;
             const orderB = TYPE_ORDER[b.type] || 99;
             if (orderA !== orderB) return orderA - orderB;
@@ -58,107 +108,141 @@ export const PokemonInventoryView: React.FC<PokemonInventoryViewProps> = ({
     const handleItemClick = (item: InventoryItem) => {
         if (item.quantity <= 0) return;
 
-        // Si es un objeto curativo o revivir, abrimos el selector de objetivos
+        setSelectedItem(item);
+
+        if (isInBattle && item.type === 'BALL') {
+            setIsTargeting(false);
+            return;
+        }
+
         if (item.type === 'HEALING' || item.type === 'REVIVE') {
-            setSelectedItem(item);
             setIsTargeting(true);
         } else {
-            setSelectedItem(item);
             setIsTargeting(false);
         }
     };
 
+    const handleUseBallInBattle = (item: InventoryItem) => {
+        if (sendThrowBall) {
+            console.log(`[🎒 MOCHILA COMBATE] Ejecutando sendThrowBall para Objeto ID: ${item.id}`);
+            sendThrowBall(item.id);
+        }
+        setSelectedItem(null);
+        onClose();
+    };
+
     const handleApplyItem = (pokemonStorageId: number) => {
-        if (!selectedItem || !sendUseHealingItem) return;
+        if (!selectedItem) return;
 
-        // Emitimos la orden directa a Node con el ítem y el Pokémon elegido
-        sendUseHealingItem(selectedItem.id, pokemonStorageId);
+        // Disparamos la curación nativa (El handler de Node se encargará de restar y pasar el turno)
+        if (sendUseHealingItem) {
+            sendUseHealingItem(selectedItem.id, pokemonStorageId);
+        }
 
-        // Reseteamos el selector tras confirmar el envío
         setIsTargeting(false);
         setSelectedItem(null);
+        if (isInBattle) onClose();
     };
 
     return (
-        <div className="nitro-mock-modal" style={styles.modalOverlay}>
-            <div style={styles.modalWindow}>
-                {/* Cabecera */}
-                <div style={styles.modalHeader}>
-                    <span>Mochila de Entrenador</span>
-                    <button onClick={onClose} style={styles.closeButton}>X</button>
+        <div
+            style={{
+                ...styles.modalWindow,
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                cursor: isDragging ? 'grabbing' : 'default'
+            }}
+        >
+            {/* Cabecera Arrastrable */}
+            <div onMouseDown={startDragging} style={styles.modalHeader}>
+                <span>{isInBattle ? '⚔️ Mochila de Combate' : 'Mochila de Entrenador'}</span>
+                <button onClick={onClose} style={styles.closeButton}>X</button>
+            </div>
+
+            {/* Doble panel */}
+            <div style={styles.modalBody}>
+                <div style={styles.inventoryGrid}>
+                    {organizedItems.map((item: InventoryItem) => (
+                        <div
+                            key={item.id}
+                            title={item.name}
+                            style={{
+                                ...styles.itemCard,
+                                border: selectedItem?.id === item.id ? '2px solid #c72e2e' : '1px solid #ccc'
+                            }}
+                            onClick={() => handleItemClick(item)}
+                        >
+                            <img
+                                src={item.iconUrl || `/swf/dcr/hof_furni/icons/${item.iconName || 'hw_pokeball_icon.png'}`}
+                                alt={item.name}
+                                style={styles.itemIcon}
+                            />
+                            <span style={styles.badgeCount}>X{item.quantity}</span>
+                        </div>
+                    ))}
+                    {organizedItems.length === 0 && (
+                        <p style={{ gridColumn: 'span 4', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>No tienes objetos utilizables en tu mochila.</p>
+                    )}
                 </div>
 
-                {/* Doble panel: Izquierda lista de ítems, Derecha detalle */}
-                <div style={styles.modalBody}>
-                    <div style={styles.inventoryGrid}>
-                        {organizedItems.map((item: InventoryItem) => (
-                            <div
-                                key={item.id}
-                                title={item.name} // 👁️ Mejora 2: Muestra el nombre al poner el ratón encima (Tooltip nativo)
-                                style={{
-                                    ...styles.itemCard,
-                                    border: selectedItem?.id === item.id ? '2px solid #c72e2e' : '1px solid #ccc'
-                                }}
-                                onClick={() => handleItemClick(item)}
-                            >
-                                {/* 🌟 Soporta tanto la URL completa del ítem como el nombre del icono plano en la carpeta de las Poké Balls */}
-                                <img
-                                    src={item.iconUrl || `/swf/dcr/hof_furni/icons/${item.iconName || 'hw_pokeball_icon.png'}`}
-                                    alt={item.name}
-                                    style={styles.itemIcon}
-                                />
-                                <span style={styles.badgeCount}>X{item.quantity}</span>
-                            </div>
-                        ))}
-                        {organizedItems.length === 0 && (
-                            <p style={{ gridColumn: 'span 4', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>No tienes objetos utilizables en tu mochila.</p>
-                        )}
-                    </div>
+                {/* Panel de detalles del objeto */}
+                <div style={styles.detailPanel}>
+                    {selectedItem ? (
+                        <>
+                            <h4 style={{ margin: '0 0 5px 0', color: '#333', fontWeight: 'bold', fontSize: '13px' }}>
+                                {selectedItem.name.trim()}
+                            </h4>
+                            <p style={{ margin: 0, color: '#555', fontSize: '11px', lineHeight: '1.4' }}>
+                                {selectedItem.description.trim()}
+                            </p>
 
-                    {/* Panel de detalles del objeto */}
-                    <div style={styles.detailPanel}>
-                        {selectedItem ? (
-                            <>
-                                <h4 style={{ margin: '0 0 5px 0' }}>{selectedItem.name}</h4>
-                                <p style={{ margin: 0, color: '#555', fontSize: '11px', lineHeight: '1.4' }}>{selectedItem.description}</p>
+                            {isInBattle && selectedItem.type === 'BALL' && (
+                                <div style={styles.targetZone}>
+                                    <button
+                                        onClick={() => handleUseBallInBattle(selectedItem)}
+                                        style={{ ...styles.btnCancel, backgroundColor: '#e67e22', color: '#fff', fontWeight: 'bold', marginTop: '10px' }}
+                                    >
+                                        🚀 Lanzar al Pokémon Rival
+                                    </button>
+                                </div>
+                            )}
 
-                                {isTargeting && (
-                                    <div style={styles.targetZone}>
-                                        <p style={styles.targetTitle}>¿Sobre qué Pokémon?</p>
-                                        <div style={styles.teamSelectContainer}>
-                                            {activeTeam.map((pkmn) => (
-                                                <button
-                                                    key={pkmn.id}
-                                                    style={styles.btnPokemonTarget}
-                                                    onClick={() => handleApplyItem(pkmn.id)}
-                                                >
-                                                    <span>Slot {pkmn.slot}: <b>{pkmn.name || 'Pokémon'}</b></span>
-                                                    <span style={styles.hpIndicator}>HP: {pkmn.currentHp}/{pkmn.maxHp}</span>
-                                                </button>
-                                            ))}
-                                            {activeTeam.length === 0 && (
-                                                <p style={{ fontStyle: 'italic', fontSize: '11px', color: '#777' }}>No tienes Pokémon en tu equipo activo.</p>
-                                            )}
-                                        </div>
-                                        <button onClick={() => { setIsTargeting(false); setSelectedItem(null); }} style={styles.btnCancel}>Cancelar</button>
+                            {isTargeting && (
+                                <div style={styles.targetZone}>
+                                    <p style={styles.targetTitle}>¿Sobre qué Pokémon?</p>
+                                    <div style={styles.teamSelectContainer}>
+                                        {activeTeam.map((pkmn) => (
+                                            <button
+                                                key={pkmn.id}
+                                                style={styles.btnPokemonTarget}
+                                                onClick={() => handleApplyItem(pkmn.id)}
+                                            >
+                                                <span>Slot {pkmn.slot}: <b>{pkmn.name || 'Pokémon'}</b></span>
+                                                <span style={styles.hpIndicator}>
+                                                    HP: {pkmn.hp ?? pkmn.currentHp ?? 0}/{pkmn.max_hp ?? pkmn.maxHp ?? 0}
+                                                </span>
+                                            </button>
+                                        ))}
+                                        {activeTeam.length === 0 && (
+                                            <p style={{ fontStyle: 'italic', fontSize: '11px', color: '#777' }}>No tienes Pokémon en tu equipo activo.</p>
+                                        )}
                                     </div>
-                                )}
-                            </>
-                        ) : (
-                            <p style={styles.emptyText}>Selecciona un objeto de la mochila para usarlo.</p>
-                        )}
-                    </div>
+                                    <button onClick={() => { setIsTargeting(false); setSelectedItem(null); }} style={styles.btnCancel}>Cancelar</button>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <p style={styles.emptyText}>Selecciona un objeto de la mochila para usarlo.</p>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-// Estilos visuales Nitro/Habbo adaptados
 const styles = {
-    modalOverlay: { position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9998 },
-    modalWindow: { backgroundColor: '#f1f1f1', borderRadius: '6px', border: '2px solid #4a4a4a', width: '500px', boxShadow: '0 4px 15px rgba(0,0,0,0.4)', fontFamily: 'Verdana, Arial, sans-serif' },
-    modalHeader: { backgroundColor: '#34495e', color: 'white', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' as const, fontSize: '13px' },
+    modalWindow: { position: 'fixed' as const, backgroundColor: '#f1f1f1', borderRadius: '6px', border: '2px solid #4a4a4a', width: '500px', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', fontFamily: 'Verdana, Arial, sans-serif', zIndex: 999999, display: 'flex', flexDirection: 'column' as const, userSelect: 'none' as const },
+    modalHeader: { backgroundColor: '#34495e', color: 'white', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' as const, fontSize: '13px', cursor: 'grab' },
     closeButton: { background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' as const },
     modalBody: { padding: '15px', display: 'flex', gap: '15px', minHeight: '220px' },
     inventoryGrid: { width: '55%', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', overflowY: 'auto' as const, maxHeight: '240px', alignContent: 'start' },

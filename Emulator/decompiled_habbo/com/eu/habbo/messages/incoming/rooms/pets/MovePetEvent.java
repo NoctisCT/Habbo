@@ -1,0 +1,35 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package com.eu.habbo.messages.incoming.rooms.pets;
+
+import com.eu.habbo.habbohotel.pets.Pet;
+import com.eu.habbo.habbohotel.rooms.Room;
+import com.eu.habbo.habbohotel.rooms.RoomTile;
+import com.eu.habbo.habbohotel.rooms.RoomUserRotation;
+import com.eu.habbo.messages.incoming.MessageHandler;
+import com.eu.habbo.messages.outgoing.rooms.users.RoomUserStatusComposer;
+
+public class MovePetEvent
+extends MessageHandler {
+    @Override
+    public void handle() throws Exception {
+        Room room;
+        Pet pet = this.client.getHabbo().getHabboInfo().getCurrentRoom().getPet(this.packet.readInt());
+        if (pet != null && (room = this.client.getHabbo().getHabboInfo().getCurrentRoom()) != null && room.hasRights(this.client.getHabbo()) && pet.getRoomUnit() != null) {
+            int x = this.packet.readInt();
+            int y = this.packet.readInt();
+            RoomTile tile = room.getLayout().getTile((short)x, (short)y);
+            if (tile != null) {
+                pet.getRoomUnit().setLocation(tile);
+                pet.getRoomUnit().setPreviousLocation(tile);
+                pet.getRoomUnit().setZ(tile.z);
+                pet.getRoomUnit().setRotation(RoomUserRotation.fromValue(this.packet.readInt()));
+                pet.getRoomUnit().setPreviousLocationZ(pet.getRoomUnit().getZ());
+                room.sendComposer(new RoomUserStatusComposer(pet.getRoomUnit()).compose());
+                pet.needsUpdate = true;
+            }
+        }
+    }
+}
+

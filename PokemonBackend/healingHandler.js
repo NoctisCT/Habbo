@@ -104,9 +104,10 @@ function processUseHealingItem(ws, db, data) {
         return;
     }
 
-    // 🛡️ FILTRO 2: Bloqueo de seguridad si está en mitad de un combate activo
-    if (ws.battle && !ws.battle.ended) {
-        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ITEM_ERROR', message: '¡No puedes administrar medicinas desde la mochila en este modo de combate!' }));
+    // 🛡️ REGLA MODIFICADA: Quitamos el bloqueo restrictivo tosco. Como el front ya bloquea la mochila ordinaria, 
+    // cualquier curación con ws.battle activo es una acción legítima de combate que consume turno.
+    if (ws.battle && !ws.battle.ended && ws.battle.type === 'PVP') {
+        if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ITEM_ERROR', message: '¡No puedes usar objetos de soporte médico en batallas clasificatorias PVP contra otros entrenadores!' }));
         return;
     }
 
@@ -146,20 +147,16 @@ function processUseHealingItem(ws, db, data) {
             const maxHp = realStats.maxHp;
 
             // 🛡️ FILTROS DE ESTADO CLÁSICOS DE LA SAGA POKÉMON
-
-            // Caso A: El Pokémon está muerto (HP = 0) y le intentas dar una Poción
             if (pokemon.hp === 0 && !itemEffect.isRevive) {
                 if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ITEM_ERROR', message: `¡${pokemon.name} está debilitado! Las pociones no le harán efecto. Usa un Revivir.` }));
                 return;
             }
 
-            // Caso B: El Pokémon está VIVO (HP > 0) y le intentas meter un Revivir
             if (pokemon.hp > 0 && itemEffect.isRevive) {
                 if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ITEM_ERROR', message: `¡${pokemon.name} no está debilitado! No puedes usar un Revivir en él.` }));
                 return;
             }
 
-            // Caso C: El Pokémon ya está curado al máximo
             if (pokemon.hp === maxHp) {
                 if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ITEM_ERROR', message: `¡La salud de ${pokemon.name} ya está al máximo de sus capacidades!` }));
                 return;
@@ -186,6 +183,29 @@ function processUseHealingItem(ws, db, data) {
                     if (errHeal) return;
 
                     console.log(`[MOCHILA] Ítem ${itemEffect.name} consumido. Pokémon ID ${pokemonStorageId} sanado a ${finalHp}/${maxHp} HP.`);
+
+                    // ⚔️ PASO 4.5: GASTO DE TURNO EN ARENA (Sincronizamos la RAM del encuentro vivo en el Servidor)
+                    if (ws.battle && !ws.battle.ended) {
+                        // Si el bicho curado es el que está en combate activo, actualizamos sus HP en la arena
+                        if (ws.battle.player && (ws.battle.player.id === pokemonStorageId || ws.battle.player.storageId === pokemonStorageId)) {
+                            ws.battle.player.hp = finalHp;
+                        }
+
+                        // Inyectamos el suceso en el log global para renderizarlo en el pie de la arena
+                        const stringLog = `\n¡Has usado ${itemEffect.name} en ${pokemon.name}! Recuperó salud.`;
+                        ws.battle.log = ws.battle.log ? ws.battle.log + stringLog : stringLog;
+
+                        // 🔄 CEDER EL TURNO: Pasamos el token al bot para que ejecute su ataque de respuesta
+                        ws.battle.turn = 'rival';
+
+                        // Despachamos la actualización de la arena viva a React para refrescar barras y congelar botones
+                        if (ws && ws.readyState === 1) {
+                            ws.send(JSON.stringify({
+                                type: 'BATTLE_UPDATE',
+                                battleState: ws.battle
+                            }));
+                        }
+                    }
 
                     // 🥳 PASO 5: Éxito y sincronización radial con la UI
                     if (ws && ws.readyState === 1) {

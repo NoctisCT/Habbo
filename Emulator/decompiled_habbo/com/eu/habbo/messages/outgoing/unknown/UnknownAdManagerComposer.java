@@ -1,0 +1,28 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package com.eu.habbo.messages.outgoing.unknown;
+
+import com.eu.habbo.messages.ServerMessage;
+import com.eu.habbo.messages.outgoing.MessageComposer;
+
+public class UnknownAdManagerComposer
+extends MessageComposer {
+    private final boolean unknownBoolean;
+
+    public UnknownAdManagerComposer(boolean unknownBoolean) {
+        this.unknownBoolean = unknownBoolean;
+    }
+
+    @Override
+    protected ServerMessage composeInternal() {
+        this.response.init(1808);
+        this.response.appendBoolean(this.unknownBoolean);
+        return this.response;
+    }
+
+    public boolean isUnknownBoolean() {
+        return this.unknownBoolean;
+    }
+}
+

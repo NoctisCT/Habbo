@@ -1,0 +1,583 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package org.fusesource.jansi;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Iterator;
+import org.fusesource.jansi.FilterPrintStream;
+
+public class AnsiPrintStream
+extends FilterPrintStream {
+    public static final String RESET_CODE = "\u001b[0m";
+    private static final int MAX_ESCAPE_SEQUENCE_LENGTH = 100;
+    private final byte[] buffer = new byte[100];
+    private int pos = 0;
+    private int startOfValue;
+    private final ArrayList<Object> options = new ArrayList();
+    private static final int LOOKING_FOR_FIRST_ESC_CHAR = 0;
+    private static final int LOOKING_FOR_SECOND_ESC_CHAR = 1;
+    private static final int LOOKING_FOR_NEXT_ARG = 2;
+    private static final int LOOKING_FOR_STR_ARG_END = 3;
+    private static final int LOOKING_FOR_INT_ARG_END = 4;
+    private static final int LOOKING_FOR_OSC_COMMAND = 5;
+    private static final int LOOKING_FOR_OSC_COMMAND_END = 6;
+    private static final int LOOKING_FOR_OSC_PARAM = 7;
+    private static final int LOOKING_FOR_ST = 8;
+    private static final int LOOKING_FOR_CHARSET = 9;
+    int state = 0;
+    private static final int FIRST_ESC_CHAR = 27;
+    private static final int SECOND_ESC_CHAR = 91;
+    private static final int SECOND_OSC_CHAR = 93;
+    private static final int BEL = 7;
+    private static final int SECOND_ST_CHAR = 92;
+    private static final int SECOND_CHARSET0_CHAR = 40;
+    private static final int SECOND_CHARSET1_CHAR = 41;
+    protected static final int ERASE_SCREEN_TO_END = 0;
+    protected static final int ERASE_SCREEN_TO_BEGINING = 1;
+    protected static final int ERASE_SCREEN = 2;
+    protected static final int ERASE_LINE_TO_END = 0;
+    protected static final int ERASE_LINE_TO_BEGINING = 1;
+    protected static final int ERASE_LINE = 2;
+    protected static final int ATTRIBUTE_INTENSITY_BOLD = 1;
+    protected static final int ATTRIBUTE_INTENSITY_FAINT = 2;
+    protected static final int ATTRIBUTE_ITALIC = 3;
+    protected static final int ATTRIBUTE_UNDERLINE = 4;
+    protected static final int ATTRIBUTE_BLINK_SLOW = 5;
+    protected static final int ATTRIBUTE_BLINK_FAST = 6;
+    protected static final int ATTRIBUTE_NEGATIVE_ON = 7;
+    protected static final int ATTRIBUTE_CONCEAL_ON = 8;
+    protected static final int ATTRIBUTE_UNDERLINE_DOUBLE = 21;
+    protected static final int ATTRIBUTE_INTENSITY_NORMAL = 22;
+    protected static final int ATTRIBUTE_UNDERLINE_OFF = 24;
+    protected static final int ATTRIBUTE_BLINK_OFF = 25;
+    @Deprecated
+    protected static final int ATTRIBUTE_NEGATIVE_Off = 27;
+    protected static final int ATTRIBUTE_NEGATIVE_OFF = 27;
+    protected static final int ATTRIBUTE_CONCEAL_OFF = 28;
+    protected static final int BLACK = 0;
+    protected static final int RED = 1;
+    protected static final int GREEN = 2;
+    protected static final int YELLOW = 3;
+    protected static final int BLUE = 4;
+    protected static final int MAGENTA = 5;
+    protected static final int CYAN = 6;
+    protected static final int WHITE = 7;
+
+    public AnsiPrintStream(PrintStream ps) {
+        super(ps);
+    }
+
+    @Override
+    protected synchronized boolean filter(int data) {
+        switch (this.state) {
+            case 0: {
+                if (data == 27) {
+                    this.buffer[this.pos++] = (byte)data;
+                    this.state = 1;
+                    return false;
+                }
+                return true;
+            }
+            case 1: {
+                this.buffer[this.pos++] = (byte)data;
+                if (data == 91) {
+                    this.state = 2;
+                    break;
+                }
+                if (data == 93) {
+                    this.state = 5;
+                    break;
+                }
+                if (data == 40) {
+                    this.options.add(0);
+                    this.state = 9;
+                    break;
+                }
+                if (data == 41) {
+                    this.options.add(1);
+                    this.state = 9;
+                    break;
+                }
+                this.reset(false);
+                break;
+            }
+            case 2: {
+                this.buffer[this.pos++] = (byte)data;
+                if (34 == data) {
+                    this.startOfValue = this.pos - 1;
+                    this.state = 3;
+                    break;
+                }
+                if (48 <= data && data <= 57) {
+                    this.startOfValue = this.pos - 1;
+                    this.state = 4;
+                    break;
+                }
+                if (59 == data) {
+                    this.options.add(null);
+                    break;
+                }
+                if (63 == data) {
+                    this.options.add(Character.valueOf('?'));
+                    break;
+                }
+                if (61 == data) {
+                    this.options.add(Character.valueOf('='));
+                    break;
+                }
+                this.reset(this.processEscapeCommand(this.options, data));
+                break;
+            }
+            default: {
+                break;
+            }
+            case 4: {
+                this.buffer[this.pos++] = (byte)data;
+                if (48 <= data && data <= 57) break;
+                String strValue = new String(this.buffer, this.startOfValue, this.pos - 1 - this.startOfValue, Charset.defaultCharset());
+                Integer value = new Integer(strValue);
+                this.options.add(value);
+                if (data == 59) {
+                    this.state = 2;
+                    break;
+                }
+                this.reset(this.processEscapeCommand(this.options, data));
+                break;
+            }
+            case 3: {
+                this.buffer[this.pos++] = (byte)data;
+                if (34 == data) break;
+                String value = new String(this.buffer, this.startOfValue, this.pos - 1 - this.startOfValue, Charset.defaultCharset());
+                this.options.add(value);
+                if (data == 59) {
+                    this.state = 2;
+                    break;
+                }
+                this.reset(this.processEscapeCommand(this.options, data));
+                break;
+            }
+            case 5: {
+                this.buffer[this.pos++] = (byte)data;
+                if (48 <= data && data <= 57) {
+                    this.startOfValue = this.pos - 1;
+                    this.state = 6;
+                    break;
+                }
+                this.reset(false);
+                break;
+            }
+            case 6: {
+                this.buffer[this.pos++] = (byte)data;
+                if (59 == data) {
+                    String strValue = new String(this.buffer, this.startOfValue, this.pos - 1 - this.startOfValue, Charset.defaultCharset());
+                    Integer value = new Integer(strValue);
+                    this.options.add(value);
+                    this.startOfValue = this.pos;
+                    this.state = 7;
+                    break;
+                }
+                if (48 <= data && data <= 57) break;
+                this.reset(false);
+                break;
+            }
+            case 7: {
+                this.buffer[this.pos++] = (byte)data;
+                if (7 == data) {
+                    String value = new String(this.buffer, this.startOfValue, this.pos - 1 - this.startOfValue, Charset.defaultCharset());
+                    this.options.add(value);
+                    this.reset(this.processOperatingSystemCommand(this.options));
+                    break;
+                }
+                if (27 != data) break;
+                this.state = 8;
+                break;
+            }
+            case 8: {
+                this.buffer[this.pos++] = (byte)data;
+                if (92 == data) {
+                    String value = new String(this.buffer, this.startOfValue, this.pos - 2 - this.startOfValue, Charset.defaultCharset());
+                    this.options.add(value);
+                    this.reset(this.processOperatingSystemCommand(this.options));
+                    break;
+                }
+                this.state = 7;
+                break;
+            }
+            case 9: {
+                this.options.add(Character.valueOf((char)data));
+                this.reset(this.processCharsetSelect(this.options));
+            }
+        }
+        if (this.pos >= this.buffer.length) {
+            this.reset(false);
+        }
+        return false;
+    }
+
+    private void reset(boolean skipBuffer) {
+        if (!skipBuffer) {
+            this.ps.write(this.buffer, 0, this.pos);
+        }
+        this.pos = 0;
+        this.startOfValue = 0;
+        this.options.clear();
+        this.state = 0;
+    }
+
+    private int getNextOptionInt(Iterator<Object> optionsIterator) throws IOException {
+        Object arg;
+        do {
+            if (optionsIterator.hasNext()) continue;
+            throw new IllegalArgumentException();
+        } while ((arg = optionsIterator.next()) == null);
+        return (Integer)arg;
+    }
+
+    private boolean processEscapeCommand(ArrayList<Object> options, int command) {
+        try {
+            switch (command) {
+                case 65: {
+                    this.processCursorUp(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 66: {
+                    this.processCursorDown(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 67: {
+                    this.processCursorRight(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 68: {
+                    this.processCursorLeft(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 69: {
+                    this.processCursorDownLine(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 70: {
+                    this.processCursorUpLine(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 71: {
+                    this.processCursorToColumn(this.optionInt(options, 0));
+                    return true;
+                }
+                case 72: 
+                case 102: {
+                    this.processCursorTo(this.optionInt(options, 0, 1), this.optionInt(options, 1, 1));
+                    return true;
+                }
+                case 74: {
+                    this.processEraseScreen(this.optionInt(options, 0, 0));
+                    return true;
+                }
+                case 75: {
+                    this.processEraseLine(this.optionInt(options, 0, 0));
+                    return true;
+                }
+                case 76: {
+                    this.processInsertLine(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 77: {
+                    this.processDeleteLine(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 83: {
+                    this.processScrollUp(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 84: {
+                    this.processScrollDown(this.optionInt(options, 0, 1));
+                    return true;
+                }
+                case 109: {
+                    for (Object next : options) {
+                        if (next == null || next.getClass() == Integer.class) continue;
+                        throw new IllegalArgumentException();
+                    }
+                    int count = 0;
+                    Iterator<Object> optionsIterator = options.iterator();
+                    block28: while (optionsIterator.hasNext()) {
+                        Object next = optionsIterator.next();
+                        if (next == null) continue;
+                        ++count;
+                        int value = (Integer)next;
+                        if (30 <= value && value <= 37) {
+                            this.processSetForegroundColor(value - 30);
+                            continue;
+                        }
+                        if (40 <= value && value <= 47) {
+                            this.processSetBackgroundColor(value - 40);
+                            continue;
+                        }
+                        if (90 <= value && value <= 97) {
+                            this.processSetForegroundColor(value - 90, true);
+                            continue;
+                        }
+                        if (100 <= value && value <= 107) {
+                            this.processSetBackgroundColor(value - 100, true);
+                            continue;
+                        }
+                        if (value == 38 || value == 48) {
+                            int arg2or5 = this.getNextOptionInt(optionsIterator);
+                            if (arg2or5 == 2) {
+                                int r = this.getNextOptionInt(optionsIterator);
+                                int g = this.getNextOptionInt(optionsIterator);
+                                int b = this.getNextOptionInt(optionsIterator);
+                                if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
+                                    if (value == 38) {
+                                        this.processSetForegroundColorExt(r, g, b);
+                                        continue;
+                                    }
+                                    this.processSetBackgroundColorExt(r, g, b);
+                                    continue;
+                                }
+                                throw new IllegalArgumentException();
+                            }
+                            if (arg2or5 == 5) {
+                                int paletteIndex = this.getNextOptionInt(optionsIterator);
+                                if (paletteIndex >= 0 && paletteIndex <= 255) {
+                                    if (value == 38) {
+                                        this.processSetForegroundColorExt(paletteIndex);
+                                        continue;
+                                    }
+                                    this.processSetBackgroundColorExt(paletteIndex);
+                                    continue;
+                                }
+                                throw new IllegalArgumentException();
+                            }
+                            throw new IllegalArgumentException();
+                        }
+                        switch (value) {
+                            case 39: {
+                                this.processDefaultTextColor();
+                                continue block28;
+                            }
+                            case 49: {
+                                this.processDefaultBackgroundColor();
+                                continue block28;
+                            }
+                            case 0: {
+                                this.processAttributeRest();
+                                continue block28;
+                            }
+                        }
+                        this.processSetAttribute(value);
+                    }
+                    if (count == 0) {
+                        this.processAttributeRest();
+                    }
+                    return true;
+                }
+                case 115: {
+                    this.processSaveCursorPosition();
+                    return true;
+                }
+                case 117: {
+                    this.processRestoreCursorPosition();
+                    return true;
+                }
+            }
+            if (97 <= command && 122 <= command) {
+                this.processUnknownExtension(options, command);
+                return true;
+            }
+            if (65 <= command && 90 <= command) {
+                this.processUnknownExtension(options, command);
+                return true;
+            }
+            return false;
+        }
+        catch (IllegalArgumentException count) {
+        }
+        catch (IOException ioe) {
+            this.setError();
+        }
+        return false;
+    }
+
+    private boolean processOperatingSystemCommand(ArrayList<Object> options) {
+        int command = this.optionInt(options, 0);
+        String label = (String)options.get(1);
+        try {
+            switch (command) {
+                case 0: {
+                    this.processChangeIconNameAndWindowTitle(label);
+                    return true;
+                }
+                case 1: {
+                    this.processChangeIconName(label);
+                    return true;
+                }
+                case 2: {
+                    this.processChangeWindowTitle(label);
+                    return true;
+                }
+            }
+            this.processUnknownOperatingSystemCommand(command, label);
+            return true;
+        }
+        catch (IllegalArgumentException illegalArgumentException) {
+            return false;
+        }
+    }
+
+    protected void processRestoreCursorPosition() throws IOException {
+    }
+
+    protected void processSaveCursorPosition() throws IOException {
+    }
+
+    protected void processInsertLine(int optionInt) throws IOException {
+    }
+
+    protected void processDeleteLine(int optionInt) throws IOException {
+    }
+
+    protected void processScrollDown(int optionInt) throws IOException {
+    }
+
+    protected void processScrollUp(int optionInt) throws IOException {
+    }
+
+    protected void processEraseScreen(int eraseOption) throws IOException {
+    }
+
+    protected void processEraseLine(int eraseOption) throws IOException {
+    }
+
+    protected void processSetAttribute(int attribute) throws IOException {
+    }
+
+    protected void processSetForegroundColor(int color) throws IOException {
+        this.processSetForegroundColor(color, false);
+    }
+
+    protected void processSetForegroundColor(int color, boolean bright) throws IOException {
+    }
+
+    protected void processSetForegroundColorExt(int paletteIndex) throws IOException {
+    }
+
+    protected void processSetForegroundColorExt(int r, int g, int b) throws IOException {
+    }
+
+    protected void processSetBackgroundColor(int color) throws IOException {
+        this.processSetBackgroundColor(color, false);
+    }
+
+    protected void processSetBackgroundColor(int color, boolean bright) throws IOException {
+    }
+
+    protected void processSetBackgroundColorExt(int paletteIndex) throws IOException {
+    }
+
+    protected void processSetBackgroundColorExt(int r, int g, int b) throws IOException {
+    }
+
+    protected void processDefaultTextColor() throws IOException {
+    }
+
+    protected void processDefaultBackgroundColor() throws IOException {
+    }
+
+    protected void processAttributeRest() throws IOException {
+    }
+
+    protected void processCursorTo(int row, int col) throws IOException {
+    }
+
+    protected void processCursorToColumn(int x) throws IOException {
+    }
+
+    protected void processCursorUpLine(int count) throws IOException {
+    }
+
+    protected void processCursorDownLine(int count) throws IOException {
+        for (int i = 0; i < count; ++i) {
+            this.ps.write(10);
+        }
+    }
+
+    protected void processCursorLeft(int count) throws IOException {
+    }
+
+    protected void processCursorRight(int count) throws IOException {
+        for (int i = 0; i < count; ++i) {
+            this.ps.write(32);
+        }
+    }
+
+    protected void processCursorDown(int count) throws IOException {
+    }
+
+    protected void processCursorUp(int count) throws IOException {
+    }
+
+    protected void processUnknownExtension(ArrayList<Object> options, int command) {
+    }
+
+    protected void processChangeIconNameAndWindowTitle(String label) {
+        this.processChangeIconName(label);
+        this.processChangeWindowTitle(label);
+    }
+
+    protected void processChangeIconName(String label) {
+    }
+
+    protected void processChangeWindowTitle(String label) {
+    }
+
+    protected void processUnknownOperatingSystemCommand(int command, String param) {
+    }
+
+    private boolean processCharsetSelect(ArrayList<Object> options) {
+        int set = this.optionInt(options, 0);
+        char seq = ((Character)options.get(1)).charValue();
+        this.processCharsetSelect(set, seq);
+        return true;
+    }
+
+    protected void processCharsetSelect(int set, char seq) {
+    }
+
+    private int optionInt(ArrayList<Object> options, int index) {
+        if (options.size() <= index) {
+            throw new IllegalArgumentException();
+        }
+        Object value = options.get(index);
+        if (value == null) {
+            throw new IllegalArgumentException();
+        }
+        if (!value.getClass().equals(Integer.class)) {
+            throw new IllegalArgumentException();
+        }
+        return (Integer)value;
+    }
+
+    private int optionInt(ArrayList<Object> options, int index, int defaultValue) {
+        if (options.size() > index) {
+            Object value = options.get(index);
+            if (value == null) {
+                return defaultValue;
+            }
+            return (Integer)value;
+        }
+        return defaultValue;
+    }
+
+    @Override
+    public void close() {
+        this.print(RESET_CODE);
+        this.flush();
+        super.close();
+    }
+}
+

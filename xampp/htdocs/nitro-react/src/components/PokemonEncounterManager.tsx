@@ -1,6 +1,7 @@
 import { FC, useEffect, useRef, useState, MouseEvent } from 'react';
 import { usePokemonSocket } from '../hooks/usePokemonSocket';
 import { GetRoomSession, GetOwnRoomObject, GetSessionDataManager } from '../api'; // 🔌 Importada la sesión nativa de Nitro
+import { PokemonInventoryView } from './PokemonInventoryView'; // 🎒 Importamos tu nueva mochila premium corregida
 
 const POKEMON_DICTIONARY: Record<number, string> = {
     1: 'Bulbasaur',
@@ -27,7 +28,6 @@ export const PokemonEncounterManager: FC = () => {
         sendRoomEntry, sendStep,
         battleState, setBattleState,
         startPrivateBattle, sendBattleAttack,
-        sendThrowBall, // 🎒 Importamos la acción de captura desde el hook
         sendLeaveBattle
     } = usePokemonSocket(realUserId);
 
@@ -39,7 +39,7 @@ export const PokemonEncounterManager: FC = () => {
 
     // 🚨 CONTROL DE MENÚS: Cambia entre las vistas del panel de combate
     const [showMoveMenu, setShowMoveMenu] = useState<boolean>(false);
-    const [showBagMenu, setShowBagMenu] = useState<boolean>(false); // 🎒 Control del submenú de inventario
+    const [showBagMenu, setShowBagMenu] = useState<boolean>(false); // 🎒 Control del modal premium de inventario
 
     // 🗺️ ESTADOS DE DESPLAZAMIENTO: Para poder arrastrar la alerta libremente
     const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
@@ -177,20 +177,12 @@ export const PokemonEncounterManager: FC = () => {
         setShowMoveMenu(false);
     };
 
-    // 🔴 Lanzador interactivo de esferas de captura conectado al WebSocket
-    const handleUseBallClick = (itemId: number, itemName: string) => {
-        console.log(`[UI COMBATE] Ejecutando lanzamiento de Objeto ID: ${itemId} (${itemName})`);
-        sendThrowBall(itemId); // 🚀 Dispara el evento real hacia el case 'THROW_POKEBALL' de Node
-        setShowBagMenu(false);
-    };
-
     // =========================================================================
     // 🎨 RENDER 1: PANTALLA PRINCIPAL DE COMBATE ACTIVO (MODO INTERFAZ)
     // =========================================================================
     if (battleState) {
         const p = battleState.player;
         const r = battleState.rival;
-        const inventory = battleState.inventory || [];
 
         return (
             <div
@@ -307,32 +299,8 @@ export const PokemonEncounterManager: FC = () => {
                                 ↩️ ATRÁS
                             </button>
                         </div>
-                    ) : showBagMenu ? (
-                        /* 🎒 CUADRÍCULA DE SELECCIÓN DE POKÉBALLS REALES */
-                        <div className="d-flex gap-2 h-100 align-items-center">
-                            <div className="d-flex flex-wrap gap-2 flex-grow-1 h-100 align-content-center">
-                                {inventory.map((item: any) => (
-                                    <button
-                                        key={item.item_id}
-                                        disabled={battleState.turn !== 'player' || item.quantity <= 0}
-                                        onClick={() => handleUseBallClick(item.item_id, item.name)}
-                                        className="btn btn-sm btn-warning fw-bold text-start px-2 py-1"
-                                        style={{ width: 'calc(50% - 4px)', height: '36px', border: '1px solid #ca8a04', boxShadow: '0 2px 4px rgba(0,0,0,0.2)', color: '#111827' }}
-                                    >
-                                        <div style={{ fontSize: '11px', lineHeight: '12px' }}>🔴 {item.name}</div>
-                                        <div className="text-dark-50 fw-normal" style={{ fontSize: '9px', marginTop: '1px' }}>Cantidad: {item.quantity}</div>
-                                    </button>
-                                ))}
-                                {inventory.length === 0 && (
-                                    <div className="text-muted italic m-auto" style={{ fontSize: '11px' }}>- Tu mochila está vacía -</div>
-                                )}
-                            </div>
-                            <button onClick={() => setShowBagMenu(false)} className="btn btn-secondary fw-bold h-100 px-3" style={{ fontSize: '11px', minWidth: '90px' }}>
-                                ↩️ ATRÁS
-                            </button>
-                        </div>
                     ) : (
-                        /* 🏟️ MENÚ GENERAL DE ACCIONES DE COMBATE ORIGINAL */
+                        /* 🏟️ MENÚ GENERAL DE ACCIONES DE COMBATE ORIGINAL (MOCHILA VIEJA REEMPLAZADA) */
                         <div className="d-flex gap-2 h-100 align-items-center">
                             <div className="bg-black p-2 rounded text-success small border border-secondary overflow-y-auto h-100" style={{ width: '65%', fontSize: '11px', lineHeight: '14px', whiteSpace: 'pre-line' }}>
                                 {battleState.log}
@@ -365,6 +333,13 @@ export const PokemonEncounterManager: FC = () => {
                         </div>
                     )}
                 </div>
+
+                {/* 🌟 VINCULACIÓN MAESTRA: Instanciamos el modal premium de la mochila en modo combate */}
+                <PokemonInventoryView
+                    isOpen={showBagMenu}
+                    onClose={() => setShowBagMenu(false)}
+                    isInBattle={true}
+                />
             </div>
         );
     }

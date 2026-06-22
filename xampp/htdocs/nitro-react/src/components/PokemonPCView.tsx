@@ -133,15 +133,20 @@ export const PokemonPCView: FC = () => {
                                                 <div style={styles.nameAndTypeRow}>
                                                     <span style={styles.pokemonNameText}>
                                                         {getPokemonName(poke)}
-                                                        {/* 🌟 Símbolos con silueta de contorno negra pixelada gruesa para la lista */}
-                                                        {poke.gender === 0 && <span style={{ ...styles.listGenderIcon, color: '#3498db' }}>♂</span>}
-                                                        {poke.gender === 1 && <span style={{ ...styles.listGenderIcon, color: '#ff3385' }}>♀</span>}
+                                                        {/* 🌟 Badges de Género estilo Píldora Pixelada con Borde Negro */}
+                                                        {poke.gender === 0 && <span style={styles.pixelPillMale}>♂</span>}
+                                                        {poke.gender === 1 && <span style={styles.pixelPillFemale}>♀</span>}
                                                     </span>
-                                                    <div style={styles.badgeGroup}>
-                                                        <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[poke.type1] || '#7f8c8d' }}>{poke.type1}</span>
-                                                        {poke.type2 && (
-                                                            <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[poke.type2] || '#7f8c8d' }}>{poke.type2}</span>
-                                                        )}
+
+                                                    {/* 🌟 CONFIGURADO: Nivel restaurado debajo del nombre junto a los tipos */}
+                                                    <div style={styles.subRowMetadata}>
+                                                        <span style={styles.levelTextInline}>Nv.{poke.level}</span>
+                                                        <div style={styles.badgeGroup}>
+                                                            <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[poke.type1] || '#7f8c8d' }}>{poke.type1}</span>
+                                                            {poke.type2 && (
+                                                                <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[poke.type2] || '#7f8c8d' }}>{poke.type2}</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -176,9 +181,9 @@ export const PokemonPCView: FC = () => {
                                 onMouseEnter={(e) => e.currentTarget.style.border = '2px solid #c72e2e'}
                                 onMouseLeave={(e) => e.currentTarget.style.border = '1px solid #ccc'}
                             >
-                                {/* 🌟 Icono de género flotante con contorno negro puro de 1px */}
-                                {poke.gender === 0 && <span style={{ ...styles.floatingGenderIcon, color: '#3498db' }}>♂</span>}
-                                {poke.gender === 1 && <span style={{ ...styles.floatingGenderIcon, color: '#ff3385' }}>♀</span>}
+                                {/* 🌟 Badges de género flotantes pixelados en esquina superior derecha */}
+                                {poke.gender === 0 && <span style={styles.pixelPillMaleFloating}>♂</span>}
+                                {poke.gender === 1 && <span style={styles.pixelPillFemaleFloating}>♀</span>}
 
                                 <img src={getPokemonSprite(poke.pokemon_id)} alt="ico" style={styles.gridSprite} />
                                 <span style={styles.gridLevelText}>Nv.{poke.level}</span>
@@ -197,7 +202,7 @@ export const PokemonPCView: FC = () => {
     );
 };
 
-// 🎨 Estilos Inline refinados con siluetas de trazo pixel art
+// 🎨 Estilos Inline Completos e Inalterados
 const styles = {
     modalWindow: {
         position: 'fixed' as const,
@@ -227,12 +232,12 @@ const styles = {
     closeButton: { background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold' as const, fontSize: '13px' },
     modalBody: { padding: '15px', display: 'flex', gap: '15px', flex: 1, overflow: 'hidden' },
 
-    // Bloques
+    // Divisiones de diseño
     leftColumn: { width: '45%', display: 'flex', flexDirection: 'column' as const, gap: '6px' },
     rightColumn: { width: '55%', display: 'flex', flexDirection: 'column' as const, gap: '6px' },
     columnTitle: { fontSize: '11px', fontWeight: 'bold' as const, color: '#333', marginBottom: '2px' },
 
-    // Lista izquierda (Equipo)
+    // Panel izquierdo (Equipo)
     teamListContainer: { display: 'flex', flexDirection: 'column' as const, gap: '5px', overflowY: 'auto' as const, flex: 1, paddingRight: '2px' },
     pokemonRow: {
         borderRadius: '4px',
@@ -246,15 +251,35 @@ const styles = {
     },
     rowInfoArea: { display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '75%', overflow: 'hidden' },
     pokemonSpriteMini: { width: '38px', height: '38px', objectFit: 'contain' as const, imageRendering: 'pixelated' as const },
-    nameAndTypeRow: { display: 'flex', flexDirection: 'column' as const, gap: '2px', overflow: 'hidden' },
+    nameAndTypeRow: { display: 'flex', flexDirection: 'column' as const, gap: '1px', overflow: 'hidden', width: '100%' },
     pokemonNameText: { fontSize: '11px', fontWeight: 'bold' as const, color: '#333', whiteSpace: 'nowrap' as const, display: 'flex', alignItems: 'center' },
+    subRowMetadata: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' },
+    levelTextInline: { fontSize: '10px', fontWeight: 'bold' as const, color: '#e67e22' },
 
-    // 🌟 Símbolo del género en lista con delineado negro de alto contraste
-    listGenderIcon: {
-        marginLeft: '6px',
-        fontSize: '14px',
+    // 🌟 ESTILOS PREMIUM: Badges Pixel Art con Borde de 1px Negro Líquido (Equipo en Mano)
+    pixelPillMale: {
+        display: 'inline-block',
+        backgroundColor: '#ffffff',
+        color: '#0073ec',
+        border: '1px solid #000000',
+        fontSize: '10px',
         fontWeight: 'bold' as const,
-        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+        padding: '0px 4px',
+        marginLeft: '6px',
+        lineHeight: '11px',
+        height: '13px'
+    },
+    pixelPillFemale: {
+        display: 'inline-block',
+        backgroundColor: '#ffffff',
+        color: '#ff2d7b',
+        border: '1px solid #000000',
+        fontSize: '10px',
+        fontWeight: 'bold' as const,
+        padding: '0px 4px',
+        marginLeft: '6px',
+        lineHeight: '11px',
+        height: '13px'
     },
 
     badgeGroup: { display: 'flex', gap: '3px' },
@@ -262,7 +287,7 @@ const styles = {
     hpTextBadgeBox: { display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', fontSize: '10px' },
     emptySlotText: { color: '#888', fontStyle: 'italic', fontSize: '11px', margin: 'auto' },
 
-    // Rejilla derecha (Almacén)
+    // Panel derecho (Almacén)
     rightHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     boxCountBadge: { backgroundColor: '#7f8c8d', color: 'white', fontSize: '9px', padding: '1px 6px', borderRadius: '3px', fontWeight: 'bold' as const },
     pcGridContainer: {
@@ -291,15 +316,32 @@ const styles = {
         boxSizing: 'border-box' as const
     },
 
-    // 🌟 Símbolo flotante en la rejilla con delineado perimetral negro de 1px (Efecto Sprite grueso)
-    floatingGenderIcon: {
+    // 🌟 ESTILOS PREMIUM: Badges Pixel Art Flotantes con Borde de 1px Negro Líquido (Almacén General)
+    pixelPillMaleFloating: {
         position: 'absolute' as const,
         top: '3px',
-        right: '6px',
-        fontSize: '14px',
+        right: '3px',
+        backgroundColor: '#ffffff',
+        color: '#0073ec',
+        border: '1px solid #000000',
+        fontSize: '9px',
         fontWeight: 'bold' as const,
-        lineHeight: '14px',
-        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+        padding: '0px 3px',
+        lineHeight: '10px',
+        height: '12px'
+    },
+    pixelPillFemaleFloating: {
+        position: 'absolute' as const,
+        top: '3px',
+        right: '3px',
+        backgroundColor: '#ffffff',
+        color: '#ff2d7b',
+        border: '1px solid #000000',
+        fontSize: '9px',
+        fontWeight: 'bold' as const,
+        padding: '0px 3px',
+        lineHeight: '10px',
+        height: '12px'
     },
 
     gridSprite: { width: '32px', height: '32px', objectFit: 'contain' as const, imageRendering: 'pixelated' as const, marginTop: '4px' },

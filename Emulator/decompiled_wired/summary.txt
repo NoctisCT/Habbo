@@ -1,0 +1,2 @@
+Summary for plugins\ChangeFurniDirectionUnderWiredEffect.jar
+Decompiled with CFR 0.152
