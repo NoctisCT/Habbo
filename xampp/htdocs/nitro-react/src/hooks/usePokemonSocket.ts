@@ -5,14 +5,14 @@ let globalSocket: WebSocket | null = null;
 const stateListeners = new Set<() => void>();
 
 let globalPokemonList: any[] = [];
-let globalInventoryList: any[] = []; // 🎒 NUEVO: Inventario unificado global
+let globalInventoryList: any[] = []; // 🎒 Inventario unificado global
 let globalWildEncounter: any | null = null;
 let globalBattleState: any | null = null;
 
 export const usePokemonSocket = (userId: number) => {
     // Inicializamos los estados locales apuntando a las referencias globales compartidas
     const [pokemonList, setPokemonList] = useState<any[]>(globalPokemonList);
-    const [inventoryList, setInventoryList] = useState<any[]>(globalInventoryList); // 🎒 NUEVO
+    const [inventoryList, setInventoryList] = useState<any[]>(globalInventoryList);
     const [wildEncounter, setWildEncounter] = useState<any | null>(globalWildEncounter);
     const [battleState, setBattleState] = useState<any | null>(globalBattleState);
 
@@ -20,7 +20,7 @@ export const usePokemonSocket = (userId: number) => {
     useEffect(() => {
         const updateLocalStates = () => {
             setPokemonList([...globalPokemonList]); // 🌟 Rompe la referencia para forzar el re-renderizado
-            setInventoryList([...globalInventoryList]); // 🎒 NUEVO
+            setInventoryList([...globalInventoryList]);
             setWildEncounter(globalWildEncounter);
             setBattleState(globalBattleState);
         };
@@ -43,7 +43,7 @@ export const usePokemonSocket = (userId: number) => {
             ws.onopen = () => {
                 console.log('[POKÉMON] Conectado al backend de WebSockets (Canal Unificado)');
                 ws.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
-                ws.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId })); // 🎒 NUEVO: Pedimos la mochila al conectar
+                ws.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId }));
             };
 
             ws.onmessage = (event) => {
@@ -54,9 +54,6 @@ export const usePokemonSocket = (userId: number) => {
                     broadcastStateChange();
                 }
 
-                // =========================================================================
-                // 🎒 NUEVO ESCUCHADOR: RECEPCIÓN DE INVENTARIO DESDE NODE
-                // =========================================================================
                 if (data.type === 'INVENTORY_DATA_RESPONSE') {
                     globalInventoryList = [...data.items];
                     broadcastStateChange();
@@ -74,12 +71,18 @@ export const usePokemonSocket = (userId: number) => {
                 }
 
                 // =========================================================================
-                // ⚔️ NUEVOS ESCUCHADORES ENTRANTE DE COMBATE
+                // ⚔️ ESCUCHADORES ENTRANTE DE COMBATE
                 // =========================================================================
                 if (data.type === 'BATTLE_STARTED' || data.type === 'BATTLE_UPDATE') {
-                    if (data.log) data.battle.log = data.log;
-                    globalBattleState = data.battle;
-                    broadcastStateChange();
+                    if (data.battle) {
+                        // 🛠️ PARCHE: Acumulamos el historial de logs para que el flujo de turnos sea continuo
+                        const currentLog = globalBattleState?.log || '';
+                        const nextLog = data.log || data.battle.log || '';
+
+                        globalBattleState = data.battle;
+                        globalBattleState.log = currentLog && nextLog ? `${currentLog}\n${nextLog}` : (nextLog || currentLog);
+                        broadcastStateChange();
+                    }
                 }
 
                 if (data.type === 'BATTLE_ERROR') {
@@ -87,14 +90,31 @@ export const usePokemonSocket = (userId: number) => {
                 }
 
                 // =========================================================================
-                // 🏥 NUEVOS ESCUCHADORES DE ASISTENCIA MÉDICA Y FARMACIA
+                // 🏥 ESCUCHADORES DE ASISTENCIA MÉDICA Y FARMACIA
                 // =========================================================================
                 if (data.type === 'TEAM_HEALED_BY_BOT') {
                     window.dispatchEvent(new CustomEvent('pokemon:team_healed', { detail: data.message }));
                 }
 
                 if (data.type === 'ITEM_CONSUMED_SUCCESS') {
-                    alert(data.message);
+                    console.log('[POKÉMON] Objeto aplicado con éxito en combate.');
+
+                    // 🛠️ PARCHE: Al usar un ítem, asimilamos el estado actualizado de la arena que manda Node.
+                    // Esto actualiza las barras de vida al instante (Bugs 1 y 2) y desbloquea los movimientos (Bug 4)
+                    if (globalBattleState) {
+                        const logHistorial = globalBattleState.log || '';
+                        const txtCuracion = data.message || 'Se ha utilizado un objeto curativo.';
+
+                        globalBattleState = data.battle ? data.battle : { ...globalBattleState };
+
+                        // Inyectamos el aviso de curación y el posible contraataque del rival en el log de la arena (Bug 3)
+                        globalBattleState.log = logHistorial ? `${logHistorial}\n🧪 ${txtCuracion}` : `🧪 ${txtCuracion}`;
+                        if (data.log) globalBattleState.log += `\n${data.log}`;
+                    } else if (data.battle) {
+                        globalBattleState = data.battle;
+                        if (data.log) globalBattleState.log = data.log;
+                    }
+                    broadcastStateChange();
                 }
 
                 if (data.type === 'HEAL_ERROR') {
@@ -105,11 +125,18 @@ export const usePokemonSocket = (userId: number) => {
                     alert(data.message);
                 }
 
-                // Al recibir la orden de refresco, auto-solicitamos los datos limpios a Node
+                // =========================================================================
+                // 🚨 GESTIÓN ANTICOLISIÓN: REFRESCAR DATOS SIN ROMPER LA ARENA
+                // =========================================================================
                 if (data.type === 'REFRESH_PC_DATA') {
                     if (globalSocket?.readyState === WebSocket.OPEN) {
-                        globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
-                        globalSocket.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId })); // 🎒 NUEVO: Refresca también mochila
+                        // 🔒 CANDADO DE SEGURIDAD: Si estamos en combate activo, PROHIBIDO pedir GET_PC_DATA.
+                        // Evitamos que Node limpie la propiedad temporal de la arena al procesar el PC.
+                        if (!globalBattleState) {
+                            globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
+                        }
+                        // La mochila siempre se puede y se debe actualizar para ver las unidades restantes
+                        globalSocket.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId }));
                     }
                 }
             };
@@ -119,10 +146,9 @@ export const usePokemonSocket = (userId: number) => {
                 globalSocket = null;
             };
         } else {
-            // Si el canal ya existe y se monta un nuevo componente, refrescamos sus datos al instante
             if (globalSocket.readyState === WebSocket.OPEN) {
                 globalSocket.send(JSON.stringify({ type: 'GET_PC_DATA', userId }));
-                globalSocket.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId })); // 🎒 NUEVO: Sincroniza al montar componentes tardíos
+                globalSocket.send(JSON.stringify({ type: 'GET_INVENTORY_DATA', userId }));
             }
         }
     }, [userId]);
@@ -150,10 +176,6 @@ export const usePokemonSocket = (userId: number) => {
             globalSocket.send(JSON.stringify({ type: 'USER_STEP' }));
         }
     }, []);
-
-    // =========================================================================
-    // ⚔️ NUEVAS EMISIONES DE EVENTOS DE COMBATE HACIA NODE
-    // =========================================================================
 
     const startPrivateBattle = useCallback((pokemonId: number, level: number, routeName: string) => {
         if (globalSocket?.readyState === WebSocket.OPEN) {
@@ -191,10 +213,6 @@ export const usePokemonSocket = (userId: number) => {
         }
     }, []);
 
-    // =========================================================================
-    // 🏥 NUEVAS EMISIONES MÉDICAS (BOT JOY + USO MOCHILA)
-    // =========================================================================
-
     const sendHealTeam = useCallback(() => {
         if (globalSocket?.readyState === WebSocket.OPEN) {
             globalSocket.send(JSON.stringify({ type: 'HEAL_TEAM_BOT', userId }));
@@ -214,7 +232,7 @@ export const usePokemonSocket = (userId: number) => {
 
     return {
         pokemonList,
-        inventoryList, // 🎒 NUEVO: Exportamos la lista en tiempo real para el inventario
+        inventoryList,
         movePokemon,
         wildEncounter,
         setWildEncounter: (val: any) => { globalWildEncounter = val; broadcastStateChange(); },

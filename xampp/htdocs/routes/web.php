@@ -5,6 +5,8 @@ use App\Http\Controllers\Articles\ArticleController;
 use App\Http\Controllers\Articles\WebsiteArticleCommentsController;
 use App\Http\Controllers\Client\FlashController;
 use App\Http\Controllers\Client\NitroController;
+use App\Http\Controllers\Client\CharacterSelectController;
+use App\Http\Controllers\Client\CharacterNitroController;
 use App\Http\Controllers\Community\LeaderboardController;
 use App\Http\Controllers\Community\PhotosController;
 use App\Http\Controllers\Community\RoomController;
@@ -21,6 +23,7 @@ use App\Http\Controllers\Miscellaneous\InstallationController;
 use App\Http\Controllers\Miscellaneous\LocaleController;
 use App\Http\Controllers\Miscellaneous\LogoGeneratorController;
 use App\Http\Controllers\Miscellaneous\MaintenanceController;
+use App\Http\Controllers\Shop\LegacyEconomyDisabledController;
 use App\Http\Controllers\Shop\PaypalController;
 use App\Http\Controllers\Shop\ShopController;
 use App\Http\Controllers\Shop\ShopVoucherController;
@@ -135,10 +138,10 @@ Route::middleware(['maintenance', 'check.ban', 'force.staff.2fa'])->group(functi
 
         // Shop routes
         Route::prefix('shop')->group(function () {
-            Route::get('/{category:slug?}', ShopController::class)->name('shop.index');
+            Route::get('/{category:slug?}', LegacyEconomyDisabledController::class)->name('shop.index');
 
-            Route::post('/purchase/{package}', [ShopController::class, 'purchase'])->name('shop.buy');
-            Route::post('/voucher', ShopVoucherController::class)->name('shop.use-voucher');
+            Route::post('/purchase/{package}', LegacyEconomyDisabledController::class)->name('shop.buy');
+            Route::post('/voucher', LegacyEconomyDisabledController::class)->name('shop.use-voucher');
         });
 
         // Help center
@@ -168,10 +171,10 @@ Route::middleware(['maintenance', 'check.ban', 'force.staff.2fa'])->group(functi
         });
 
         // Paypal routes
-        Route::controller(PayPalController::class)->prefix('paypal')->group(function () {
-            Route::get('/process-transaction', 'process')->name('paypal.process-transaction');
-            Route::get('/successful-transaction', 'successful')->name('paypal.successful-transaction');
-            Route::get('/cancelled-transaction', 'cancelled')->name('paypal.cancelled-transaction');
+        Route::prefix('paypal')->group(function () {
+            Route::get('/process-transaction', LegacyEconomyDisabledController::class)->name('paypal.process-transaction');
+            Route::get('/successful-transaction', LegacyEconomyDisabledController::class)->name('paypal.successful-transaction');
+            Route::get('/cancelled-transaction', LegacyEconomyDisabledController::class)->name('paypal.cancelled-transaction');
         });
 
         // Rare values routes
@@ -183,7 +186,21 @@ Route::middleware(['maintenance', 'check.ban', 'force.staff.2fa'])->group(functi
         // Client route
         Route::prefix('game')->middleware(['findretros.redirect', 'vpn.checker'])->group(function () {
             Route::get('/nitro', NitroController::class)->name('nitro-client');
+            Route::get('/characters', CharacterSelectController::class)->name('character-select');
+            Route::get('/characters/archived', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'index'])->name('character-archived-index');
+            Route::post('/characters', [CharacterSelectController::class, 'store'])->name('character-create');
+            Route::post('/characters/slots', [CharacterSelectController::class, 'purchaseSlot'])->name('character-slot-purchase');
+            Route::patch('/characters/{user}/primary', [\App\Http\Controllers\Client\CharacterManagementController::class, 'makePrimary'])->name('character-primary');
+            Route::patch('/characters/{user}/motto', [\App\Http\Controllers\Client\CharacterManagementController::class, 'updateMotto'])->name('character-motto');
+            Route::delete('/characters/{user}', [\App\Http\Controllers\Client\CharacterManagementController::class, 'archive'])->name('character-archive');
+            Route::post('/characters/{user}/restore', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'paid'])->name('character-restore-paid');
+            Route::get('/nitro/character/{user}', CharacterNitroController::class)->name('nitro-character');
             Route::get('/flash', FlashController::class)->name('flash-client');
+        });
+
+        Route::prefix('administration')->group(function () {
+            Route::get('/archived-characters', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'adminIndex'])->name('admin.archived-characters');
+            Route::post('/archived-characters/{user}/restore', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'adminRestore'])->name('admin.character-restore');
         });
 
         // Logo generator

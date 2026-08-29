@@ -5,7 +5,12 @@ import { PokemonInventoryView } from './PokemonInventoryView';
 
 export const PokemonMenu: React.FC = () => {
     const userId = GetSessionDataManager().userId;
-    const { pokemonList } = usePokemonSocket(userId);
+
+    // 🌟 SINCRONIZACIÓN: Extraemos 'battleState' para saber si el usuario está combatiendo en tiempo real
+    const { pokemonList, battleState } = usePokemonSocket(userId);
+
+    // 🚨 CONDICIONAL CENTINELA: Verdadero si hay una batalla activa que no ha finalizado
+    const isInCombat = !!battleState && !battleState.ended;
 
     const activeTeamCount = pokemonList.filter(p => p.slot >= 1 && p.slot <= 6).length;
 
@@ -13,8 +18,9 @@ export const PokemonMenu: React.FC = () => {
     const [isInventoryOpen, setIsInventoryOpen] = useState<boolean>(false);
     const [isPokedexOpen, setIsPokedexOpen] = useState<boolean>(false);
 
-    // 🌟 NUEVO: Lanza la orden de apertura al componente real del PC
+    // Lanza la orden de apertura al componente real del PC (Solo si no está en combate)
     const handleOpenPC = () => {
+        if (isInCombat) return;
         window.dispatchEvent(new CustomEvent('pokemon:open_pc'));
     };
 
@@ -25,14 +31,30 @@ export const PokemonMenu: React.FC = () => {
                 <div style={styles.toolbarTitle}>MENÚ POKÉMON</div>
 
                 <div style={styles.buttonGroup}>
-                    {/* Botón 🎒 Mochila (Ya está vinculado y abre tu inventario real) */}
-                    <button onClick={() => setIsInventoryOpen(true)} style={styles.menuButton}>
+                    {/* Botón 🎒 Mochila */}
+                    <button
+                        onClick={() => !isInCombat && setIsInventoryOpen(true)}
+                        disabled={isInCombat}
+                        style={{
+                            ...styles.menuButton,
+                            ...(isInCombat ? styles.disabledButton : {})
+                        }}
+                        title={isInCombat ? "No puedes abrir la mochila externa en combate" : ""}
+                    >
                         <span style={styles.icon}>🎒</span>
                         <span style={styles.label}>Mochila</span>
                     </button>
 
-                    {/* Botón 💻 PC / Equipo (Vinculado al PC Real) */}
-                    <button onClick={handleOpenPC} style={styles.menuButton}>
+                    {/* Botón 💻 PC / Equipo */}
+                    <button
+                        onClick={handleOpenPC}
+                        disabled={isInCombat}
+                        style={{
+                            ...styles.menuButton,
+                            ...(isInCombat ? styles.disabledButton : {})
+                        }}
+                        title={isInCombat ? "No puedes gestionar tu equipo en mitad de una batalla" : ""}
+                    >
                         <span style={styles.icon}>💻</span>
                         <div style={styles.labelContainer}>
                             <span style={styles.label}>Equipo</span>
@@ -41,7 +63,15 @@ export const PokemonMenu: React.FC = () => {
                     </button>
 
                     {/* Botón 📖 Pokédex */}
-                    <button onClick={() => setIsPokedexOpen(true)} style={styles.menuButton}>
+                    <button
+                        onClick={() => !isInCombat && setIsPokedexOpen(true)}
+                        disabled={isInCombat}
+                        style={{
+                            ...styles.menuButton,
+                            ...(isInCombat ? styles.disabledButton : {})
+                        }}
+                        title={isInCombat ? "La Pokédex no está disponible ahora" : ""}
+                    >
                         <span style={styles.icon}>📖</span>
                         <span style={styles.label}>Pokédex</span>
                     </button>
@@ -52,10 +82,11 @@ export const PokemonMenu: React.FC = () => {
             {/* 🪟 INYECCIÓN DE MODALES GESTIONADOS POR LA BARRA */}
             {/* ========================================================================= */}
 
-            {/* 1. Modal de la Mochila Conectada */}
+            {/* 1. Modal de la Mochila Conectada (Fuera de peligro) */}
             <PokemonInventoryView
                 isOpen={isInventoryOpen}
                 onClose={() => setIsInventoryOpen(false)}
+                isInBattle={false}
             />
 
             {/* 3. Placeholder para la Pokédex */}
@@ -120,6 +151,13 @@ const styles = {
         fontWeight: 'bold' as const,
         transition: 'background 0.2s',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)'
+    },
+    // 🚨 NUEVO ESTILO: Candado visual para deshabilitar botones de Habbo UI
+    disabledButton: {
+        opacity: 0.4,
+        cursor: 'not-allowed',
+        filter: 'grayscale(80%)',
+        boxShadow: 'none'
     },
     icon: {
         fontSize: '16px'

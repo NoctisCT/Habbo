@@ -1,6 +1,7 @@
 export class OutgoingHeader
 {
     public static ACHIEVEMENT_LIST = 219;
+    public static ABRIR_SUBASTAS = 5000;
     public static AUTHENTICATION = -1;
     public static BOT_CONFIGURATION = 1986;
     public static BOT_PICKUP = 3323;
@@ -470,4 +471,19 @@ export class OutgoingHeader
 
 	public static FURNITURE_PICKUP_ALL = 10017;
 	public static DELETE_ITEM = 10018;
+    public static OBTENER_INVENTARIO_SUBASTAS = 5002;
+    public static PONER_EN_SUBASTA = 5004;
+    public static OBTENER_MIS_SUBASTAS = 5006;
+    public static RETIRAR_SUBASTA = 5008;
+    public static PUJAR_SUBASTA = 5010;
+    public static OBTENER_ESTADO_SESION_SUBASTAS = 5012;
+    public static OBTENER_HISTORIAL_SUBASTAS = 5015;
+    public static OBTENER_FEED_SUBASTAS = 5017;
+    public static OBTENER_ESTADISTICAS_SUBASTAS = 5019;
+    public static OBTENER_PROXIMA_SUBASTA = 5021;
+    public static OBTENER_RECORDS_SUBASTAS = 5023;
+    public static CONSULTAR_BLOQUEO_INVENTARIO = 5030;
+    public static VERIFICAR_PATRON_INVENTARIO = 5032;
+    public static CONFIGURAR_PATRON_INVENTARIO = 5034;
+    public static CERRAR_SESION_INVENTARIO = 5036;
 }

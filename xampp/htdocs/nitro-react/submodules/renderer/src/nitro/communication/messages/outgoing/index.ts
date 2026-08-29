@@ -62,6 +62,8 @@ export * from './roomdirectory';
 export * from './roomevents';
 export * from './roomsettings';
 export * from './sound';
+export * from './inventorylock';
+export * from './subastas';
 export * from './talent';
 export * from './tracking';
 export * from './user';

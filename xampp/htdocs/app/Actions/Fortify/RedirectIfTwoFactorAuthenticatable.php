@@ -86,6 +86,14 @@ class RedirectIfTwoFactorAuthenticatable
 
                     $this->throwFailedAuthenticationException($request);
                 }
+
+                $this->validate($request);
+
+                if (setting('maintenance_enabled') === '1' && (int) setting('min_maintenance_login_rank') > (int) $user->rank) {
+                    throw ValidationException::withMessages([
+                        'username' => __('Only staff can login during maintenance!'),
+                    ]);
+                }
             });
         }
 

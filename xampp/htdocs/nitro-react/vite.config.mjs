@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: resolve(__dirname, '../public/dist'),
+    emptyOutDir: false,
     assetsInlineLimit: 102400,
     rollupOptions: {
       output: {
@@ -30,3 +32,5 @@ export default defineConfig({
     },
   },
 });
+
+

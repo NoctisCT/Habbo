@@ -26,14 +26,18 @@ import { WiredActionTeleportView } from './WiredActionTeleportView';
 import { WiredActionToggleFurniStateView } from './WiredActionToggleFurniStateView';
 // Importación de tu vista Casual
 import { WiredActionVisualModifierView } from './WiredActionVisualModifierView';
-
+import { WiredActionAvatarSyncView } from './WiredActionAvatarSyncView';
+import { WiredActionStopAvatarSyncView } from './WiredActionStopAvatarSyncView';
 export const WiredActionLayoutView = (code: number) => {
     switch (code) {
+        case WiredActionLayoutCode.AVATAR_SYNC:
+            return <WiredActionAvatarSyncView />;
+        case WiredActionLayoutCode.STOP_AVATAR_SYNC:
+            return <WiredActionStopAvatarSyncView />;
         // 1. MAPEAMOS TU NUEVO "ACT" CON EL ID 88 QUE RECIBE DEL EMULADOR
         case WiredActionLayoutCode.VISUAL_MODIFIER:
             return <WiredActionVisualModifierView />;
-
-        // 2. EL WIRED DE MENSAJES (CHAT) VUELVE A SER EL ORIGINAL SIN INTERCEPTORES SUCIOS
+// 2. EL WIRED DE MENSAJES (CHAT) VUELVE A SER EL ORIGINAL SIN INTERCEPTORES SUCIOS
         case WiredActionLayoutCode.CHAT:
             return <WiredActionChatView />;
 

@@ -37,6 +37,18 @@
                         </x-navigation.dropdown-child>
                     @endif
 
+                    @php
+                        $maximumAdminRankId = (int) \Illuminate\Support\Facades\DB::table('permissions')
+                            ->orderByDesc('level')
+                            ->value('id');
+                    @endphp
+
+                    @if ((int) auth()->user()->rank === $maximumAdminRankId)
+                        <x-navigation.dropdown-child route="{{ route('admin.archived-characters') }}" :turbolink="false">
+                            Personajes archivados
+                        </x-navigation.dropdown-child>
+                    @endif
+
                     @if (hasPermission('view_server_logs'))
                         <x-navigation.dropdown-child route="/log-viewer" :turbolink="false" target="_blank">
                             {{ __('Error logs') }}
@@ -60,6 +72,10 @@
             <x-slot:children>
                 <x-navigation.dropdown-child :route="route('settings.account.show')">
                     {{ __('User settings') }}
+                </x-navigation.dropdown-child>
+
+                <x-navigation.dropdown-child :route="route('character-select')" :turbolink="false">
+                    Personajes
                 </x-navigation.dropdown-child>
 
                 <button class="dropdown-item dark:text-gray-200 dark:hover:bg-gray-700 w-full text-left" @click.prevent="document.getElementById('logout-form').submit();">

@@ -7,8 +7,11 @@ use App\Actions\Fortify\DisableTwoFactorAuthentication;
 use App\Actions\Fortify\RedirectIfTwoFactorConfirmed;
 use App\Models\Articles\WebsiteArticle;
 use App\Models\Miscellaneous\CameraWeb;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Actions\AttemptToAuthenticate;
@@ -36,6 +39,62 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Fortify::createUsersUsing(CreateNewUser::class);
+        Fortify::authenticateUsing(function (Request $request) {
+            $login = trim((string) $request->input('username'));
+            $password = (string) $request->input('password');
+
+            /*
+             * Login por email de cuenta o por nickname del personaje principal.
+             * En ambos casos la contraseña se valida SIEMPRE contra accounts.password.
+             */
+            $account = DB::table('accounts')
+                ->where('email', $login)
+                ->first();
+
+            if (!$account) {
+                $account = DB::table('accounts')
+                    ->join('account_characters', 'account_characters.account_id', '=', 'accounts.id')
+                    ->join('users', 'users.id', '=', 'account_characters.user_id')
+                    ->where('account_characters.is_primary', 1)
+                    ->whereNull('account_characters.archived_at')
+                    ->where('users.username', $login)
+                    ->select('accounts.*')
+                    ->first();
+            }
+
+            if ($account && Hash::check($password, $account->password)) {
+                $primaryUserId = DB::table('account_characters')
+                    ->where('account_id', $account->id)
+                    ->where('is_primary', 1)
+                    ->whereNull('archived_at')
+                    ->value('user_id');
+
+                if (!$primaryUserId) {
+                return null;
+            }
+
+            $primaryUser = User::find($primaryUserId);
+
+            if (!$primaryUser) {
+                return null;
+            }
+
+            /*
+             * accounts es la fuente real del 2FA.
+             * User mantiene una copia para compatibilidad con Fortify.
+             */
+            $primaryUser->forceFill([
+                'two_factor_secret' => $account->two_factor_secret,
+                'two_factor_recovery_codes' => $account->two_factor_recovery_codes,
+                'two_factor_confirmed' => (int) $account->two_factor_confirmed,
+                'two_factor_confirmed_at' => $account->two_factor_confirmed_at,
+            ])->saveQuietly();
+
+            return $primaryUser;
+            }
+
+            return null;
+        });
 
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by($request->input('username') . $request->ip());

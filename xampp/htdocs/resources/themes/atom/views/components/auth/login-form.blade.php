@@ -10,10 +10,10 @@
 
     <div>
         <x-form.label for="username">
-            {{ __('Username') }}
+            Email
         </x-form.label>
 
-        <x-form.input error-bag="login" name="username" value="{{ old('username') }}" placeholder="{{ __('Username') }}"
+        <x-form.input error-bag="login" name="username" value="{{ old('username') }}" placeholder="Email o nombre de usuario"
             :autofocus="true" />
     </div>
 

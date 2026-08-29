@@ -23,6 +23,146 @@ class EditUser extends EditRecord
     protected function getActions(): array
     {
         return [
+            Actions\Action::make('adjustCredits')
+                ->label('Ajustar créditos')
+                ->icon('heroicon-o-banknotes')
+                ->color('warning')
+                ->visible(function (): bool {
+                    $actor = auth()->user();
+
+                    if (! $actor) {
+                        return false;
+                    }
+
+                    $actorLevel = DB::table('permissions')
+                        ->where('id', $actor->rank)
+                        ->value('level');
+
+                    $maxLevel = DB::table('permissions')
+                        ->max('level');
+
+                    return
+                        $actorLevel !== null &&
+                        $maxLevel !== null &&
+                        (int) $actorLevel === (int) $maxLevel;
+                })
+                ->form([
+                    \Filament\Forms\Components\Hidden::make(
+                        'adjustment_id'
+                    )
+                        ->default(
+                            fn () =>
+                                (string) \Illuminate\Support\Str::uuid()
+                        ),
+
+                    \Filament\Forms\Components\TextInput::make(
+                        'delta'
+                    )
+                        ->label('Ajuste')
+                        ->helperText(
+                            'Usa un número positivo para añadir y negativo para retirar. Ejemplo: 53 o -53.'
+                        )
+                        ->numeric()
+                        ->required()
+                        ->rules([
+                            'integer',
+                            'not_in:0',
+                            'between:-2147483647,2147483647',
+                        ]),
+
+                    \Filament\Forms\Components\Textarea::make(
+                        'reason'
+                    )
+                        ->label('Motivo')
+                        ->helperText(
+                            'Quedará guardado permanentemente en el registro económico.'
+                        )
+                        ->required()
+                        ->minLength(3)
+                        ->maxLength(500)
+                        ->rows(3),
+                ])
+                ->modalHeading('Ajustar créditos')
+                ->modalDescription(
+                    'Esta operación modifica créditos premium y quedará auditada.'
+                )
+                ->modalSubmitActionLabel('Aplicar ajuste')
+                ->action(function (array $data): void {
+                    $actor = auth()->user();
+
+                    if (! $actor) {
+                        Notification::make()
+                            ->danger()
+                            ->title('No autorizado')
+                            ->send();
+
+                        $this->halt();
+                    }
+
+                    try {
+                        $result = app(
+                            \App\Services\AdminCreditAdjustmentService::class
+                        )->adjust(
+                            (int) $actor->id,
+                            (int) $this->getRecord()->id,
+                            (int) $data['delta'],
+                            (string) $data['reason'],
+                            (string) $data['adjustment_id']
+                        );
+
+                        $before = number_format(
+                            (int) $result['balance_before'],
+                            0,
+                            ',',
+                            '.'
+                        );
+
+                        $after = number_format(
+                            (int) $result['balance_after'],
+                            0,
+                            ',',
+                            '.'
+                        );
+
+                        $delta = (int) $result['delta'];
+
+                        $deltaText =
+                            ($delta > 0 ? '+' : '') .
+                            number_format(
+                                $delta,
+                                0,
+                                ',',
+                                '.'
+                            );
+
+                        Notification::make()
+                            ->success()
+                            ->title('Créditos ajustados')
+                            ->body(
+                                "{$deltaText} créditos. {$before} → {$after}"
+                            )
+                            ->send();
+
+                        $this->refreshFormData([
+                            'credits',
+                        ]);
+                    } catch (
+                        \App\Exceptions\AdminCreditAdjustmentException $exception
+                    ) {
+                        Notification::make()
+                            ->danger()
+                            ->title(
+                                'No se pudo ajustar el saldo'
+                            )
+                            ->body(
+                                $exception->getMessage()
+                            )
+                            ->send();
+
+                        $this->halt();
+                    }
+                }),
+
             Actions\DeleteAction::make(),
         ];
     }
@@ -78,11 +218,7 @@ class EditUser extends EditRecord
         }
 
         DB::transaction(function () use ($user, $data, $rcon) {
-            if ($data['credits'] != $user->credits) {
-                $rcon->giveCredits($user, -$user->credits + $data['credits']);
-            }
-
-            $this->checkUsernameChangedPermission($user, $data, $rcon);
+$this->checkUsernameChangedPermission($user, $data, $rcon);
             $this->treatChangedCurrencies($user, $data, $rcon);
             $this->treatChangedUserRank($user, $data, $rcon);
             $this->treatChangedUserMotto($user, $data, $rcon);

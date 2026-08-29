@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -48,6 +49,43 @@ class User extends Authenticatable implements FilamentUser, HasName
 	use LogsActivity;
 
 
+    protected static function booted(): void
+    {
+        static::updated(function (User $user) {
+            if (!$user->wasChanged([
+                'two_factor_secret',
+                'two_factor_recovery_codes',
+                'two_factor_confirmed',
+                'two_factor_confirmed_at',
+            ])) {
+                return;
+            }
+
+            $user->syncAccountTwoFactor();
+        });
+    }
+
+    private function syncAccountTwoFactor(): void
+    {
+        $accountId = DB::table('account_characters')
+            ->where('user_id', $this->id)
+            ->where('is_primary', 1)
+            ->value('account_id');
+
+        if (!$accountId) {
+            return;
+        }
+
+        DB::table('accounts')
+            ->where('id', $accountId)
+            ->update([
+                'two_factor_secret' => $this->two_factor_secret,
+                'two_factor_recovery_codes' => $this->two_factor_recovery_codes,
+                'two_factor_confirmed' => (int) $this->two_factor_confirmed,
+                'two_factor_confirmed_at' => $this->two_factor_confirmed_at,
+                'updated_at' => now(),
+            ]);
+    }
     public $timestamps = false;
 
     protected $guarded = [
@@ -263,6 +301,7 @@ class User extends Authenticatable implements FilamentUser, HasName
 
         $this->update([
             'two_factor_confirmed' => true,
+            'two_factor_confirmed_at' => now(),
         ]);
 
         return true;

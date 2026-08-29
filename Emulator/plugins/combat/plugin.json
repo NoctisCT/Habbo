@@ -1,7 +1,0 @@
-{
-    "name": "BHRPG Combat",
-    "author": "Alejandro",
-    "version": "1.0.0",
-    "main": "com.eu.habbo.bhrpg.combat.BHRPGPlugin",
-    "description": "Combate Táctico"
-}

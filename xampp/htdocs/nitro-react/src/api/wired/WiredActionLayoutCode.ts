@@ -27,4 +27,6 @@ export class WiredActionLayoutCode
     public static BOT_CHANGE_FIGURE: number = 26;
     public static BOT_TALK_DIRECT_TO_AVTR: number = 27;
     public static VISUAL_MODIFIER: number = 88;
+    public static AVATAR_SYNC: number = 89;
+    public static STOP_AVATAR_SYNC: number = 90;
 }

@@ -17,6 +17,15 @@ use Rmsramos\Activitylog\Resources\ActivitylogResource;
 
 class UserAuditResource extends ActivitylogResource
 {
+    public static function getNavigationGroup(): ?string
+    {
+        return "Auditor\u{00ED}a";
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Registros';
+    }
 	public static function table(Table $table): Table
     {
         return $table

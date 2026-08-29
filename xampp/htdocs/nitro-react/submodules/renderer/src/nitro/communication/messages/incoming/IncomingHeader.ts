@@ -469,4 +469,21 @@ export class IncomingHeader {
     public static WEEKLY_GAME2_LEADERBOARD = 2196;
     public static RENTABLE_FURNI_RENT_OR_BUYOUT_OFFER = 35;
     public static HANDSHAKE_IDENTITY_ACCOUNT = 3523;
+
+    public static ESTADO_SUBASTA = 5001;
+    public static INVENTARIO_SUBASTAS = 5003;
+    public static RESULTADO_PONER_SUBASTA = 5005;
+    public static MIS_SUBASTAS = 5007;
+    public static RESULTADO_RETIRAR_SUBASTA = 5009;
+    public static RESULTADO_PUJA_SUBASTA = 5011;
+    public static ESTADO_SESION_SUBASTAS = 5013;
+    public static AVISO_GLOBAL_SUBASTA = 5014;
+    public static HISTORIAL_SUBASTAS = 5016;
+    public static FEED_SUBASTAS = 5018;
+    public static ESTADISTICAS_SUBASTAS = 5020;
+    public static PROXIMA_SUBASTA = 5022;
+    public static RECORDS_SUBASTAS = 5024;
+    public static ESTADO_BLOQUEO_INVENTARIO = 5031;
+    public static RESULTADO_PATRON_INVENTARIO = 5033;
+    public static RESULTADO_CONFIGURAR_PATRON = 5035;
 }

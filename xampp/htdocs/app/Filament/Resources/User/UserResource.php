@@ -120,7 +120,8 @@ class UserResource extends Resource
                                 TextInput::make('credits')
                                     ->label(__('filament::resources.common.Credits'))
                                     ->numeric()
-                                    ->minValue(0)
+                                    ->disabled()
+                                    ->dehydrated(false)
                                     ->columnSpanFull(),
 
                                 TextInput::make('currency_0')

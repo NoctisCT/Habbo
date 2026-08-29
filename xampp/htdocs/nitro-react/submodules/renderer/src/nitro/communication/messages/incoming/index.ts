@@ -73,3 +73,6 @@ export * from './user/inventory/currency';
 export * from './user/inventory/subscription';
 export * from './user/wardrobe';
 export * from './userclassification';
+
+export * from './inventorylock';
+export * from './subastas';

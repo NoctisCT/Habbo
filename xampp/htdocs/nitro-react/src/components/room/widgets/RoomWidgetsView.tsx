@@ -1,5 +1,5 @@
 import { RoomEngineObjectEvent, RoomEngineRoomAdEvent, RoomEngineTriggerWidgetEvent, RoomEngineUseProductEvent, RoomId, RoomSessionErrorMessageEvent, RoomZoomEvent } from '@nitrots/nitro-renderer';
-import { FC, useEffect } from 'react';
+import { FC } from 'react';
 import { DispatchUiEvent, GetRoomEngine, LocalizeText, NotificationAlertType, RoomWidgetUpdateRoomObjectEvent } from '../../../api';
 import { useNotification, useRoom, useRoomEngineEvent, useRoomSessionManagerEvent } from '../../../hooks';
 import { AvatarInfoWidgetView } from './avatar-info/AvatarInfoWidgetView';
@@ -15,37 +15,11 @@ import { RoomFilterWordsWidgetView } from './room-filter-words/RoomFilterWordsWi
 import { RoomThumbnailWidgetView } from './room-thumbnail/RoomThumbnailWidgetView';
 import { RoomToolsWidgetView } from './room-tools/RoomToolsWidgetView';
 import { WordQuizWidgetView } from './word-quiz/WordQuizWidgetView';
-import { CombatGridView } from './CombatGridView';
 
 export const RoomWidgetsView: FC<{}> = props => {
     const { roomSession = null } = useRoom();
     const { simpleAlert = null } = useNotification();
 
-    useEffect(() => {
-        const handleRpgGrid = (e: any) => {
-            const rawData = e.detail;
-            if (!rawData) return;
-
-            const tiles: { x: number, y: number }[] = [];
-            const pairs = rawData.split(';');
-            for (const pair of pairs) {
-                if (!pair) continue;
-                const coords = pair.split(',');
-                if (coords.length === 2) {
-                    tiles.push({ x: parseInt(coords[0], 10), y: parseInt(coords[1], 10) });
-                }
-            }
-
-            console.log("%c[RPG COMBAT] ¡Coordenadas interceptadas desde WebSocket!", "background: #222; color: #bada55; font-size: 14px;", tiles);
-
-            if (typeof (window as any).CombatGridManager !== 'undefined') {
-                (window as any).CombatGridManager.tiles = tiles;
-            }
-        };
-
-        window.addEventListener('RPG_GRID_DATA', handleRpgGrid);
-        return () => window.removeEventListener('RPG_GRID_DATA', handleRpgGrid);
-    }, []);
 
     useRoomEngineEvent<RoomZoomEvent>(RoomZoomEvent.ROOM_ZOOM, event => GetRoomEngine().setRoomInstanceRenderingCanvasScale(event.roomId, 1, event.level, null, null, false, event.asDelta));
 
@@ -188,7 +162,6 @@ export const RoomWidgetsView: FC<{}> = props => {
             <UserChooserWidgetView />
             <WordQuizWidgetView />
             <FriendRequestWidgetView />
-            <CombatGridView />
         </>
     );
 }

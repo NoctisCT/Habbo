@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "vite --base=/client/ --host",
-    "build": "vite build --base=/client/",
+    "build": "vite build --base=/dist/",
     "preview": "vite preview --base=/client/ --host",
     "build:prod": "npx browserslist@latest --update-db && yarn build",
     "eslint": "eslint src --ext .ts,.tsx"

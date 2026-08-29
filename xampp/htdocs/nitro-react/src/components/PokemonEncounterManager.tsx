@@ -1,7 +1,6 @@
 import { FC, useEffect, useRef, useState, MouseEvent } from 'react';
 import { usePokemonSocket } from '../hooks/usePokemonSocket';
 import { GetRoomSession, GetOwnRoomObject, GetSessionDataManager } from '../api'; // 🔌 Importada la sesión nativa de Nitro
-import { PokemonInventoryView } from './PokemonInventoryView'; // 🎒 Importamos tu nueva mochila premium corregida
 
 const POKEMON_DICTIONARY: Record<number, string> = {
     1: 'Bulbasaur',
@@ -10,63 +9,77 @@ const POKEMON_DICTIONARY: Record<number, string> = {
     25: 'Pikachu',
 };
 
-// 🎨 Paleta de colores oficial para los Badges de Tipo en Interfaz
 const TYPE_COLORS: Record<string, string> = {
-    'Planta': '#22c55e', // Verde
-    'Veneno': '#a855f7', // Morado
-    'Fuego': '#ef4444', // Rojo
-    'Agua': '#3b82f6', // Azul
-    'Eléctrico': '#eab308', // Amarillo
-    'Normal': '#78716c', // Gris
+    'Planta': '#2ecc71',
+    'Veneno': '#9b59b6',
+    'Fuego': '#e74c3c',
+    'Agua': '#3498db',
+    'Eléctrico': '#f1c40f',
+    'Normal': '#95a5a6',
 };
 
 export const PokemonEncounterManager: FC = () => {
-    // 👤 Sincronización dinámica del ID real del personaje conectado
     const realUserId = GetSessionDataManager().userId;
     const {
         wildEncounter, setWildEncounter,
         sendRoomEntry, sendStep,
         battleState, setBattleState,
         startPrivateBattle, sendBattleAttack,
-        sendLeaveBattle
+        sendThrowBall, // 🚀 Conectado nativamente para las capturas inline
+        sendUseHealingItem, // 💊 Conectado nativamente para las curaciones inline
+        sendLeaveBattle,
+        inventoryList, // 🎒 Cargamos tu inventario real completo
+        pokemonList    // 🟢 Cargamos tu equipo real activo
     } = usePokemonSocket(realUserId);
 
     const lastRoomIdRef = useRef<number | null>(null);
     const lastCoordsRef = useRef<{ x: number; y: number } | null>(null);
-
-    // 🚨 REFERENCIA DE CONGELACIÓN: Se congela si hay alerta O si ya estamos combatiendo
     const wildEncounterRef = useRef<any>(null);
 
-    // 🚨 CONTROL DE MENÚS: Cambia entre las vistas del panel de combate
+    // 🚨 CONTROL DE MENÚS INTERNOS
     const [showMoveMenu, setShowMoveMenu] = useState<boolean>(false);
-    const [showBagMenu, setShowBagMenu] = useState<boolean>(false); // 🎒 Control del modal premium de inventario
+    const [showBagMenu, setShowBagMenu] = useState<boolean>(false);
+    const [selectedBattleItem, setSelectedBattleItem] = useState<any>(null);
+    const [isHealingTargetMode, setIsHealingTargetMode] = useState<boolean>(false);
 
-    // 🗺️ ESTADOS DE DESPLAZAMIENTO: Para poder arrastrar la alerta libremente
     const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-    // 🔍 FUNCIÓN MODULAR DE SALIDA: Sincroniza y libera el hilo de pasos en cliente y servidor a la vez
+    // 🚨 REPARACIÓN: Cruza tu equipo real activo filtrado del PC (slots 1-6) con el HP actual de la arena viva
+    const activeTeam = pokemonList
+        .filter(p => p.slot >= 1 && p.slot <= 6)
+        .map(p => {
+            if (battleState?.player && p.id === battleState.player.id) {
+                return {
+                    ...p,
+                    hp: battleState.player.hp,
+                    maxHp: battleState.player.maxHp
+                };
+            }
+            return p;
+        });
+
     const handleExitBattle = () => {
-        sendLeaveBattle(); // Libera la propiedad ws.battle en el Node
-        setBattleState(null); // Desmonta el overlay de combate en React
+        sendLeaveBattle();
+        setBattleState(null);
     };
 
-    // Sincronizamos la referencia y centramos la ventana cada vez que aparezca un NUEVO bicho
     useEffect(() => {
         wildEncounterRef.current = wildEncounter || battleState;
 
         if (wildEncounter) {
-            // Inicializa centrado en la pantalla del usuario automáticamente
             setWindowPosition({
-                x: Math.max(10, window.innerWidth / 2 - 140),
-                y: Math.max(10, window.innerHeight * 0.25)
+                x: Math.max(10, window.innerWidth / 2 - 240),
+                y: Math.max(10, window.innerHeight * 0.15)
             });
         }
 
         if (!battleState) {
             setShowMoveMenu(false);
-            setShowBagMenu(false); // Reseteamos la mochila al limpiar combate
+            setShowBagMenu(false);
+            setSelectedBattleItem(null);
+            setIsHealingTargetMode(false);
         }
     }, [wildEncounter, battleState]);
 
@@ -76,16 +89,15 @@ export const PokemonEncounterManager: FC = () => {
         return `/swf/dcr/hof_furni/icons/pokeweebz${paddedId}_icon.png`;
     };
 
-    // Factoría de color dinámica para las barras de salud (HP Progress Bars)
     const getHpBarColor = (current: number, max: number) => {
         const pct = (current / max) * 100;
-        if (pct > 50) return '#22c55e'; // Verde
-        if (pct > 20) return '#eab308'; // Amarillo
-        return '#ef4444'; // Rojo
+        if (pct > 50) return '#2ecc71';
+        if (pct > 20) return '#f1c40f';
+        return '#e74c3c';
     };
 
     // =========================================================================
-    // 🚪 1. CONTROL DE ENTRADA A SALA
+    // 🚪 TRACERS Y SENSORS DE PASOS NATIVOS DE HABBO (INALTERADOS)
     // =========================================================================
     useEffect(() => {
         const roomCheck = setInterval(() => {
@@ -102,13 +114,9 @@ export const PokemonEncounterManager: FC = () => {
                 }
             } catch (e) { }
         }, 1000);
-
         return () => clearInterval(roomCheck);
     }, [sendRoomEntry]);
 
-    // =========================================================================
-    // 👣 2. RADAR DE PASOS NATIVO (Con sistema de bloqueo reactivo)
-    // =========================================================================
     useEffect(() => {
         const trackerLoop = setInterval(() => {
             try {
@@ -142,13 +150,9 @@ export const PokemonEncounterManager: FC = () => {
                 }
             } catch (err) { }
         }, 150);
-
         return () => clearInterval(trackerLoop);
     }, [sendStep]);
 
-    // =========================================================================
-    // 🖱️ LÓGICA DE ARRASTRE MOUSE
-    // =========================================================================
     const startDragging = (e: MouseEvent) => {
         setIsDragging(true);
         setDragOffset({ x: e.clientX - windowPosition.x, y: e.clientY - windowPosition.y });
@@ -172,13 +176,37 @@ export const PokemonEncounterManager: FC = () => {
     }, [isDragging, dragOffset]);
 
     const handleAttackClick = (index: number) => {
-        console.log(`[UI COMBATE] Pulsado ataque en índice numérico: ${index}`);
         sendBattleAttack(index);
         setShowMoveMenu(false);
     };
 
+    // ⚔️ CONTROL INTERNO DE OBJETOS SEGMENTADO
+    const handleSelectBagItem = (item: any) => {
+        setSelectedBattleItem(item);
+        // Validamos de forma robustecida y case-insensitive con el tipo de la BD
+        if (item.type?.toUpperCase() === 'BALL') {
+            setIsHealingTargetMode(false); // Es captura, no pide diana de equipo
+        } else {
+            setIsHealingTargetMode(true);  // Es medicina, pide diana
+        }
+    };
+
+    const handleExecuteItemAction = (targetId?: number) => {
+        if (!selectedBattleItem) return;
+
+        if (selectedBattleItem.type?.toUpperCase() === 'BALL') {
+            if (sendThrowBall) sendThrowBall(selectedBattleItem.id);
+        } else {
+            if (sendUseHealingItem && targetId) sendUseHealingItem(selectedBattleItem.id, targetId);
+        }
+
+        setSelectedBattleItem(null);
+        setIsHealingTargetMode(false);
+        setShowBagMenu(false);
+    };
+
     // =========================================================================
-    // 🎨 RENDER 1: PANTALLA PRINCIPAL DE COMBATE ACTIVO (MODO INTERFAZ)
+    // 🎨 RENDER 1: COMBATE ACTIVO CON ESTÉTICA HABBO NITRO PREMIUM
     // =========================================================================
     if (battleState) {
         const p = battleState.player;
@@ -186,160 +214,165 @@ export const PokemonEncounterManager: FC = () => {
 
         return (
             <div
-                className="position-fixed card p-3"
                 style={{
-                    zIndex: 999999, width: '480px', height: '360px',
-                    left: 'calc(50% - 240px)', top: '20%',
-                    backgroundColor: '#111827', borderColor: '#374151',
-                    boxShadow: '0 0 40px rgba(0, 0, 0, 0.85)',
-                    color: '#ffffff', fontFamily: 'monospace', userSelect: 'none'
+                    ...styles.nitroWindow,
+                    left: `${windowPosition.x}px`,
+                    top: `${windowPosition.y}px`,
+                    cursor: isDragging ? 'grabbing' : 'default'
                 }}
             >
-                {/* Cabecera del Estadio */}
-                <div className="text-center fw-bold text-info border-bottom pb-1 mb-3" style={{ fontSize: '11px' }}>
-                    {r.isShiny === 1 ? '✨ ' : '🏟️ '} ARENA DE COMBATE PRIVADA ({r.routeName})
+                {/* Cabecera Oficial Nitro Arrastrable */}
+                <div onMouseDown={startDragging} style={styles.nitroHeader}>
+                    <span>{r.isShiny === 1 ? '✨ ' : '🏟️ '} Arena de Combate - {r.routeName}</span>
+                    <span style={{ fontSize: '10px', color: '#bdc3c7' }}>Turno: {battleState.turn === 'player' ? 'Tuyo' : 'Rival'}</span>
                 </div>
 
-                {/* FILA SUPERIOR: DATOS DEL POKÉMON RIVAL */}
-                <div className="d-flex justify-content-between align-items-center bg-dark p-2 rounded mb-3 border border-secondary">
-                    <div style={{ width: '65%' }}>
-                        <div className="d-flex justify-content-between align-items-center fw-bold text-warning" style={{ fontSize: '12px' }}>
-                            {/* Nombre + Género Rival */}
-                            <span className="d-flex align-items-center gap-1">
-                                🔴 {r.name || getPokemonName(r.pokemonId)}
-                                {r.gender === 0 && <span style={{ color: '#38bdf8' }}>♂</span>}
-                                {r.gender === 1 && <span style={{ color: '#f472b6' }}>♀</span>}
-                            </span>
-                            {/* Badges de Tipo Rival */}
-                            <div className="d-flex gap-1 align-items-center mx-2">
-                                <span style={{ backgroundColor: TYPE_COLORS[r.type1] || '#4b5563', padding: '0px 4px', borderRadius: '2px', color: '#fff', fontSize: '7px', fontWeight: 'bold' }}>{r.type1}</span>
-                                {r.type2 && (
-                                    <span style={{ backgroundColor: TYPE_COLORS[r.type2] || '#4b5563', padding: '0px 4px', borderRadius: '2px', color: '#fff', fontSize: '7px', fontWeight: 'bold' }}>{r.type2}</span>
-                                )}
+                <div style={styles.nitroBody}>
+
+                    {/* 🔴 PANEL SUPERIOR: POKÉMON RIVAL */}
+                    <div style={styles.combatRow}>
+                        <div style={styles.metadataCard}>
+                            <div style={styles.metaHeaderRow}>
+                                <span style={styles.pokeNameText}>
+                                    🔴 {r.name || getPokemonName(r.pokemonId)}
+                                    {r.gender === 0 && <span style={{ color: '#3498db', marginLeft: '4px' }}>♂</span>}
+                                    {r.gender === 1 && <span style={{ color: '#e74c3c', marginLeft: '4px' }}>♀</span>}
+                                </span>
+                                <div style={styles.badgeGroup}>
+                                    <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[r.type1] || '#7f8c8d' }}>{r.type1}</span>
+                                    {r.type2 && <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[r.type2] || '#7f8c8d' }}>{r.type2}</span>}
+                                </div>
+                                <span style={styles.levelText}>Nv.{r.level}</span>
                             </div>
-                            <span>Nv.{r.level}</span>
+                            <div style={styles.hpBarContainer}>
+                                <div style={{ ...styles.hpBarFill, width: `${(r.hp / r.maxHp) * 100}%`, backgroundColor: getHpBarColor(r.hp, r.maxHp) }} />
+                            </div>
+                            <div style={styles.hpNumericText}>HP: {r.hp}/{r.maxHp}</div>
                         </div>
-                        <div className="progress mt-1" style={{ height: '8px', backgroundColor: '#1f2937' }}>
-                            <div
-                                className="progress-bar"
-                                style={{
-                                    width: `${(r.hp / r.maxHp) * 100}%`,
-                                    backgroundColor: getHpBarColor(r.hp, r.maxHp),
-                                    transition: 'width 0.3s ease'
-                                }}
-                            />
-                        </div>
-                        <div className="text-muted text-end" style={{ fontSize: '9px' }}>HP: {r.hp}/{r.maxHp}</div>
+                        <img src={getPokemonSprite(r.pokemonId)} alt="rival" style={styles.combatSprite} />
                     </div>
-                    <img src={getPokemonSprite(r.pokemonId)} alt="rival-sprite" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                </div>
 
-                {/* FILA CENTRAL: DATOS DE TU POKÉMON ACTIVO (SLOT 1) */}
-                <div className="d-flex justify-content-between align-items-center bg-dark p-2 rounded mb-3 border border-info" style={{ marginLeft: '40px' }}>
-                    <img src={getPokemonSprite(p.pokemonId)} alt="player-sprite" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                    <div style={{ width: '65%' }}>
-                        <div className="d-flex justify-content-between align-items-center fw-bold text-success" style={{ fontSize: '12px' }}>
-                            {/* Nombre + Género Jugador */}
-                            <span className="d-flex align-items-center gap-1">
-                                🟢 {p.name || getPokemonName(p.pokemonId)}
-                                {p.gender === 0 && <span style={{ color: '#38bdf8' }}>♂</span>}
-                                {p.gender === 1 && <span style={{ color: '#f472b6' }}>♀</span>}
-                            </span>
-                            {/* Badges de Tipo Jugador */}
-                            <div className="d-flex gap-1 align-items-center mx-2">
-                                <span style={{ backgroundColor: TYPE_COLORS[p.type1] || '#4b5563', padding: '0px 4px', borderRadius: '2px', color: '#fff', fontSize: '7px', fontWeight: 'bold' }}>{p.type1}</span>
-                                {p.type2 && (
-                                    <span style={{ backgroundColor: TYPE_COLORS[p.type2] || '#4b5563', padding: '0px 4px', borderRadius: '2px', color: '#fff', fontSize: '7px', fontWeight: 'bold' }}>{p.type2}</span>
-                                )}
+                    {/* 🟢 PANEL CENTRAL: TU POKÉMON ACTIVO */}
+                    <div style={{ ...styles.combatRow, flexDirection: 'row-reverse' }}>
+                        <div style={styles.metadataCard}>
+                            <div style={styles.metaHeaderRow}>
+                                <span style={styles.pokeNameText}>
+                                    🟢 {p.name || getPokemonName(p.pokemonId)}
+                                    {p.gender === 0 && <span style={{ color: '#3498db', marginLeft: '4px' }}>♂</span>}
+                                    {p.gender === 1 && <span style={{ color: '#e74c3c', marginLeft: '4px' }}>♀</span>}
+                                </span>
+                                <div style={styles.badgeGroup}>
+                                    <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[p.type1] || '#7f8c8d' }}>{p.type1}</span>
+                                    {p.type2 && <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[p.type2] || '#7f8c8d' }}>{p.type2}</span>}
+                                </div>
+                                <span style={styles.levelText}>Nv.{p.level}</span>
                             </div>
-                            <span>Nv.{p.level}</span>
+                            <div style={styles.hpBarContainer}>
+                                <div style={{ ...styles.hpBarFill, width: `${(p.hp / p.maxHp) * 100}%`, backgroundColor: getHpBarColor(p.hp, p.maxHp) }} />
+                            </div>
+                            <div style={styles.hpNumericText}>HP: {p.hp}/{p.maxHp}</div>
                         </div>
-                        <div className="progress mt-1" style={{ height: '8px', backgroundColor: '#1f2937' }}>
-                            <div
-                                className="progress-bar"
-                                style={{
-                                    width: `${(p.hp / p.maxHp) * 100}%`,
-                                    backgroundColor: getHpBarColor(p.hp, p.maxHp),
-                                    transition: 'width 0.3s ease'
-                                }}
-                            />
-                        </div>
-                        <div className="text-white text-end fw-bold" style={{ fontSize: '9px' }}>HP: {p.hp}/{p.maxHp}</div>
+                        <img src={getPokemonSprite(p.pokemonId)} alt="player" style={styles.combatSprite} />
                     </div>
-                </div>
 
-                {/* PIE DE ARENA SINCRETISTA */}
-                <div className="mt-auto border-top pt-2" style={{ height: '85px' }}>
-                    {battleState.ended ? (
-                        <div className="d-flex gap-2 h-100 align-items-center">
-                            <div className="bg-black p-2 rounded text-warning small border border-secondary flex-grow-1 h-100 overflow-y-auto" style={{ fontSize: '11px', lineHeight: '14px' }}>
-                                {battleState.log}
+                    {/* 🎒 CONTROLADOR INTEGRADO: INTERFAZ DE ACCIONES */}
+                    <div style={styles.actionFooterArea}>
+                        {battleState.ended ? (
+                            <div style={styles.embeddedFullRow}>
+                                <div style={styles.logTerminalBox}>{battleState.log}</div>
+                                <button onClick={handleExitBattle} style={{ ...styles.nitroButton, backgroundColor: '#3498db', color: '#fff', height: '100%', minWidth: '100px' }}>🚪 CERRAR</button>
                             </div>
-                            <button onClick={handleExitBattle} className="btn btn-info fw-bold h-100 px-4" style={{ fontSize: '13px', color: '#111827', minWidth: '120px' }}>
-                                🚪 CERRAR
-                            </button>
-                        </div>
-                    ) : showMoveMenu ? (
-                        <div className="d-flex gap-2 h-100 align-items-center">
-                            <div className="d-flex flex-wrap gap-2 flex-grow-1 h-100 align-content-center">
-                                {p.moves && p.moves.map((move: any, index: number) => (
-                                    <button
-                                        key={index}
-                                        disabled={battleState.turn !== 'player' || move.pp <= 0}
-                                        onClick={() => handleAttackClick(index)}
-                                        className="btn btn-sm btn-danger fw-bold text-start px-2 py-1"
-                                        style={{ width: 'calc(50% - 4px)', height: '36px', border: '1px solid #ef4444', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
-                                    >
-                                        <div style={{ fontSize: '11px', lineHeight: '12px' }}>{move.name}</div>
-                                        <div className="text-white-50 fw-normal" style={{ fontSize: '8.5px', marginTop: '1px' }}>PP {move.pp}/{move.maxPp}</div>
-                                    </button>
-                                ))}
+                        ) : showMoveMenu ? (
+                            <div style={styles.embeddedFullRow}>
+                                <div style={styles.gridMovesContainer}>
+                                    {p.moves && p.moves.map((move: any, index: number) => (
+                                        <button
+                                            key={index}
+                                            disabled={battleState.turn !== 'player' || move.pp <= 0}
+                                            onClick={() => handleAttackClick(index)}
+                                            style={styles.btnMoveCard}
+                                        >
+                                            <span style={{ fontWeight: 'bold' }}>{move.name}</span>
+                                            <span style={{ color: '#7f8c8d', fontSize: '9px' }}>PP {move.pp}/{move.maxPp}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <button onClick={() => setShowMoveMenu(false)} style={{ ...styles.nitroButton, height: '100%' }}>↩️ VOLVER</button>
                             </div>
-                            <button onClick={() => setShowMoveMenu(false)} className="btn btn-secondary fw-bold h-100 px-3" style={{ fontSize: '11px', minWidth: '90px' }}>
-                                ↩️ ATRÁS
-                            </button>
-                        </div>
-                    ) : (
-                        /* 🏟️ MENÚ GENERAL DE ACCIONES DE COMBATE ORIGINAL (MOCHILA VIEJA REEMPLAZADA) */
-                        <div className="d-flex gap-2 h-100 align-items-center">
-                            <div className="bg-black p-2 rounded text-success small border border-secondary overflow-y-auto h-100" style={{ width: '65%', fontSize: '11px', lineHeight: '14px', whiteSpace: 'pre-line' }}>
-                                {battleState.log}
-                            </div>
-                            <div className="d-flex flex-column gap-1 h-100 justify-content-center" style={{ width: '35%' }}>
-                                <button
-                                    onClick={() => setShowMoveMenu(true)}
-                                    disabled={battleState.turn !== 'player'}
-                                    className="btn btn-sm btn-danger fw-bold w-100 py-1"
-                                    style={{ fontSize: '11px', height: '24px' }}
-                                >
-                                    ⚔️ COMBATIR
-                                </button>
-                                <button
-                                    onClick={() => setShowBagMenu(true)}
-                                    disabled={battleState.turn !== 'player'}
-                                    className="btn btn-sm btn-warning fw-bold w-100 py-1"
-                                    style={{ fontSize: '11px', height: '24px', color: '#111827' }}
-                                >
-                                    🎒 MOCHILA
-                                </button>
-                                <button
-                                    onClick={handleExitBattle}
-                                    className="btn btn-sm btn-outline-warning py-0 text-white border-warning w-100"
-                                    style={{ fontSize: '10px', height: '20px' }}
-                                >
-                                    🏃 HUIR
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        ) : showBagMenu ? (
+                            /* 💼 MOCHILA INTEGRADA: Mapea tu inventario real de forma inline */
+                            <div style={styles.embeddedFullRow}>
+                                <div style={styles.inlineBagGrid}>
+                                    {inventoryList
+                                        .filter((item: any) => item.quantity > 0)
+                                        .map((item: any) => (
+                                            <button
+                                                key={item.id}
+                                                disabled={battleState.turn !== 'player'}
+                                                onClick={() => handleSelectBagItem(item)}
+                                                style={{
+                                                    ...styles.inlineItemCard,
+                                                    border: selectedBattleItem?.id === item.id ? '2px solid #e74c3c' : '1px solid #ccc'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                                                    {item.type?.toUpperCase() === 'BALL' ? '🔴' : '💊'} {item.name}
+                                                </span>
+                                                <span style={{ fontSize: '9px', color: '#7f8c8d' }}>x{item.quantity}</span>
+                                            </button>
+                                        ))}
+                                    {inventoryList.filter((item: any) => item.quantity > 0).length === 0 && (
+                                        <div style={styles.emptyTextItalic}>Mochila de combate vacía.</div>
+                                    )}
+                                </div>
 
-                {/* 🌟 VINCULACIÓN MAESTRA: Instanciamos el modal premium de la mochila en modo combate */}
-                <PokemonInventoryView
-                    isOpen={showBagMenu}
-                    onClose={() => setShowBagMenu(false)}
-                    isInBattle={true}
-                />
+                                {/* Panel Dinámico de Aplicación de Objetos */}
+                                <div style={styles.inlineDetailPanel}>
+                                    {selectedBattleItem ? (
+                                        isHealingTargetMode ? (
+                                            <div style={styles.miniTargetSelector}>
+                                                <span style={{ fontSize: '9px', fontWeight: 'bold', color: '#e74c3c', textAlign: 'center' }}>¿A quién curar?</span>
+                                                <div style={styles.miniTargetScroll}>
+                                                    {activeTeam.map((teamPkmn: any) => (
+                                                        <button
+                                                            key={teamPkmn.id}
+                                                            onClick={() => handleExecuteItemAction(teamPkmn.id)}
+                                                            style={styles.btnMiniTargetRow}
+                                                        >
+                                                            <span>Slot {teamPkmn.slot}: <b>{teamPkmn.name || getPokemonName(teamPkmn.pokemonId)}</b></span>
+                                                            <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>{teamPkmn.hp}/{teamPkmn.maxHp || teamPkmn.max_hp || 100}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleExecuteItemAction()}
+                                                style={{ ...styles.nitroButton, backgroundColor: '#e67e22', color: '#fff', fontSize: '10px', width: '100%', margin: 'auto 0' }}
+                                            >
+                                                🚀 Lanzar Ball
+                                            </button>
+                                        )
+                                    ) : (
+                                        <span style={{ color: '#7f8c8d', fontSize: '9px', textAlign: 'center', margin: 'auto' }}>Elige un objeto</span>
+                                    )}
+                                </div>
+                                <button onClick={() => { setShowBagMenu(false); setSelectedBattleItem(null); setIsHealingTargetMode(false); }} style={{ ...styles.nitroButton, height: '100%' }}>↩️ VOLVER</button>
+                            </div>
+                        ) : (
+                            /* 🏟️ INTERFAZ PRINCIPAL DE ACCIONES ORIGINAL (TEXTO LIMPIO EN HUIR) */
+                            <div style={styles.embeddedFullRow}>
+                                <div style={styles.logTerminalBox}>{battleState.log}</div>
+                                <div style={styles.verticalActionButtons}>
+                                    <button onClick={() => setShowMoveMenu(true)} disabled={battleState.turn !== 'player'} style={{ ...styles.nitroButton, backgroundColor: '#e74c3c', color: '#fff' }}>⚔️ ATACAR</button>
+                                    <button onClick={() => setShowBagMenu(true)} disabled={battleState.turn !== 'player'} style={{ ...styles.nitroButton, backgroundColor: '#f1c40f', color: '#333' }}>🎒 MOCHILA</button>
+                                    <button onClick={handleExitBattle} style={styles.nitroButton}>HUIR</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                </div>
             </div>
         );
     }
@@ -347,90 +380,268 @@ export const PokemonEncounterManager: FC = () => {
     if (!wildEncounter) return null;
 
     // =========================================================================
-    // 🎨 RENDER 2: ALERT BOX DE SPAWN SALVAJE CON TIPOS Y GÉNEROS
+    // 🎨 RENDER 2: ALERT BOX DE SPAWN SALVAJE (TEXTO LIMPIO EN HUIR)
     // =========================================================================
     return (
         <div
-            className="position-fixed card p-3 text-center"
             style={{
-                zIndex: 999999,
+                ...styles.nitroWindow,
                 width: '280px',
                 left: `${windowPosition.x}px`,
-                top: `${windowPosition.y}px`,
-                backgroundColor: '#111827',
-                borderColor: wildEncounter.isShiny === 1 ? '#eab308' : '#ca8a04',
-                boxShadow: wildEncounter.isShiny === 1 ? '0 0 30px rgba(234, 179, 8, 0.7)' : '0 0 25px rgba(202, 138, 4, 0.5)',
-                color: '#ffffff',
-                fontFamily: 'monospace',
-                userSelect: 'none'
+                top: `${windowPosition.y}px`
             }}
         >
-            <div
-                onMouseDown={startDragging}
-                className="fw-bold text-warning border-bottom pb-2 mb-2"
-                style={{
-                    fontSize: '12px',
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                    background: 'rgba(255,255,255,0.03)',
-                    borderRadius: '4px'
-                }}
-            >
-                {wildEncounter.isShiny === 1 ? '✨ ¡VARIOPINTO SALVAJE! ☰' : '💥 ¡POKÉMON SALVAJE! ☰'}
+            <div onMouseDown={startDragging} style={{ ...styles.nitroHeader, backgroundColor: wildEncounter.isShiny === 1 ? '#d4af37' : '#34495e' }}>
+                <span>{wildEncounter.isShiny === 1 ? '✨ ¡VARIOPINTO APARECIÓ!' : '💥 ¡AVISTAMIENTO POKÉMON!'}</span>
             </div>
-            <div className="text-muted small mb-1" style={{ fontSize: '10px' }}>{wildEncounter.routeName}</div>
+            <div style={{ ...styles.nitroBody, padding: '12px', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '10px', color: '#7f8c8d' }}>{wildEncounter.routeName}</span>
+                <img src={getPokemonSprite(wildEncounter.pokemonId)} alt="wild" style={{ width: '56px', height: '56px', objectFit: 'contain', imageRendering: 'pixelated' }} />
 
-            <img src={getPokemonSprite(wildEncounter.pokemonId)} alt="wild" className="mx-auto my-2" style={{ width: '56px', height: '56px', objectFit: 'contain' }} />
+                <h5 style={{ fontSize: '14px', fontWeight: 'bold', color: '#333', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {wildEncounter.name || getPokemonName(wildEncounter.pokemonId)}
+                    {wildEncounter.gender === 0 && <span style={{ color: '#3498db' }}>♂</span>}
+                    {wildEncounter.gender === 1 && <span style={{ color: '#e74c3c' }}>♀</span>}
+                </h5>
 
-            {/* Nombre + Icono de Género Dinámico */}
-            <h5 className="text-info fw-bold mb-0 d-flex align-items-center justify-content-center gap-1" style={{ fontSize: '15px' }}>
-                {wildEncounter.name || getPokemonName(wildEncounter.pokemonId)}
-                {wildEncounter.gender === 0 && <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>♂</span>}
-                {wildEncounter.gender === 1 && <span style={{ color: '#f472b6', fontWeight: 'bold' }}>♀</span>}
-            </h5>
-
-            {/* Medallas de Tipo Elementales de la Especie */}
-            <div className="d-flex justify-content-center gap-1 my-2">
-                <span style={{ backgroundColor: TYPE_COLORS[wildEncounter.type1] || '#4b5563', padding: '1px 6px', borderRadius: '2px', color: '#fff', fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>{wildEncounter.type1}</span>
-                {wildEncounter.type2 && (
-                    <span style={{ backgroundColor: TYPE_COLORS[wildEncounter.type2] || '#4b5563', padding: '1px 6px', borderRadius: '2px', color: '#fff', fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>{wildEncounter.type2}</span>
-                )}
-            </div>
-
-            <p className="text-secondary small mb-3" style={{ fontSize: '11px' }}>Nivel {wildEncounter.level}</p>
-
-            <div className="d-flex flex-column gap-2 justify-content-center">
-                <div className="d-flex gap-2 justify-content-center">
-                    <button
-                        className="btn btn-sm btn-warning fw-bold px-2"
-                        style={{ fontSize: '10.5px', color: '#111827', boxShadow: '0 0 10px rgba(234, 179, 8, 0.2)' }}
-                        onClick={() => {
-                            alert(`Activando framework cRPG en sala para luchar contra ${wildEncounter.name || getPokemonName(wildEncounter.pokemonId)}...`);
-                            setWildEncounter(null);
-                        }}
-                    >
-                        ⚔️ EN SALA
-                    </button>
-
-                    <button
-                        className="btn btn-sm btn-success fw-bold px-2"
-                        style={{ fontSize: '10.5px', boxShadow: '0 0 10px rgba(34, 197, 94, 0.2)' }}
-                        onClick={() => {
-                            startPrivateBattle(wildEncounter.pokemonId, wildEncounter.level, wildEncounter.routeName);
-                            setWildEncounter(null);
-                        }}
-                    >
-                        🛡️ EN INTERFAZ
-                    </button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                    <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[wildEncounter.type1] || '#7f8c8d' }}>{wildEncounter.type1}</span>
+                    {wildEncounter.type2 && <span style={{ ...styles.typeBadge, backgroundColor: TYPE_COLORS[wildEncounter.type2] || '#7f8c8d' }}>{wildEncounter.type2}</span>}
                 </div>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#e67e22' }}>Nivel {wildEncounter.level}</span>
 
-                <button
-                    className="btn btn-sm btn-outline-danger fw-bold mx-auto mt-1 px-4"
-                    style={{ fontSize: '11px', width: 'fit-content' }}
-                    onClick={() => setWildEncounter(null)}
-                >
-                    🏃 HUIR
-                </button>
+                <div style={{ display: 'flex', gap: '6px', width: '100%', marginTop: '6px' }}>
+                    <button onClick={() => { alert('Activando framework en sala...'); setWildEncounter(null); }} style={{ ...styles.nitroButton, flex: 1, backgroundColor: '#2ecc71', color: '#fff' }}>En Sala</button>
+                    <button onClick={() => { startPrivateBattle(wildEncounter.pokemonId, wildEncounter.level, wildEncounter.routeName); setWildEncounter(null); }} style={{ ...styles.nitroButton, flex: 1, backgroundColor: '#3498db', color: '#fff' }}>En Interfaz</button>
+                </div>
+                <button onClick={() => setWildEncounter(null)} style={{ ...styles.nitroButton, width: '100%', marginTop: '2px' }}>HUIR</button>
             </div>
         </div>
     );
+};
+
+// =========================================================================
+// 🎨 HOJA DE ESTILOS INLINE ADAPTADA AL DISEÑO DE INTERFAZ HABBO/NITRO
+// =========================================================================
+const styles = {
+    nitroWindow: {
+        position: 'fixed' as const,
+        backgroundColor: '#f1f1f1',
+        borderRadius: '6px',
+        border: '2px solid #4a4a4a',
+        width: '500px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+        fontFamily: 'Verdana, Arial, sans-serif',
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        userSelect: 'none' as const
+    },
+    nitroHeader: {
+        backgroundColor: '#34495e',
+        color: 'white',
+        padding: '8px 12px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontWeight: 'bold' as const,
+        fontSize: '12px',
+        borderBottom: '1px solid #2c3e50',
+        cursor: 'grab'
+    },
+    nitroBody: {
+        padding: '12px',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '10px'
+    },
+    combatRow: {
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        padding: '8px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '10px'
+    },
+    combatSprite: {
+        width: '52px',
+        height: '52px',
+        objectFit: 'contain' as const,
+        imageRendering: 'pixelated' as const
+    },
+    metadataCard: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '3px'
+    },
+    metaHeaderRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontSize: '11px'
+    },
+    pokeNameText: {
+        fontWeight: 'bold' as const,
+        color: '#333'
+    },
+    levelText: {
+        fontWeight: 'bold' as const,
+        color: '#e67e22'
+    },
+    badgeGroup: {
+        display: 'flex',
+        gap: '3px'
+    },
+    typeBadge: {
+        color: '#fff',
+        fontSize: '7px',
+        fontWeight: 'bold' as const,
+        padding: '1px 4px',
+        borderRadius: '2px',
+        textTransform: 'uppercase' as const
+    },
+    hpBarContainer: {
+        backgroundColor: '#e2e2e2',
+        border: '1px solid #000',
+        height: '8px',
+        borderRadius: '1px',
+        overflow: 'hidden' as const,
+        marginTop: '2px'
+    },
+    hpBarFill: {
+        height: '100%',
+        transition: 'width 0.3s ease'
+    },
+    hpNumericText: {
+        fontSize: '9px',
+        textAlign: 'right' as const,
+        color: '#555',
+        fontWeight: 'bold' as const
+    },
+    actionFooterArea: {
+        borderTop: '1px dashed #ccc',
+        paddingTop: '10px',
+        height: '105px',
+        display: 'flex'
+    },
+    embeddedFullRow: {
+        display: 'flex',
+        width: '100%',
+        gap: '8px',
+        height: '100%'
+    },
+    logTerminalBox: {
+        flex: 1,
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        padding: '6px',
+        fontSize: '10px',
+        fontFamily: 'monospace',
+        color: '#27ae60',
+        overflowY: 'auto' as const,
+        whiteSpace: 'pre-line' as const
+    },
+    verticalActionButtons: {
+        width: '32%',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '4px'
+    },
+    nitroButton: {
+        backgroundColor: '#e2e2e2',
+        border: '1px solid #7f8c8d',
+        borderRadius: '4px',
+        fontSize: '10px',
+        fontWeight: 'bold' as const,
+        cursor: 'pointer',
+        padding: '5px 10px',
+        textAlign: 'center' as const,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)'
+    },
+    gridMovesContainer: {
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '5px'
+    },
+    btnMoveCard: {
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center',
+        padding: '4px 8px',
+        textAlign: 'left' as const,
+        cursor: 'pointer',
+        fontSize: '11px'
+    },
+    inlineBagGrid: {
+        width: '55%',
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        padding: '4px',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '4px',
+        overflowY: 'auto' as const
+    },
+    inlineItemCard: {
+        backgroundColor: '#f9f9f9',
+        borderRadius: '3px',
+        padding: '4px 6px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        cursor: 'pointer'
+    },
+    inlineDetailPanel: {
+        width: '25%',
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        padding: '4px',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center'
+    },
+    miniTargetSelector: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        height: '100%',
+        gap: '2px'
+    },
+    miniTargetScroll: {
+        flex: 1,
+        overflowY: 'auto' as const,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '2px'
+    },
+    btnMiniTargetRow: {
+        border: '1px solid #eee',
+        backgroundColor: '#fdfdfd',
+        fontSize: '8px',
+        padding: '2px 4px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        cursor: 'pointer',
+        borderRadius: '2px',
+        alignItems: 'center'
+    },
+    emptyTextItalic: {
+        gridColumn: 'span 2',
+        fontSize: '10px',
+        color: '#999',
+        fontStyle: 'italic',
+        margin: 'auto'
+    }
 };

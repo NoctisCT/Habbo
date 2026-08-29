@@ -9,7 +9,7 @@
             @csrf
 
             <div class="relative w-full overflow-hidden text-black">
-                <input id="username-input" type="text" placeholder="Enter your username" name="username" class="relative py-2 rounded-md mt-3 w-full">
+                <input id="username-input" type="text" placeholder="Email o nombre de usuario" name="username" class="relative py-2 rounded-md mt-3 w-full">
 
                 <img id="user-avatar" class="absolute right-0 -top-4" src="{{ asset('/assets/images/dusk/ghost.png') }}" alt="">
             </div>

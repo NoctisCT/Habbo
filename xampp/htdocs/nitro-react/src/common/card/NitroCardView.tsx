@@ -10,52 +10,32 @@ export interface NitroCardViewProps extends DraggableWindowProps, ColumnProps
 
 export const NitroCardView: FC<NitroCardViewProps> = props =>
 {
-    const { theme = 'primary', uniqueKey = null, handleSelector = '.drag-handler', windowPosition = DraggableWindowPosition.CENTER, disableDrag = false, overflow = 'hidden', position = 'relative', gap = 0, classNames = [], ...rest } = props;
+    const { theme = 'holo-classic', uniqueKey = null, handleSelector = '.drag-handler', windowPosition = DraggableWindowPosition.CENTER, disableDrag = false, overflow = 'hidden', position = 'relative', gap = 0, classNames = [], ...rest } = props;
     const elementRef = useRef<HTMLDivElement>();
+
+    const resolvedTheme = useMemo(() =>
+    {
+        // Holo uses one coherent classic window language.
+        // Legacy Nitro components still request primary / primary-slim,
+        // so normalize both here instead of editing dozens of views.
+        if(!theme || theme === 'primary' || theme === 'primary-slim') return 'holo-classic';
+
+        return theme;
+    }, [ theme ]);
 
     const getClassNames = useMemo(() =>
     {
-        const newClassNames: string[] = [ 'nitro-card', 'rounded', 'shadow', ];
+        const newClassNames: string[] = [ 'nitro-card' ];
 
-        newClassNames.push(`theme-${ theme || 'primary' }`);
+        newClassNames.push(`theme-${ resolvedTheme }`);
 
         if(classNames.length) newClassNames.push(...classNames);
 
         return newClassNames;
-    }, [ theme, classNames ]);
-
-    /* useEffect(() =>
-    {
-        if(!uniqueKey || !elementRef || !elementRef.current) return;
-
-        const localStorage = GetLocalStorage<WindowSaveOptions>(`nitro.windows.${ uniqueKey }`);
-        const element = elementRef.current;
-
-        if(localStorage && localStorage.size)
-        {
-            //element.style.width = `${ localStorage.size.width }px`;
-            //element.style.height = `${ localStorage.size.height }px`;
-        }
-
-        const observer = new ResizeObserver(event =>
-        {
-            const newStorage = { ...GetLocalStorage<Partial<WindowSaveOptions>>(`nitro.windows.${ uniqueKey }`) } as WindowSaveOptions;
-
-            newStorage.size = { width: element.offsetWidth, height: element.offsetHeight };
-
-            SetLocalStorage<WindowSaveOptions>(`nitro.windows.${ uniqueKey }`, newStorage);
-        });
-
-        observer.observe(element);
-
-        return () =>
-        {
-            observer.disconnect();
-        }
-    }, [ uniqueKey ]); */
+    }, [ resolvedTheme, classNames ]);
 
     return (
-        <NitroCardContextProvider value={ { theme } }>
+        <NitroCardContextProvider value={ { theme: resolvedTheme } }>
             <DraggableWindow uniqueKey={ uniqueKey } handleSelector={ handleSelector } windowPosition={ windowPosition } disableDrag={ disableDrag }>
                 <Column innerRef={ elementRef } overflow={ overflow } position={ position } gap={ gap } classNames={ getClassNames } { ...rest } />
             </DraggableWindow>

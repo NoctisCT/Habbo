@@ -16,7 +16,7 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
     const { requests = [] } = useFriends();
     const { iconState = MessengerIconState.HIDDEN } = useMessenger();
     const isMod = GetSessionDataManager().isModerator;
-    
+
     useMessageEvent<PerkAllowancesMessageEvent>(PerkAllowancesMessageEvent, event =>
     {
         const parser = event.getParser();
@@ -31,7 +31,7 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
             const target = (document.body.getElementsByClassName(iconName)[0] as HTMLElement);
 
             if(!target) return;
-            
+
             image.className = 'toolbar-icon-animation';
             image.style.visibility = 'visible';
             image.style.left = (x + 'px');
@@ -68,41 +68,76 @@ export const ToolbarView: FC<{ isInRoom: boolean }> = props =>
             <TransitionAnimation type={ TransitionAnimationTypes.FADE_IN } inProp={ isMeExpanded } timeout={ 300 }>
                 <ToolbarMeView useGuideTool={ useGuideTool } unseenAchievementCount={ getTotalUnseen } setMeExpanded={ setMeExpanded } />
             </TransitionAnimation>
-            <Flex alignItems="center" justifyContent="between" gap={ 2 } className="nitro-toolbar py-1 px-3">
-                <Flex gap={ 2 } alignItems="center" className="widthsizemax">
-                    <Flex alignItems="center" gap={ 2 }>
-                        <Flex center pointer className={ 'navigation-item item-avatar ' + (isMeExpanded ? 'active ' : '') } onClick={ event => setMeExpanded(!isMeExpanded) }>
+
+            <Flex alignItems="center" justifyContent="between" className="nitro-toolbar holo-classic-toolbar">
+                <Flex alignItems="center" className="holo-toolbar-left">
+                    <Flex alignItems="center" className="holo-toolbar-main">
+                        <Flex center pointer className={ 'holo-avatar-button navigation-item item-avatar ' + (isMeExpanded ? 'active ' : '') } onClick={ event => setMeExpanded(!isMeExpanded) }>
                             <LayoutAvatarImageView figure={ userFigure } headOnly={ true } direction={ 2 } position="absolute" />
                             { (getTotalUnseen > 0) &&
                                 <LayoutItemCountView count={ getTotalUnseen } /> }
                         </Flex>
+
+                        <Flex center className="holo-toolbar-slot">
+                            { isInRoom &&
+                                <Base pointer className="navigation-item icon icon-habbo" onClick={ event => VisitDesktop() } /> }
+                            { !isInRoom &&
+                                <Base pointer className="navigation-item icon icon-house" onClick={ event => CreateLinkEvent('navigator/goto/home') } /> }
+                        </Flex>
+
+                        <Flex center className="holo-toolbar-slot">
+                            <Base pointer className="navigation-item icon icon-rooms" onClick={ event => CreateLinkEvent('navigator/toggle') } />
+                        </Flex>
+
+                        <Flex center className="holo-toolbar-slot">
+                            <Base pointer className="navigation-item icon icon-catalog" title="Subastas" onClick={ event => CreateLinkEvent('subastas/toggle') } />
+                        </Flex>
+
+                        { GetConfiguration('game.center.enabled') &&
+                            <Flex center className="holo-toolbar-slot">
+                                <Base pointer className="navigation-item icon icon-game" onClick={ event => CreateLinkEvent('games/toggle') } />
+                            </Flex> }
+
+                        <Flex center className="holo-toolbar-slot">
+                            <Base pointer className="navigation-item icon icon-catalog" onClick={ event => CreateLinkEvent('catalog/toggle') } />
+                        </Flex>
+
+                        <Flex center className="holo-toolbar-slot">
+                            <Base pointer className="navigation-item icon icon-inventory" onClick={ event => CreateLinkEvent('inventory/toggle') }>
+                                { (getFullCount > 0) &&
+                                    <LayoutItemCountView count={ getFullCount } /> }
+                            </Base>
+                        </Flex>
+
                         { isInRoom &&
-                            <Base pointer className="navigation-item icon icon-habbo click-box" onClick={ event => VisitDesktop() } /> }
-                        { !isInRoom &&
-                            <Base pointer className="navigation-item icon icon-house click-box" onClick={ event => CreateLinkEvent('navigator/goto/home') } /> }
-                        <Base pointer className="navigation-item icon icon-rooms click-box" onClick={ event => CreateLinkEvent('navigator/toggle') } />
-                        { GetConfiguration('game.center.enabled') && <Base pointer className="navigation-item icon icon-game click-box" onClick={ event => CreateLinkEvent('games/toggle') } /> }
-                        <Base pointer className="navigation-item icon icon-catalog click-box" onClick={ event => CreateLinkEvent('catalog/toggle') } />
-                        <Base pointer className="navigation-item icon icon-inventory click-box" onClick={ event => CreateLinkEvent('inventory/toggle') }>
-                            { (getFullCount > 0) &&
-                                <LayoutItemCountView count={ getFullCount } /> }
-                        </Base>
-                        { isInRoom &&
-                            <Base pointer className="navigation-item icon icon-camera click-box" onClick={ event => CreateLinkEvent('camera/toggle') } /> }
+                            <Flex center className="holo-toolbar-slot">
+                                <Base pointer className="navigation-item icon icon-camera" onClick={ event => CreateLinkEvent('camera/toggle') } />
+                            </Flex> }
+
                         { isMod &&
-                            <Base pointer className="navigation-item icon icon-modtools click-box" onClick={ event => CreateLinkEvent('mod-tools/toggle') } /> }
+                            <Flex center className="holo-toolbar-slot">
+                                <Base pointer className="navigation-item icon icon-modtools" onClick={ event => CreateLinkEvent('mod-tools/toggle') } />
+                            </Flex> }
                     </Flex>
+
                     <Flex alignItems="center" id="toolbar-chat-input-container" />
                 </Flex>
-                <Flex alignItems="center" gap={ 2 }>
-                    <Flex gap={ 2 }>
-                        <Base pointer className="navigation-item icon icon-friendall click-box friendsmovilgen" onClick={ event => CreateLinkEvent('friends/toggle') }>
-                            { (requests.length > 0) &&
-                                <LayoutItemCountView count={ requests.length } /> }
-                        </Base>
+
+                <Flex alignItems="center" className="holo-toolbar-right">
+                    <Flex alignItems="center" className="holo-toolbar-social">
+                        <Flex center className="holo-toolbar-slot holo-toolbar-slot-social">
+                            <Base pointer className="navigation-item icon icon-friendall friendsmovilgen" onClick={ event => CreateLinkEvent('friends/toggle') }>
+                                { (requests.length > 0) &&
+                                    <LayoutItemCountView count={ requests.length } /> }
+                            </Base>
+                        </Flex>
+
                         { ((iconState === MessengerIconState.SHOW) || (iconState === MessengerIconState.UNREAD)) &&
-                            <Base pointer className={ `navigation-item icon icon-message click-box mensajesmovilgen ${ (iconState === MessengerIconState.UNREAD) && 'is-unseen' }` } onClick={ event => OpenMessengerChat() } /> }
+                            <Flex center className="holo-toolbar-slot holo-toolbar-slot-social">
+                                <Base pointer className={ `navigation-item icon icon-message mensajesmovilgen ${ (iconState === MessengerIconState.UNREAD) && 'is-unseen' }` } onClick={ event => OpenMessengerChat() } />
+                            </Flex> }
                     </Flex>
+
                     <Base id="toolbar-friend-bar-container" className="d-none d-lg-block" />
                 </Flex>
             </Flex>

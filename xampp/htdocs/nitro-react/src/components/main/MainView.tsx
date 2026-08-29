@@ -4,6 +4,7 @@ import { AddEventLinkTracker, GetCommunication, RemoveLinkEventTracker } from '.
 import { Base, TransitionAnimation, TransitionAnimationTypes } from '../../common';
 import { useRoomSessionManagerEvent } from '../../hooks';
 import { AchievementsView } from '../achievements/AchievementsView';
+import { SubastasView } from '../subastas/SubastasView';
 import { AvatarEditorView } from '../avatar-editor/AvatarEditorView';
 import { CameraWidgetView } from '../camera/CameraWidgetView';
 import { CampaignView } from '../campaign/CampaignView';
@@ -29,7 +30,6 @@ import { UserProfileView } from '../user-profile/UserProfileView';
 import { UserSettingsView } from '../user-settings/UserSettingsView';
 import { WiredView } from '../wired/WiredView';
 import { YoutubeTvView } from '../youtube-tv/YoutubeTvView';
-import { CombatMenuView } from '../combat/CombatMenuView';
 
 // 🚀 INYECCIÓN DE TU PC DE POKÉMON SALVAJE Y ELEMENTOS MÉDICOS
 import { PokemonPCView } from '../PokemonPCView';
@@ -103,6 +103,7 @@ export const MainView: FC<{}> = props => {
             <WiredView />
             <AvatarEditorView />
             <AchievementsView />
+ <SubastasView />
             <NavigatorView />
             <NitrobubbleHiddenView />
             <InventoryView />
@@ -121,7 +122,6 @@ export const MainView: FC<{}> = props => {
             <GameCenterView />
             <FloorplanEditorView />
             <YoutubeTvView />
-            <CombatMenuView />
 
             {/* Renderizado directo en el DOM por encima de la interfaz nativa */}
             <PokemonPCView />

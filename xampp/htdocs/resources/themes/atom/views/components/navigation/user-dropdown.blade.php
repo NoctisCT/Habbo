@@ -20,6 +20,10 @@
         class="block px-4 py-2 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">
         {{ __('User settings') }}
     </a>
+    <a href="{{ route('character-select') }}"
+        class="dropdown-item dark:text-gray-200 dark:hover:bg-gray-700">
+        Personajes
+    </a>
 
     @auth
         <a href="{{ route('logout') }}"

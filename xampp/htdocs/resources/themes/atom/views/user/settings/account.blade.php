@@ -28,7 +28,7 @@
                         </x-slot:info>
                     </x-form.label>
 
-                    <x-form.input name="mail" type="email" value="{{ $user->mail }}" :autofocus="true" />
+                    <x-form.input name="mail" type="email" value="{{ $account->email }}" :autofocus="true" />
                 </div>
 
                 @if ($user->settings?->allow_name_change)

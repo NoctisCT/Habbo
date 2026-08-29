@@ -97,6 +97,15 @@ const useChatWidgetState = () =>
 
     useRoomSessionManagerEvent<RoomSessionChatEvent>(RoomSessionChatEvent.CHAT_EVENT, event =>
     {
+        /*
+         * AvatarSync invisible emotion packet.
+         *
+         * El renderer ya ha aplicado el gesture facial antes
+         * de llegar a este widget. No mostramos el mensaje
+         * U+200B usado internamente para sincronizar la cara.
+         */
+        if(event.message === '\u200B') return;
+
 		const roomObject = GetRoomEngine().getRoomObject(roomSession.roomId, event.objectId, RoomObjectCategory.UNIT);
         const bubbleLocation = roomObject ? GetRoomObjectScreenLocation(roomSession.roomId, roomObject?.id, RoomObjectCategory.UNIT) : new NitroPoint();
         const userData = roomObject ? roomSession.userDataManager.getUserDataByIndex(event.objectId) : new RoomUserData(-1);

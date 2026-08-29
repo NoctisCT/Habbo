@@ -21,12 +21,12 @@
                     <div>
                         <div class="flex flex-col gap-y-2">
                             <x-form.label for="username">
-                                {{ __('Username') }}
+                                Email
                             </x-form.label>
                         </div>
 
                         <x-form.input error-bag="register" name="username" type="text" value="{{ old('username') }}"
-                            placeholder="{{ __('Username') }}" :autofocus="true" />
+                            placeholder="Email o nombre de usuario" :autofocus="true" />
                     </div>
 
                     <div class="mt-4">
