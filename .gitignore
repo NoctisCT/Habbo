@@ -47,3 +47,8 @@ Emulator/logging/debug.txt
 Emulator/CreditBridge/classes/
 avatar-sync-mvp/src/main/java/com/neah/avatarsync/*.bak*
 avatar-sync-mvp/src/main/java/com/neah/avatarsync/*.STABLE-*
+**/target/
+*.class
+*.bak-*
+*.backup-*
+*.roto-*
