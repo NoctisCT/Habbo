@@ -1,6 +1,7 @@
 import { ConfigurationEvent, GetAssetManager, HabboWebTools, LegacyExternalInterface, Nitro, NitroCommunicationDemoEvent, NitroConfiguration, NitroEvent, NitroLocalizationEvent, NitroVersion, RoomEngineEvent } from '@nitrots/nitro-renderer';
 import { FC, useCallback, useEffect, useState } from 'react';
 import { GetCommunication, GetConfiguration, GetNitroInstance, GetUIVersion } from './api';
+import { InstallGridNitroAdapter } from './api/rpg/grid';
 import { Base, TransitionAnimation, TransitionAnimationTypes } from './common';
 import { LoadingView } from './components/loading/LoadingView';
 import { MainView } from './components/main/MainView';
@@ -72,6 +73,8 @@ export const App: FC<{}> = props =>
                 HabboWebTools.send(-1, 'client.init.handshake.fail');
                 return;
             case RoomEngineEvent.ENGINE_INITIALIZED:
+                InstallGridNitroAdapter();
+
                 setPercent(prevValue => (prevValue + 20));
 
                 setTimeout(() => setIsReady(true), 300);
@@ -99,6 +102,7 @@ export const App: FC<{}> = props =>
             }
         }
     }, []);
+
 
     useMainEvent(Nitro.WEBGL_UNAVAILABLE, handler);
     useMainEvent(Nitro.WEBGL_CONTEXT_LOST, handler);

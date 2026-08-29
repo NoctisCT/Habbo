@@ -1,9 +1,11 @@
 import { Renderer, RenderTexture, Resource, Texture } from '@pixi/core';
+import { Graphics } from '@pixi/graphics';
 import { Matrix, Point } from '@pixi/math';
 import { Sprite } from '@pixi/sprite';
 import { IRoomGeometry, IRoomPlane, IVector3D, Vector3d } from '../../../../../api';
 import { PixiApplicationProxy, PlaneTextureCache } from '../../../../../pixi-proxy';
 import { ColorConverter } from '../../../../../room';
+import { GridEngine } from '../../../../rpg/grid';
 import { PlaneMaskManager } from './mask';
 import { PlaneDrawingData } from './PlaneDrawingData';
 import { IPlaneRasterizer } from './rasterizer';
@@ -61,6 +63,7 @@ export class RoomPlane implements IRoomPlane
     private _width: number = 0;
     private _height: number = 0;
     private _canBeVisible: boolean;
+    private _gridRevision: number;
 
     constructor(textureCache: PlaneTextureCache, origin: IVector3D, location: IVector3D, leftSide: IVector3D, rightSide: IVector3D, type: number, usesMask: boolean, secondaryNormals: IVector3D[], randomSeed: number, textureOffsetX: number = 0, textureOffsetY: number = 0, textureMaxX: number = 0, textureMaxY: number = 0)
     {
@@ -114,6 +117,7 @@ export class RoomPlane implements IRoomPlane
         this._color = 0;
         this._rasterizer = null;
         this._canBeVisible = true;
+        this._gridRevision = -1;
         this._cornerA = new Vector3d();
         this._cornerB = new Vector3d();
         this._cornerC = new Vector3d();
@@ -289,6 +293,8 @@ export class RoomPlane implements IRoomPlane
     private needsNewTexture(k: IRoomGeometry, _arg_2: number): boolean
     {
         if(!k) return false;
+
+        if((this._type === RoomPlane.TYPE_FLOOR) && (this._gridRevision !== GridEngine.revision)) return true;
 
         const planeBitmap = this._activeTexture;
 
@@ -565,6 +571,8 @@ export class RoomPlane implements IRoomPlane
             if(texture)
             {
                 this.renderTexture(geometry, texture);
+                this.renderGridOverlay();
+                this._gridRevision = GridEngine.revision;
             }
             else
             {
@@ -658,6 +666,113 @@ export class RoomPlane implements IRoomPlane
         this.draw(_arg_2, this.getMatrixForDimensions(_arg_2.width, _arg_2.height));
     }
 
+    private renderGridOverlay(): void
+    {
+        if(!GridEngine.enabled || (this._type !== RoomPlane.TYPE_FLOOR) || !this._bitmapData || !this._normal) return;
+
+        // Los laterales del grosor del suelo tambien son TYPE_FLOOR. Solo dibujamos superficies transitables.
+        if(Math.abs(this._normal.z) < 0.001) return;
+
+        const graphics = new Graphics();
+
+        for(const tile of GridEngine.tiles)
+        {
+            this.drawGridTile(graphics, tile.x, tile.y, tile.kind);
+        }
+
+        const style = GridEngine.style;
+
+        graphics.lineStyle(style.lineWidth, style.lineColor, style.lineAlpha, 0.5);
+
+        // En Habbo la coordenada entera es el centro de la baldosa; sus bordes estan en n +/- 0.5.
+        this.drawGridBoundaries(graphics, this._location, this._leftSide, this._cornerA, this._cornerD, this._cornerB, this._cornerC);
+        this.drawGridBoundaries(graphics, this._location, this._rightSide, this._cornerA, this._cornerB, this._cornerD, this._cornerC);
+
+        this._textureCache.writeToRenderTexture(graphics, this._bitmapData, false);
+        graphics.destroy();
+    }
+
+    private drawGridTile(graphics: Graphics, tileX: number, tileY: number, kind: import('../../../../rpg/grid').GridTileKind): void
+    {
+        const p1 = this.getGridPlanePoint(tileX - 0.5, tileY - 0.5);
+        const p2 = this.getGridPlanePoint(tileX + 0.5, tileY - 0.5);
+        const p3 = this.getGridPlanePoint(tileX + 0.5, tileY + 0.5);
+        const p4 = this.getGridPlanePoint(tileX - 0.5, tileY + 0.5);
+
+        if(!p1 || !p2 || !p3 || !p4) return;
+
+        const style = GridEngine.getTileStyle(kind);
+
+        graphics.lineStyle(style.lineWidth, style.lineColor, style.lineAlpha, 0.5);
+        graphics.beginFill(style.fillColor, style.fillAlpha);
+        graphics.moveTo(p1.x, p1.y);
+        graphics.lineTo(p2.x, p2.y);
+        graphics.lineTo(p3.x, p3.y);
+        graphics.lineTo(p4.x, p4.y);
+        graphics.closePath();
+        graphics.endFill();
+    }
+
+    private getGridPlanePoint(worldX: number, worldY: number): Point
+    {
+        const leftX = this._leftSide.x;
+        const leftY = this._leftSide.y;
+        const rightX = this._rightSide.x;
+        const rightY = this._rightSide.y;
+        const determinant = ((leftX * rightY) - (leftY * rightX));
+        const epsilon = 0.0001;
+
+        if(Math.abs(determinant) < epsilon) return null;
+
+        const deltaX = (worldX - this._location.x);
+        const deltaY = (worldY - this._location.y);
+        const u = (((deltaX * rightY) - (deltaY * rightX)) / determinant);
+        const v = (((leftX * deltaY) - (leftY * deltaX)) / determinant);
+
+        if((u < -epsilon) || (u > (1 + epsilon)) || (v < -epsilon) || (v > (1 + epsilon))) return null;
+
+        const clampedU = Math.max(0, Math.min(1, u));
+        const clampedV = Math.max(0, Math.min(1, v));
+
+        return new Point(
+            this._cornerA.x + ((this._cornerD.x - this._cornerA.x) * clampedU) + ((this._cornerB.x - this._cornerA.x) * clampedV),
+            this._cornerA.y + ((this._cornerD.y - this._cornerA.y) * clampedU) + ((this._cornerB.y - this._cornerA.y) * clampedV)
+        );
+    }
+
+    private drawGridBoundaries(graphics: Graphics, location: IVector3D, side: IVector3D, a0: IVector3D, a1: IVector3D, b0: IVector3D, b1: IVector3D): void
+    {
+        const useX = (Math.abs(side.x) >= Math.abs(side.y));
+        const origin = useX ? location.x : location.y;
+        const delta = useX ? side.x : side.y;
+        const epsilon = 0.0001;
+
+        if(Math.abs(delta) < epsilon) return;
+
+        const end = origin + delta;
+        const min = Math.min(origin, end);
+        const max = Math.max(origin, end);
+        let boundary = Math.ceil((min - 0.5) - epsilon) + 0.5;
+
+        while(boundary <= (max + epsilon))
+        {
+            const rawT = (boundary - origin) / delta;
+
+            if((rawT >= -epsilon) && (rawT <= (1 + epsilon)))
+            {
+                const t = Math.max(0, Math.min(1, rawT));
+                const x0 = a0.x + ((a1.x - a0.x) * t);
+                const y0 = a0.y + ((a1.y - a0.y) * t);
+                const x1 = b0.x + ((b1.x - b0.x) * t);
+                const y1 = b0.y + ((b1.y - b0.y) * t);
+
+                graphics.moveTo(x0, y0);
+                graphics.lineTo(x1, y1);
+            }
+
+            boundary++;
+        }
+    }
     private draw(k: RenderTexture, matrix: Matrix): void
     {
         //k.baseTexture.mipmap = MIPMAP_MODES.OFF;

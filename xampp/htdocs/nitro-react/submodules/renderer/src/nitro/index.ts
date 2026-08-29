@@ -11,3 +11,4 @@ export * from './session';
 export * from './sound';
 export * from './utils';
 export * from './window';
+export * from './rpg';
