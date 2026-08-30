@@ -486,4 +486,6 @@ export class OutgoingHeader
     public static VERIFICAR_PATRON_INVENTARIO = 5032;
     public static CONFIGURAR_PATRON_INVENTARIO = 5034;
     public static CERRAR_SESION_INVENTARIO = 5036;
+    public static GET_HOLO_GRID_WALKABILITY = 5040;
+    public static RPG_ENGINE_COMMAND = 5050;
 }

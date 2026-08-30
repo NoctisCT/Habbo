@@ -1,4 +1,5 @@
 import {
+    GetHoloGridWalkabilityComposer,
     GridEngine,
     GridGeometry,
     GridMap,
@@ -8,11 +9,16 @@ import {
     GridMovementRules,
     GridMovementStep,
     GridPoint,
+    HoloGridFurnitureWalkability,
+    HoloGridWalkabilityEvent,
     RoomMapData,
     RoomObjectCategory,
+    RoomUnitWalkComposer,
     RoomObjectVariable
 } from '@nitrots/nitro-renderer';
+import { GetCommunication } from '../../nitro/GetCommunication';
 import { GetNitroInstance } from '../../nitro/GetNitroInstance';
+import { SendMessageComposer } from '../../nitro/SendMessageComposer';
 import { GetOwnRoomObject } from '../../nitro/room/GetOwnRoomObject';
 import { GetRoomEngine } from '../../nitro/room/GetRoomEngine';
 
@@ -27,9 +33,41 @@ interface FollowResult extends OwnGridPosition
     movementCount: number;
     following: boolean;
     mapReady: boolean;
+    serverWalkabilityReady: boolean;
+}
+
+interface MovementSessionSnapshot
+{
+    active: boolean;
+
+    // Canonical runtime resource names.
+    maximum: number;
+    current: number;
+    consumed: number;
+
+    // Backwards-compatible aliases used by existing debug/tests.
+    total: number;
+    remaining: number;
+    spent: number;
+
+    selected: GridPoint | null;
+    selectedCost: number | null;
+    moving: boolean;
+    stepsSpent: number;
+    lastStepCost: number;
+}
+
+interface MovementSelectionResult extends MovementSessionSnapshot
+{
+    valid: boolean;
+    reason: 'ok' | 'movement-inactive' | 'moving' | 'same-tile' | 'unreachable' | 'over-budget' | 'no-selection';
+    target: GridPoint | null;
+    path: GridPoint[];
+    pathCost: number | null;
 }
 
 type FurnitureRule = 'respect-walkability' | 'block-all' | 'ignore';
+type WalkabilitySource = 'server' | 'client-fallback' | 'unknown';
 
 interface HumanMovementRuleUpdate
 {
@@ -39,6 +77,8 @@ interface HumanMovementRuleUpdate
     passBetweenCorners?: boolean;
     furniture?: FurnitureRule;
     unknownFurnitureBlocks?: boolean;
+    maxStepHeight?: number;
+    allowFalling?: boolean;
 }
 
 interface HumanMovementRuleSnapshot
@@ -49,6 +89,8 @@ interface HumanMovementRuleSnapshot
     passBetweenCorners: boolean;
     furniture: FurnitureRule;
     unknownFurnitureBlocks: boolean;
+    maxStepHeight: number;
+    allowFalling: boolean;
 }
 
 interface RoomFurnitureInfo
@@ -60,6 +102,10 @@ interface RoomFurnitureInfo
     sizeX: number;
     sizeY: number;
     canStandOn: boolean | null;
+    allowWalk: boolean | null;
+    allowSit: boolean | null;
+    allowLay: boolean | null;
+    walkabilitySource: WalkabilitySource;
     blocks: boolean;
 }
 
@@ -71,6 +117,10 @@ interface RoomGridSummary extends GridMapSummary
     walkableFurnitureObjects: number;
     blockingFurnitureObjects: number;
     unknownFurnitureObjects: number;
+    authoritativeFurnitureObjects: number;
+    authoritativeHeightTiles: number;
+    serverWalkabilityReady: boolean;
+    serverHeightReady: boolean;
     rules: HumanMovementRuleSnapshot;
 }
 
@@ -85,11 +135,21 @@ interface HoloGridDebugApi
     stopFollow: () => void;
     following: () => boolean;
     budget: (budget: number) => FollowResult;
+    beginMovement: (points?: number) => MovementSessionSnapshot;
+    updateMovementTotal: (points: number) => MovementSessionSnapshot;
+    resetMovement: (points?: number) => MovementSessionSnapshot;
+    endMovement: () => MovementSessionSnapshot;
+    movementSession: () => MovementSessionSnapshot;
+    choose: (x: number, y: number) => MovementSelectionResult;
+    confirmMove: () => MovementSelectionResult;
+    cancelMove: () => MovementSessionSnapshot;
     select: (x: number, y: number) => void;
     movement: (tiles: GridPoint[]) => void;
     targets: (tiles: GridPoint[]) => void;
     target: (x: number, y: number) => void;
     blocked: (tiles: GridPoint[]) => void;
+    encounterBlocked: (tiles: GridPoint[]) => void;
+    rejoinMarker: (tile?: GridPoint | null) => void;
     pathLayer: (tiles: GridPoint[]) => void;
     state: () => unknown;
     rules: (update?: HumanMovementRuleUpdate) => HumanMovementRuleSnapshot;
@@ -99,6 +159,9 @@ interface HoloGridDebugApi
     map: () => RoomGridSummary;
     tile: (x: number, y: number) => GridMapCell;
     furniture: () => RoomFurnitureInfo[];
+    height: (x: number, y: number) => number;
+    step: (ax: number, ay: number, bx: number, by: number) => unknown;
+    refreshWalkability: () => void;
     showObstacles: (show?: boolean) => RoomGridSummary;
     furnitureBlocking: (enabled?: boolean) => RoomGridSummary;
     reachable: (budget?: number) => GridPoint[];
@@ -114,6 +177,20 @@ let movementBudget = 4;
 let lastFollowKey: string = null;
 let installed = false;
 
+let movementSessionActive = false;
+let movementTotal = 4;
+let movementRemaining = 4;
+let movementSpent = 0;
+let movementSelected: GridPoint = null;
+let movementSelectedPath: GridPoint[] = [];
+let movementSelectedCost: number = null;
+let movementInFlight = false;
+let movementQueuedPath: GridPoint[] = [];
+let movementStepsSpent = 0;
+let movementLastStepCost = 0;
+let movementCommandAt = 0;
+let lastTrackedPosition: GridPoint = null;
+
 let currentMap: GridMap = null;
 let currentRoomId = -1;
 let lastMapScanAt = 0;
@@ -124,7 +201,16 @@ let lastFurnitureInfo: RoomFurnitureInfo[] = [];
 let showRoomObstacles = false;
 let furnitureRule: FurnitureRule = 'respect-walkability';
 let unknownFurnitureBlocks = true;
+let maxStepHeight = 1.1;
+let allowFalling = true;
 let manualBlocked = new Map<string, GridPoint>();
+let encounterBlockedTiles = new Map<string, GridPoint>();
+
+let walkabilityRoomId = -1;
+let walkabilitySnapshotAt = 0;
+let lastWalkabilityRequestAt = 0;
+let serverWalkability = new Map<number, HoloGridFurnitureWalkability>();
+let serverTileHeights = new Map<string, number>();
 
 function normalizeBudget(value: number): number
 {
@@ -132,7 +218,61 @@ function normalizeBudget(value: number): number
 
     if(!Number.isFinite(parsed)) return 0;
 
-    return Math.max(0, Math.min(100, parsed));
+    return Math.max(0, Math.min(100000, parsed));
+}
+
+function activeMovementBudget(): number
+{
+    return movementSessionActive ? movementRemaining : movementBudget;
+}
+
+function movementSnapshot(): MovementSessionSnapshot
+{
+    return {
+        active: movementSessionActive,
+
+        maximum: movementTotal,
+        current: movementRemaining,
+        consumed: movementSpent,
+
+        total: movementTotal,
+        remaining: movementRemaining,
+        spent: movementSpent,
+
+        selected: movementSelected ? { ...movementSelected } : null,
+        selectedCost: movementSelectedCost,
+        moving: movementInFlight,
+        stepsSpent: movementStepsSpent,
+        lastStepCost: movementLastStepCost
+    };
+}
+
+function movementSelectionResult(
+    valid: boolean,
+    reason: MovementSelectionResult['reason'],
+    target: GridPoint = movementSelected,
+    path: GridPoint[] = movementSelectedPath,
+    pathCost: number = movementSelectedCost): MovementSelectionResult
+{
+    return {
+        ...movementSnapshot(),
+        valid,
+        reason,
+        target: target ? { ...target } : null,
+        path: (path ?? []).map(point => ({ ...point })),
+        pathCost
+    };
+}
+
+function clearMovementSelection(): void
+{
+    movementSelected = null;
+    movementSelectedPath = [];
+    movementSelectedCost = null;
+    movementQueuedPath = [];
+    movementInFlight = false;
+    movementCommandAt = 0;
+    lastFollowKey = null;
 }
 
 function getOwnGridPosition(): OwnGridPosition
@@ -162,7 +302,9 @@ function getHumanRules(): HumanMovementRuleSnapshot
         diagonalCost: rules.diagonalCost,
         passBetweenCorners: rules.allowCornerCutting,
         furniture: furnitureRule,
-        unknownFurnitureBlocks
+        unknownFurnitureBlocks,
+        maxStepHeight,
+        allowFalling
     };
 }
 
@@ -206,6 +348,16 @@ function configureHumanRules(update: HumanMovementRuleUpdate = null): HumanMovem
         unknownFurnitureBlocks = update.unknownFurnitureBlocks;
     }
 
+    if(Number.isFinite(update.maxStepHeight))
+    {
+        maxStepHeight = Math.max(0, update.maxStepHeight);
+    }
+
+    if(typeof update.allowFalling === 'boolean')
+    {
+        allowFalling = update.allowFalling;
+    }
+
     lastFollowKey = null;
     scanRoomMap(true);
     applyFollow(true);
@@ -229,9 +381,33 @@ function setManualBlocked(tiles: GridPoint[]): void
     refreshBlockedLayer();
 }
 
+function setEncounterBlocked(tiles: GridPoint[]): void
+{
+    encounterBlockedTiles = new Map();
+
+    for(const tile of (tiles ?? []))
+    {
+        if(!tile || !Number.isFinite(tile.x) || !Number.isFinite(tile.y)) continue;
+
+        const normalized = GridGeometry.normalize(tile);
+
+        encounterBlockedTiles.set(GridGeometry.key(normalized), normalized);
+    }
+
+    lastFollowKey = null;
+    refreshBlockedLayer();
+
+    if(trackerTimer !== null) applyFollow(true);
+}
+
 function isManuallyBlocked(point: GridPoint): boolean
 {
     return manualBlocked.has(GridGeometry.key(point));
+}
+
+function isEncounterBlocked(point: GridPoint): boolean
+{
+    return encounterBlockedTiles.has(GridGeometry.key(point));
 }
 
 function refreshBlockedLayer(): void
@@ -239,6 +415,11 @@ function refreshBlockedLayer(): void
     const blocked = new Map<string, GridPoint>();
 
     for(const point of manualBlocked.values())
+    {
+        blocked.set(GridGeometry.key(point), point);
+    }
+
+    for(const point of encounterBlockedTiles.values())
     {
         blocked.set(GridGeometry.key(point), point);
     }
@@ -256,6 +437,63 @@ function refreshBlockedLayer(): void
     });
 }
 
+function isServerWalkabilityReady(roomId: number): boolean
+{
+    return (roomId >= 0) &&
+        (walkabilityRoomId === roomId) &&
+        (walkabilitySnapshotAt > 0);
+}
+
+function requestServerWalkability(force: boolean = false): void
+{
+    const roomId = GetRoomEngine().activeRoomId;
+
+    if(roomId < 0) return;
+
+    const now = Date.now();
+
+    if(!force && ((now - lastWalkabilityRequestAt) < 750)) return;
+
+    lastWalkabilityRequestAt = now;
+
+    SendMessageComposer(new GetHoloGridWalkabilityComposer());
+}
+
+function onServerWalkability(event: HoloGridWalkabilityEvent): void
+{
+    const parser = event?.getParser();
+
+    if(!parser) return;
+
+    const next = new Map<number, HoloGridFurnitureWalkability>();
+
+    for(const item of parser.items)
+    {
+        next.set(item.itemId, item);
+    }
+
+    const nextHeights = new Map<string, number>();
+
+    for(const tile of parser.tiles)
+    {
+        nextHeights.set(GridGeometry.key(tile), tile.height);
+    }
+
+    walkabilityRoomId = parser.roomId;
+    walkabilitySnapshotAt = Date.now();
+    serverWalkability = next;
+    serverTileHeights = nextHeights;
+
+    mapRevision++;
+    lastFollowKey = null;
+
+    if(GetRoomEngine().activeRoomId === parser.roomId)
+    {
+        scanRoomMap(true);
+        applyFollow(true);
+    }
+}
+
 function makeSummary(
     roomId: number,
     map: GridMap,
@@ -263,7 +501,8 @@ function makeSummary(
     furnitureObjects: number,
     walkableFurnitureObjects: number,
     blockingFurnitureObjects: number,
-    unknownFurnitureObjects: number): RoomGridSummary
+    unknownFurnitureObjects: number,
+    authoritativeFurnitureObjects: number): RoomGridSummary
 {
     if(!map) return null;
 
@@ -275,6 +514,10 @@ function makeSummary(
         walkableFurnitureObjects,
         blockingFurnitureObjects,
         unknownFurnitureObjects,
+        authoritativeFurnitureObjects,
+        authoritativeHeightTiles: serverTileHeights.size,
+        serverWalkabilityReady: isServerWalkabilityReady(roomId),
+        serverHeightReady: isServerWalkabilityReady(roomId) && (serverTileHeights.size > 0),
         rules: getHumanRules()
     };
 }
@@ -307,7 +550,7 @@ function markRectangle(
     }
 }
 
-function furnitureBlocks(canStandOn: boolean | null): boolean
+function furnitureBlocks(allowWalk: boolean | null): boolean
 {
     switch(furnitureRule)
     {
@@ -317,9 +560,9 @@ function furnitureBlocks(canStandOn: boolean | null): boolean
             return true;
         case 'respect-walkability':
         default:
-            if(canStandOn === null) return unknownFurnitureBlocks;
+            if(allowWalk === null) return unknownFurnitureBlocks;
 
-            return !canStandOn;
+            return !allowWalk;
     }
 }
 
@@ -329,9 +572,27 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
     const roomId = engine.activeRoomId;
     const now = Date.now();
 
+    if(roomId !== currentRoomId)
+    {
+        currentMap = null;
+        currentRoomId = roomId;
+        lastMapSummary = null;
+        lastFurnitureInfo = [];
+        lastFollowKey = null;
+
+        if(walkabilityRoomId !== roomId)
+        {
+            walkabilityRoomId = -1;
+            walkabilitySnapshotAt = 0;
+            serverWalkability.clear();
+            serverTileHeights.clear();
+        }
+
+        requestServerWalkability(true);
+    }
+
     if(!force &&
         currentMap &&
-        (roomId === currentRoomId) &&
         ((now - lastMapScanAt) < 500))
     {
         return lastMapSummary;
@@ -342,7 +603,6 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
     if(!roomObject?.model)
     {
         currentMap = null;
-        currentRoomId = roomId;
         lastMapSummary = null;
         lastFurnitureInfo = [];
         lastMapScanAt = now;
@@ -355,7 +615,6 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
     if(!mapData?.tileMap?.length)
     {
         currentMap = null;
-        currentRoomId = roomId;
         lastMapSummary = null;
         lastFurnitureInfo = [];
         lastMapScanAt = now;
@@ -366,6 +625,7 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
     const width = Math.max(0, Math.trunc(mapData.width || mapData.tileMap[0]?.length || 0));
     const height = Math.max(0, Math.trunc(mapData.height || mapData.tileMap.length || 0));
     const nextMap = new GridMap(width, height);
+    const authoritativeHeightReady = isServerWalkabilityReady(roomId) && (serverTileHeights.size > 0);
 
     for(let y = 0; y < height; y++)
     {
@@ -375,11 +635,17 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
         {
             const rawHeight = row[x]?.height;
             const hasFloor = Number.isFinite(rawHeight) && (rawHeight >= 0);
+            const serverHeight = authoritativeHeightReady
+                ? serverTileHeights.get(GridGeometry.key({ x, y }))
+                : undefined;
+            const effectiveHeight = Number.isFinite(serverHeight)
+                ? serverHeight
+                : (hasFloor ? rawHeight : 0);
 
             nextMap.setCell(
                 x,
                 y,
-                hasFloor ? rawHeight : 0,
+                effectiveHeight,
                 !hasFloor
             );
         }
@@ -401,10 +667,12 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
 
     const sessionData = GetNitroInstance().sessionDataManager;
     const totalFurniture = engine.getTotalObjectsForManager(roomId, RoomObjectCategory.FLOOR);
+    const authoritativeReady = isServerWalkabilityReady(roomId);
 
     let walkableFurnitureObjects = 0;
     let blockingFurnitureObjects = 0;
     let unknownFurnitureObjects = 0;
+    let authoritativeFurnitureObjects = 0;
 
     const furnitureInfo: RoomFurnitureInfo[] = [];
 
@@ -418,13 +686,34 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
 
         if(!location) continue;
 
+        const serverEntry = authoritativeReady ? (serverWalkability.get(object.id) ?? null) : null;
         const furnitureData = sessionData?.getFloorItemDataByName(object.type) ?? null;
-        const canStandOn = furnitureData ? !!furnitureData.canStandOn : null;
 
-        if(canStandOn === true) walkableFurnitureObjects++;
-        else if(canStandOn === null) unknownFurnitureObjects++;
+        let allowWalk: boolean | null = null;
+        let allowSit: boolean | null = null;
+        let allowLay: boolean | null = null;
+        let source: WalkabilitySource = 'unknown';
 
-        const blocks = furnitureBlocks(canStandOn);
+        if(serverEntry)
+        {
+            allowWalk = serverEntry.allowWalk;
+            allowSit = serverEntry.allowSit;
+            allowLay = serverEntry.allowLay;
+            source = 'server';
+            authoritativeFurnitureObjects++;
+        }
+        else if(!authoritativeReady && furnitureData)
+        {
+            allowWalk = !!furnitureData.canStandOn;
+            allowSit = !!furnitureData.canSitOn;
+            allowLay = !!furnitureData.canLayOn;
+            source = 'client-fallback';
+        }
+
+        if(allowWalk === true) walkableFurnitureObjects++;
+        else if(allowWalk === null) unknownFurnitureObjects++;
+
+        const blocks = furnitureBlocks(allowWalk);
 
         if(blocks) blockingFurnitureObjects++;
 
@@ -473,13 +762,16 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
             y: Math.round(location.y),
             sizeX: Math.max(1, Math.round(sizeX)),
             sizeY: Math.max(1, Math.round(sizeY)),
-            canStandOn,
+            canStandOn: allowWalk,
+            allowWalk,
+            allowSit,
+            allowLay,
+            walkabilitySource: source,
             blocks
         });
     }
 
     currentMap = nextMap;
-    currentRoomId = roomId;
     lastMapScanAt = now;
     mapRevision++;
     lastFurnitureInfo = furnitureInfo;
@@ -490,7 +782,8 @@ function scanRoomMap(force: boolean = false): RoomGridSummary
         totalFurniture,
         walkableFurnitureObjects,
         blockingFurnitureObjects,
-        unknownFurnitureObjects
+        unknownFurnitureObjects,
+        authoritativeFurnitureObjects
     );
 
     refreshBlockedLayer();
@@ -511,6 +804,7 @@ function canOccupy(point: GridPoint): boolean
 
     if(!map) return false;
     if(isManuallyBlocked(point)) return false;
+    if(isEncounterBlocked(point)) return false;
 
     return map.isWalkable(point);
 }
@@ -521,6 +815,17 @@ function canStep(from: GridPoint, to: GridPoint, step: GridMovementStep): boolea
 
     if(!map || !step) return false;
     if(!canOccupy(to)) return false;
+
+    const fromHeight = map.heightAt(from);
+    const toHeight = map.heightAt(to);
+
+    if(!Number.isFinite(fromHeight) || !Number.isFinite(toHeight)) return false;
+
+    const deltaHeight = toHeight - fromHeight;
+    const epsilon = 0.0001;
+
+    if(deltaHeight > (maxStepHeight + epsilon)) return false;
+    if(!allowFalling && (deltaHeight < -(maxStepHeight + epsilon))) return false;
 
     const rules = movementPolicy.rules;
 
@@ -539,7 +844,9 @@ function canStep(from: GridPoint, to: GridPoint, step: GridMovementStep): boolea
             y: Math.trunc(from.y) + dy
         };
 
-        if(!canOccupy(sideA) || !canOccupy(sideB)) return false;
+        // Bloquea solo el "squeeze" entre DOS obstaculos.
+        // Un obstaculo aislado se puede rodear diagonalmente.
+        if(!canOccupy(sideA) && !canOccupy(sideB)) return false;
     }
 
     return true;
@@ -570,44 +877,454 @@ function applyFollow(force: boolean = false): FollowResult
 
     const map = ensureMap(false);
     const rules = movementPolicy.rules;
+    const budget = activeMovementBudget();
     const key = [
         position.x,
         position.y,
-        movementBudget,
+        budget,
+        movementSessionActive ? 1 : 0,
+        movementSpent,
+        movementSelected ? GridGeometry.key(movementSelected) : '-',
+        movementSelectedCost ?? '-',
+        movementInFlight ? 1 : 0,
+        movementQueuedPath.map(point => GridGeometry.key(point)).join('|'),
         mapRevision,
         rules.directions,
         rules.orthogonalCost,
         rules.diagonalCost,
         rules.allowCornerCutting ? 1 : 0,
         furnitureRule,
-        unknownFurnitureBlocks ? 1 : 0
+        unknownFurnitureBlocks ? 1 : 0,
+        maxStepHeight,
+        allowFalling ? 1 : 0,
+        walkabilityRoomId,
+        walkabilitySnapshotAt
     ].join(':');
+
+    let movementCount = 0;
 
     if(force || (key !== lastFollowKey))
     {
-        const movement = getReachable(position, movementBudget);
+        const movement = getReachable(position, budget);
+        movementCount = movement.length;
+
+        let visiblePath: GridPoint[] = [];
+        let selected: GridPoint = position;
+        let targets: GridPoint[] = [];
+
+        if(movementSessionActive && movementSelected)
+        {
+            const sourcePath = movementInFlight ? [ position, ...movementQueuedPath ] : movementSelectedPath;
+
+            visiblePath = sourcePath.length > 1 ? sourcePath.slice(1, -1) : [];
+            selected = movementSelected;
+            targets = [ movementSelected ];
+        }
 
         GridEngine.updateState({
             origin: position,
-            movementRadius: movementBudget,
+            movementRadius: budget,
             movement,
-            path: [],
-            targets: [],
-            selected: position
+            path: visiblePath,
+            targets,
+            selected
         });
 
         refreshBlockedLayer();
 
         lastFollowKey = key;
     }
+    else
+    {
+        movementCount = getReachable(position, budget).length;
+    }
 
     return {
         ...position,
-        budget: movementBudget,
-        movementCount: getReachable(position, movementBudget).length,
+        budget,
+        movementCount,
         following: (trackerTimer !== null),
-        mapReady: !!map
+        mapReady: !!map,
+        serverWalkabilityReady: isServerWalkabilityReady(GetRoomEngine().activeRoomId)
     };
+}
+
+function updateSelectedPathFromCurrent(): MovementSelectionResult
+{
+    if(!movementSessionActive)
+    {
+        return movementSelectionResult(false, 'movement-inactive', null, [], null);
+    }
+
+    if(!movementSelected)
+    {
+        return movementSelectionResult(false, 'no-selection', null, [], null);
+    }
+
+    const position = getOwnGridPosition();
+
+    if(!position)
+    {
+        clearMovementSelection();
+
+        return movementSelectionResult(false, 'unreachable', null, [], null);
+    }
+
+    if(GridGeometry.equals(position, movementSelected))
+    {
+        const target = { ...movementSelected };
+
+        clearMovementSelection();
+        applyFollow(true);
+
+        return movementSelectionResult(true, 'same-tile', target, [ position ], 0);
+    }
+
+    const path = findPath(position, movementSelected);
+
+    if(path.length < 2)
+    {
+        const target = { ...movementSelected };
+
+        movementSelectedPath = [];
+        movementSelectedCost = null;
+        movementQueuedPath = [];
+        movementInFlight = false;
+        lastFollowKey = null;
+        applyFollow(true);
+
+        return movementSelectionResult(false, 'unreachable', target, [], null);
+    }
+
+    const cost = GridGeometry.pathCost(path, movementPolicy);
+
+    movementSelectedPath = path;
+    movementSelectedCost = cost;
+    lastFollowKey = null;
+
+    if(cost > (movementRemaining + 0.0001))
+    {
+        movementQueuedPath = [];
+        movementInFlight = false;
+        applyFollow(true);
+
+        return movementSelectionResult(false, 'over-budget', movementSelected, path, cost);
+    }
+
+    applyFollow(true);
+
+    return movementSelectionResult(true, 'ok', movementSelected, path, cost);
+}
+
+function chooseMovementTarget(x: number, y: number): MovementSelectionResult
+{
+    if(!movementSessionActive)
+    {
+        return movementSelectionResult(false, 'movement-inactive', null, [], null);
+    }
+
+    if(movementInFlight)
+    {
+        return movementSelectionResult(false, 'moving', movementSelected, movementSelectedPath, movementSelectedCost);
+    }
+
+    const position = getOwnGridPosition();
+    const target = GridGeometry.normalize({ x, y });
+
+    if(!position)
+    {
+        return movementSelectionResult(false, 'unreachable', target, [], null);
+    }
+
+    movementSelected = target;
+    movementQueuedPath = [];
+    movementInFlight = false;
+
+    return updateSelectedPathFromCurrent();
+}
+
+function finishMovementPath(): void
+{
+    clearMovementSelection();
+    applyFollow(true);
+}
+
+function sendNextMovementStep(): void
+{
+    if(!movementSessionActive || !movementInFlight) return;
+
+    const position = getOwnGridPosition();
+
+    if(!position)
+    {
+        finishMovementPath();
+        return;
+    }
+
+    if(!movementQueuedPath.length)
+    {
+        finishMovementPath();
+        return;
+    }
+
+    const next = movementQueuedPath[0];
+    const step = movementPolicy.stepBetween(position, next);
+
+    if(!step || !canStep(position, next, step) || (step.cost > (movementRemaining + 0.0001)))
+    {
+        movementInFlight = false;
+        movementQueuedPath = [];
+        updateSelectedPathFromCurrent();
+        return;
+    }
+
+    movementCommandAt = Date.now();
+
+    SendMessageComposer(new RoomUnitWalkComposer(next.x, next.y));
+}
+
+function confirmMovementSelection(): MovementSelectionResult
+{
+    if(!movementSessionActive)
+    {
+        return movementSelectionResult(false, 'movement-inactive', null, [], null);
+    }
+
+    if(movementInFlight)
+    {
+        return movementSelectionResult(false, 'moving', movementSelected, movementSelectedPath, movementSelectedCost);
+    }
+
+    if(!movementSelected)
+    {
+        return movementSelectionResult(false, 'no-selection', null, [], null);
+    }
+
+    const validation = updateSelectedPathFromCurrent();
+
+    if(!validation.valid || validation.reason === 'same-tile') return validation;
+
+    movementQueuedPath = movementSelectedPath.slice(1);
+    movementInFlight = true;
+    movementCommandAt = 0;
+    lastFollowKey = null;
+
+    sendNextMovementStep();
+    applyFollow(true);
+
+    return movementSelectionResult(true, 'ok', movementSelected, movementSelectedPath, movementSelectedCost);
+}
+
+function handleGridWalkRequest(x: number, y: number): boolean
+{
+    if(!movementSessionActive) return false;
+
+    const target = GridGeometry.normalize({ x, y });
+
+    if(movementInFlight) return true;
+
+    if(movementSelected && GridGeometry.equals(movementSelected, target))
+    {
+        confirmMovementSelection();
+        return true;
+    }
+
+    chooseMovementTarget(target.x, target.y);
+
+    return true;
+}
+
+function trackMovementSession(): void
+{
+    const currentPosition = getOwnGridPosition();
+
+    if(!currentPosition) return;
+
+    const current = GridGeometry.normalize(currentPosition);
+
+    if(!lastTrackedPosition)
+    {
+        lastTrackedPosition = current;
+        return;
+    }
+
+    if(GridGeometry.equals(lastTrackedPosition, current))
+    {
+        if(movementSessionActive &&
+            movementInFlight &&
+            (movementCommandAt > 0) &&
+            ((Date.now() - movementCommandAt) > 2000))
+        {
+            movementInFlight = false;
+            movementQueuedPath = [];
+            movementCommandAt = 0;
+            updateSelectedPathFromCurrent();
+        }
+
+        return;
+    }
+
+    const previous = lastTrackedPosition;
+    lastTrackedPosition = current;
+
+    if(!movementSessionActive)
+    {
+        return;
+    }
+
+    const actualStep = movementPolicy.stepBetween(previous, current);
+
+    if(actualStep)
+    {
+        const charged = Math.min(movementRemaining, actualStep.cost);
+
+        movementRemaining = Math.max(0, movementRemaining - charged);
+        movementSpent = Math.max(0, movementSpent + charged);
+        movementLastStepCost = charged;
+        movementStepsSpent++;
+
+        if(movementInFlight && movementQueuedPath.length && GridGeometry.equals(movementQueuedPath[0], current))
+        {
+            movementQueuedPath.shift();
+        }
+        else if(movementInFlight && movementSelected)
+        {
+            const reroute = findPath(current, movementSelected);
+            const rerouteCost = reroute.length > 1 ? GridGeometry.pathCost(reroute, movementPolicy) : 0;
+
+            if((reroute.length > 1) && (rerouteCost <= (movementRemaining + 0.0001)))
+            {
+                movementQueuedPath = reroute.slice(1);
+                movementSelectedPath = reroute;
+                movementSelectedCost = rerouteCost;
+            }
+            else
+            {
+                movementQueuedPath = [];
+                movementInFlight = false;
+            }
+        }
+    }
+    else
+    {
+        // Teleports, WIREDs y saltos no adyacentes no consumen movimiento normal.
+        movementQueuedPath = [];
+        movementInFlight = false;
+    }
+
+    movementCommandAt = 0;
+    lastFollowKey = null;
+
+    if(movementSelected && GridGeometry.equals(movementSelected, current))
+    {
+        finishMovementPath();
+        return;
+    }
+
+    if(movementRemaining <= 0.0001)
+    {
+        movementQueuedPath = [];
+        movementInFlight = false;
+        movementSelectedPath = [];
+        movementSelectedCost = null;
+        applyFollow(true);
+        return;
+    }
+
+    if(movementInFlight && movementQueuedPath.length)
+    {
+        movementSelectedPath = [ current, ...movementQueuedPath ];
+        movementSelectedCost = GridGeometry.pathCost(movementSelectedPath, movementPolicy);
+        sendNextMovementStep();
+    }
+
+    applyFollow(true);
+}
+
+function beginMovementSession(points: number = movementBudget): MovementSessionSnapshot
+{
+    const total = normalizeBudget(points);
+
+    movementSessionActive = true;
+    movementTotal = total;
+    movementRemaining = total;
+    movementSpent = 0;
+    movementStepsSpent = 0;
+    movementLastStepCost = 0;
+    clearMovementSelection();
+
+    const position = getOwnGridPosition();
+
+    lastTrackedPosition = position ? GridGeometry.normalize(position) : null;
+    movementBudget = total;
+
+    startFollow(total);
+    applyFollow(true);
+
+    return movementSnapshot();
+}
+
+function updateMovementSessionTotal(points: number): MovementSessionSnapshot
+{
+    const maximum = normalizeBudget(points);
+
+    if(!movementSessionActive)
+    {
+        return beginMovementSession(maximum);
+    }
+
+    const previousMaximum = Math.max(0, movementTotal);
+    const previousCurrent = Math.max(0, movementRemaining);
+
+    // Current movement is a real resource, not "maximum - spent".
+    // When a live STAT effect changes the maximum, preserve the percentage
+    // of Movement that remained. Example: 5 max / 1 current + x1.5 =>
+    // 8 max / 2 current after RPG half-up rounding.
+    let nextCurrent = 0;
+
+    if(previousMaximum > 0.0001)
+    {
+        const ratio = Math.max(0, Math.min(1, previousCurrent / previousMaximum));
+        nextCurrent = Math.floor((maximum * ratio) + 0.5);
+    }
+
+    movementTotal = maximum;
+    movementRemaining = Math.max(0, Math.min(maximum, nextCurrent));
+    movementBudget = maximum;
+
+    // A runtime STAT/rule change invalidates the current preview/path,
+    // but does not erase the amount actually consumed by walking.
+    clearMovementSelection();
+    startFollow(maximum);
+    applyFollow(true);
+
+    return movementSnapshot();
+}
+
+function resetMovementSession(points: number = movementTotal): MovementSessionSnapshot
+{
+    return beginMovementSession(points);
+}
+
+function endMovementSession(): MovementSessionSnapshot
+{
+    movementSessionActive = false;
+    clearMovementSelection();
+
+    const position = getOwnGridPosition();
+
+    lastTrackedPosition = position ? GridGeometry.normalize(position) : null;
+    applyFollow(true);
+
+    return movementSnapshot();
+}
+
+function cancelMovementSelection(): MovementSessionSnapshot
+{
+    clearMovementSelection();
+    applyFollow(true);
+
+    return movementSnapshot();
 }
 
 function startFollow(budget: number = 4): FollowResult
@@ -615,13 +1332,16 @@ function startFollow(budget: number = 4): FollowResult
     movementBudget = normalizeBudget(budget);
     lastFollowKey = null;
 
+    requestServerWalkability(true);
     ensureMap(true);
 
     if(trackerTimer === null)
     {
         trackerTimer = window.setInterval(() =>
         {
+            requestServerWalkability(false);
             scanRoomMap(false);
+            trackMovementSession();
             applyFollow(false);
         }, 100);
     }
@@ -697,11 +1417,23 @@ function createDebugApi(): HoloGridDebugApi
         stopFollow,
         following: () => (trackerTimer !== null),
         budget: (budget: number) => startFollow(budget),
+        beginMovement: (points: number = movementBudget) => beginMovementSession(points),
+        updateMovementTotal: (points: number) => updateMovementSessionTotal(points),
+        resetMovement: (points: number = movementTotal) => resetMovementSession(points),
+        endMovement: () => endMovementSession(),
+        movementSession: () => movementSnapshot(),
+        choose: (x: number, y: number) => chooseMovementTarget(x, y),
+        confirmMove: () => confirmMovementSelection(),
+        cancelMove: () => cancelMovementSelection(),
         select: (x: number, y: number) => GridEngine.updateState({ selected: { x, y } }),
         movement: (tiles: GridPoint[]) => GridEngine.updateState({ movement: tiles }),
         targets: (tiles: GridPoint[]) => GridEngine.updateState({ targets: tiles }),
         target: (x: number, y: number) => GridEngine.updateState({ targets: [{ x, y }] }),
         blocked: (tiles: GridPoint[]) => setManualBlocked(tiles),
+        encounterBlocked: (tiles: GridPoint[]) => setEncounterBlocked(tiles),
+        rejoinMarker: (tile: GridPoint | null = null) => GridEngine.updateState({
+            targets: tile ? [ GridGeometry.normalize(tile) ] : []
+        }),
         pathLayer: (tiles: GridPoint[]) => GridEngine.updateState({ path: tiles }),
         state: () => GridEngine.snapshot,
         rules: (update: HumanMovementRuleUpdate = null) => configureHumanRules(update),
@@ -709,7 +1441,12 @@ function createDebugApi(): HoloGridDebugApi
             GridGeometry.chebyshev({ x: ax, y: ay }, { x: bx, y: by }),
         neighbors: (x: number, y: number) =>
             movementPolicy.stepsFrom({ x, y }).map(step => ({ x: step.x, y: step.y })),
-        scan: () => scanRoomMap(true),
+        scan: () =>
+        {
+            requestServerWalkability(true);
+
+            return scanRoomMap(true);
+        },
         map: () => scanRoomMap(false),
         tile: (x: number, y: number) =>
         {
@@ -719,13 +1456,42 @@ function createDebugApi(): HoloGridDebugApi
         },
         furniture: () =>
         {
+            requestServerWalkability(true);
             scanRoomMap(true);
 
             return lastFurnitureInfo.map(item => ({ ...item }));
         },
+        height: (x: number, y: number) =>
+        {
+            const map = ensureMap(false);
+
+            return map?.heightAt({ x, y }) ?? Number.NaN;
+        },
+        step: (ax: number, ay: number, bx: number, by: number) =>
+        {
+            const map = ensureMap(false);
+            const from = GridGeometry.normalize({ x: ax, y: ay });
+            const to = GridGeometry.normalize({ x: bx, y: by });
+            const movementStep = movementPolicy.stepBetween(from, to);
+            const fromHeight = map?.heightAt(from) ?? Number.NaN;
+            const toHeight = map?.heightAt(to) ?? Number.NaN;
+
+            return {
+                from,
+                to,
+                fromHeight,
+                toHeight,
+                delta: toHeight - fromHeight,
+                maxStepHeight,
+                allowFalling,
+                allowed: !!movementStep && canStep(from, to, movementStep)
+            };
+        },
+        refreshWalkability: () => requestServerWalkability(true),
         showObstacles: (show: boolean = true) =>
         {
             showRoomObstacles = show;
+            requestServerWalkability(true);
             scanRoomMap(true);
             refreshBlockedLayer();
 
@@ -735,6 +1501,7 @@ function createDebugApi(): HoloGridDebugApi
         {
             furnitureRule = enabled ? 'respect-walkability' : 'ignore';
             lastFollowKey = null;
+            requestServerWalkability(true);
             scanRoomMap(true);
             applyFollow(true);
 
@@ -758,6 +1525,16 @@ function createDebugApi(): HoloGridDebugApi
 export function InstallGridNitroAdapter(): boolean
 {
     if(installed) return true;
+
+    const communication = GetCommunication();
+
+    if(!communication) return false;
+
+    communication.registerMessageEvent(
+        new HoloGridWalkabilityEvent(onServerWalkability)
+    );
+
+    GridEngine.setWalkRequestHandler(handleGridWalkRequest);
 
     (globalThis as any).HoloGrid = createDebugApi();
 

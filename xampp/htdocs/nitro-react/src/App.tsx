@@ -2,6 +2,7 @@ import { ConfigurationEvent, GetAssetManager, HabboWebTools, LegacyExternalInter
 import { FC, useCallback, useEffect, useState } from 'react';
 import { GetCommunication, GetConfiguration, GetNitroInstance, GetUIVersion } from './api';
 import { InstallGridNitroAdapter } from './api/rpg/grid';
+import { InstallRpgEngineAdapter } from './api/rpg/engine';
 import { Base, TransitionAnimation, TransitionAnimationTypes } from './common';
 import { LoadingView } from './components/loading/LoadingView';
 import { MainView } from './components/main/MainView';
@@ -74,6 +75,7 @@ export const App: FC<{}> = props =>
                 return;
             case RoomEngineEvent.ENGINE_INITIALIZED:
                 InstallGridNitroAdapter();
+                InstallRpgEngineAdapter();
 
                 setPercent(prevValue => (prevValue + 20));
 

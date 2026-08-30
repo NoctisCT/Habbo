@@ -486,4 +486,6 @@ export class IncomingHeader {
     public static ESTADO_BLOQUEO_INVENTARIO = 5031;
     public static RESULTADO_PATRON_INVENTARIO = 5033;
     public static RESULTADO_CONFIGURAR_PATRON = 5035;
+    public static HOLO_GRID_WALKABILITY = 5041;
+    public static RPG_ENGINE_RESULT = 5051;
 }

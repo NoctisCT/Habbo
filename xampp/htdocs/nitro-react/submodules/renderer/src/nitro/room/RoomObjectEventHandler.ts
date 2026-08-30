@@ -4,6 +4,7 @@ import { RoomEngineDimmerStateEvent, RoomEngineObjectEvent, RoomEngineObjectPlac
 import { RoomEnterEffect, RoomId, RoomObjectUpdateMessage } from '../../room';
 import { BotPlaceComposer, FurnitureColorWheelComposer, FurnitureDiceActivateComposer, FurnitureDiceDeactivateComposer, FurnitureFloorUpdateComposer, FurnitureGroupInfoComposer, FurnitureMultiStateComposer, FurnitureOneWayDoorComposer, FurniturePickupComposer, FurniturePlaceComposer, FurniturePostItPlaceComposer, FurnitureRandomStateComposer, FurnitureWallMultiStateComposer, FurnitureWallUpdateComposer, GetItemDataComposer, GetResolutionAchievementsMessageComposer, PetMoveComposer, PetPlaceComposer, RemoveWallItemComposer, RoomUnitLookComposer, RoomUnitWalkComposer, SetItemDataMessageComposer, SetObjectDataMessageComposer } from '../communication';
 import { Nitro } from '../Nitro';
+import { GridEngine } from '../rpg';
 import { ObjectAvatarSelectedMessage, ObjectDataUpdateMessage, ObjectSelectedMessage, ObjectTileCursorUpdateMessage, ObjectVisibilityUpdateMessage } from './messages';
 import { SelectedRoomObjectData } from './utils';
 
@@ -1484,6 +1485,7 @@ export class RoomObjectEventHandler extends Disposable implements IRoomCanvasMou
 
     private sendWalkUpdate(x: number, y: number): void
     {
+        if(GridEngine.handleWalkRequest(x, y)) return;
         if(!this._roomEngine || !this._roomEngine.connection) return;
 
         this._roomEngine.connection.send(new RoomUnitWalkComposer(x, y));

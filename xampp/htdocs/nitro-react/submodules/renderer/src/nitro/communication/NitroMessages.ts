@@ -1,5 +1,9 @@
 import { EstadoBloqueoInventarioEvent, ResultadoConfigurarPatronEvent, ResultadoPatronInventarioEvent } from './messages/incoming/inventorylock';
+import { HoloGridWalkabilityEvent } from './messages/incoming/hologrid';
+import { RpgEngineResultEvent } from './messages/incoming/rpgengine';
 import { CerrarSesionInventarioComposer, ConfigurarPatronInventarioComposer, ConsultarBloqueoInventarioComposer, VerificarPatronInventarioComposer } from './messages/outgoing/inventorylock';
+import { GetHoloGridWalkabilityComposer } from './messages/outgoing/hologrid';
+import { RpgEngineCommandComposer } from './messages/outgoing/rpgengine';
 import { ObtenerRecordsSubastasComposer } from './messages/outgoing/subastas';
 import { RecordsSubastasEvent } from './messages/incoming/subastas';
 import { ObtenerProximaSubastaComposer, ProximaSubastaEvent } from './messages';
@@ -85,6 +89,8 @@ export class NitroMessages implements IMessageConfiguration {
         this._events.set(IncomingHeader.ESTADO_BLOQUEO_INVENTARIO, EstadoBloqueoInventarioEvent);
         this._events.set(IncomingHeader.RESULTADO_PATRON_INVENTARIO, ResultadoPatronInventarioEvent);
         this._events.set(IncomingHeader.RESULTADO_CONFIGURAR_PATRON, ResultadoConfigurarPatronEvent);
+        this._events.set(IncomingHeader.HOLO_GRID_WALKABILITY, HoloGridWalkabilityEvent);
+        this._events.set(IncomingHeader.RPG_ENGINE_RESULT, RpgEngineResultEvent);
         this._events.set(IncomingHeader.ROOM_AD_ERROR, RoomAdErrorEvent);
 
         // AVAILABILITY
@@ -652,6 +658,8 @@ export class NitroMessages implements IMessageConfiguration {
         this._composers.set(OutgoingHeader.VERIFICAR_PATRON_INVENTARIO, VerificarPatronInventarioComposer);
         this._composers.set(OutgoingHeader.CONFIGURAR_PATRON_INVENTARIO, ConfigurarPatronInventarioComposer);
         this._composers.set(OutgoingHeader.CERRAR_SESION_INVENTARIO, CerrarSesionInventarioComposer);
+        this._composers.set(OutgoingHeader.GET_HOLO_GRID_WALKABILITY, GetHoloGridWalkabilityComposer);
+        this._composers.set(OutgoingHeader.RPG_ENGINE_COMMAND, RpgEngineCommandComposer);
 
         // SUBASTAS
         this._composers.set(OutgoingHeader.ABRIR_SUBASTAS, AbrirSubastasComposer);

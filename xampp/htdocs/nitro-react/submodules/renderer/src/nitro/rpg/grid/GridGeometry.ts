@@ -41,7 +41,7 @@ export class GridGeometry
 
     public static key(point: GridPoint): string
     {
-        const normalized = this.normalize(point);
+        const normalized = GridGeometry.normalize(point);
 
         if(!normalized) return '';
 

@@ -47,12 +47,15 @@ export interface GridTacticalStateSnapshot
     selected: GridPoint | null;
 }
 
+export type GridWalkRequestHandler = (x: number, y: number) => boolean;
+
 export class GridEngine
 {
     private static _enabled = true;
     private static _revision = 0;
     private static _origin: GridPoint = null;
     private static _movementRadius = 0;
+    private static _walkRequestHandler: GridWalkRequestHandler = null;
 
     private static _style: GridVisualStyle = {
         lineColor: 0xD7E6F0,
@@ -175,6 +178,27 @@ export class GridEngine
             x: tile.x,
             y: tile.y
         }));
+    }
+
+    public static setWalkRequestHandler(handler: GridWalkRequestHandler): void
+    {
+        this._walkRequestHandler = handler;
+    }
+
+    public static handleWalkRequest(x: number, y: number): boolean
+    {
+        if(!this._walkRequestHandler) return false;
+
+        try
+        {
+            return (this._walkRequestHandler(x, y) === true);
+        }
+        catch(error)
+        {
+            console.error('[HoloGrid] walk request handler failed', error);
+
+            return true;
+        }
     }
 
     public static setEnabled(enabled: boolean): void
