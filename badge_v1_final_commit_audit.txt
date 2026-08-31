@@ -1,0 +1,2622 @@
+﻿
+======================================================================
+BRANCH / WORKTREES
+======================================================================
+BRANCH=rpg-engine-wip
+C:/Users/erale/Desktop/Habbo    544fe558f [rpg-engine-wip]
+C:/Users/erale/Desktop/Habbo/cw f3d11d9ed [codex/cinema-reservations]
+
+======================================================================
+FULL GIT STATUS --SHORT
+======================================================================
+ M Desarrollo/RPGEngine/src/main/java/com/retro/rpgengine/RpgEnginePlugin.java
+ M Desarrollo/RPGEngine/src/main/java/com/retro/rpgengine/ServicioRpgEngine.java
+ M Emulator/CreditBridge/src/com/retro/creditbridge/CreditBridge.java
+ M Emulator/Habbo-3.6.0-jar-with-dependencies.jar
+ M Emulator/decompiled_habbo/com/eu/habbo/habbohotel/commands/SummonCommand.java
+ M Emulator/decompiled_habbo/com/eu/habbo/messages/incoming/rooms/RequestRoomLoadEvent.java
+ D Emulator/logging/debug.2026-06-14.0.gz
+ D Emulator/logging/debug.2026-06-15.0.gz
+ M Emulator/logging/debug.txt
+ D Emulator/logging/errors/runtime.2026-06-14.0.gz
+ D Emulator/logging/errors/runtime.2026-06-15.0.gz
+ M Emulator/logging/errors/runtime.txt
+ D Emulator/plugins/CasualWireds.jar
+ M Emulator/plugins/CreditBridge.jar
+ M Emulator/plugins/RPGEngine.jar
+ D Emulator/plugins/casualwireds/CasualWireds.jar
+ M PokemonBackend/healingHandler.js
+ M xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php
+ M xampp/htdocs/app/Console/Kernel.php
+ M xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php
+ M xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php
+ M xampp/htdocs/app/Filament/Resources/User/UserResource.php
+ M xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php
+ M xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php
+ M xampp/htdocs/app/Models/User.php
+ M xampp/htdocs/app/Services/Community/TeamService.php
+ M xampp/htdocs/app/Services/CreditBridgeClient.php
+ M xampp/htdocs/app/Services/CreditTransactionService.php
+ M xampp/htdocs/app/Services/User/UserApiService.php
+ M xampp/htdocs/lang/es.json
+ M xampp/htdocs/nitro-react/src/hooks/navigator/useNavigator.ts
+ M xampp/htdocs/public/renderer-config.json
+ M xampp/htdocs/resources/themes/atom/views/components/auth/login-form.blade.php
+ M xampp/htdocs/resources/themes/atom/views/components/navigation/navigation-menu.blade.php
+ M xampp/htdocs/resources/themes/atom/views/components/site-header.blade.php
+ M xampp/htdocs/resources/themes/atom/views/components/top-header.blade.php
+ M xampp/htdocs/resources/themes/dusk/views/components/auth/login-form.blade.php
+ M xampp/htdocs/routes/api.php
+ M xampp/htdocs/routes/web.php
+?? Archivo/
+?? AssetWork/
+?? Auditoria/
+?? BACKUP-CONFIG-SUBASTAS-20260827-085346.txt
+?? DOCUMENTACION-RETRO.md
+?? DOCUMENTACION-SUBASTAS-V1.md
+?? DOCUMENTACION-UI-HOLO-v14.md
+?? DOCUMENTACION-WIREDS-CUSTOM.md
+?? Emulator/decompiled_habbo/com/eu/habbo/habbohotel/rooms/ForcedRoomEntryRegistry.java
+?? Emulator/inventory-plugin-json/
+?? Emulator/logging/debug.2026-06-22.0.gz
+?? Emulator/logging/debug.2026-06-23.0.gz
+?? Emulator/logging/debug.2026-08-27.0.gz
+?? Emulator/logging/debug.2026-08-28.0.gz
+?? Emulator/logging/errors/runtime.2026-06-22.0.gz
+?? Emulator/logging/errors/runtime.2026-06-23.0.gz
+?? Emulator/logging/errors/runtime.2026-08-27.0.gz
+?? Emulator/logging/errors/runtime.2026-08-28.0.gz
+?? Emulator/logging/errors/runtime.2026-08-29.0.gz
+?? Emulator/logging/errors/runtime.2026-08-30.0.gz
+?? Emulator/plugin-inspect/
+?? Emulator/plugin-manifest-inspect/
+?? Emulator/plugins-disabled/
+?? Emulator/plugins/AvatarSync.jar.BEFORE-remove-sync-ended-message-20260828-130432.bak
+?? Emulator/plugins/AvatarSync.jar.BEFORE-wired-config-separation-20260828-125812.bak
+?? Emulator/plugins/AvatarSync.jar.BEFORE-wired-session-mode-fix-20260828-124851.bak
+?? Emulator/plugins/casualwireds/WiredEffectFollowPath.java
+?? MONETIZACION.md
+?? PENDIENTES.md
+?? RPGENGINE_CHANGELOG_2026-08-30.md
+?? RPGENGINE_DECISIONS_2026-08-30.md
+?? RPGENGINE_HANDOFF_2026-08-30.md
+?? RPGENGINE_V1_SCOPE_2026-08-30.md
+?? avatar-sync-cleanup.js
+?? avatar-sync-mvp.zip
+?? avatar-sync-mvp/README.txt
+?? avatar-sync-mvp/_backups/
+?? avatar-sync-mvp/lib/
+?? backup-pre-account-2fa-20260828.sql
+?? backup-pre-character-archive-20260828.sql
+?? backup-pre-character-slots-20260828.sql
+?? backup-pre-multikeko-20260828.sql
+?? badge_marketplace_QA_results.txt
+?? badge_marketplace_closeout_audit.txt
+?? badge_marketplace_notification_diagnostic.txt
+?? badge_marketplace_payout_and_qa_audit.txt
+?? badge_seller_waitlist_inactivity_audit.txt
+?? cw/
+?? hotel_distribution_controller_audit.txt
+?? hotel_distribution_right_audit.txt
+?? stop-avatar-sync-assets.js
+?? tools/
+?? xampp/htdocs/app/Console/Commands/BadgeSellerLicenseMaintenanceCommand.php
+?? xampp/htdocs/app/Exceptions/CreditRefundException.php
+?? xampp/htdocs/app/Filament/Pages/Applications.php
+?? xampp/htdocs/app/Filament/Resources/Hotel/BadgeSubmissionResource.php
+?? xampp/htdocs/app/Filament/Resources/Hotel/BadgeSubmissionResource/
+?? xampp/htdocs/app/Http/Controllers/AccountNotificationController.php
+?? xampp/htdocs/app/Http/Controllers/Api/NitroExternalTextsController.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/
+?? xampp/htdocs/app/Livewire/
+?? xampp/htdocs/app/Models/AccountNotification.php
+?? xampp/htdocs/app/Models/BadgeDesigner.php
+?? xampp/htdocs/app/Models/BadgeMarketplaceListing.php
+?? xampp/htdocs/app/Models/BadgeMarketplaceSale.php
+?? xampp/htdocs/app/Models/BadgeSellerLicense.php
+?? xampp/htdocs/app/Models/BadgeSubmission.php
+?? xampp/htdocs/app/Models/CreatorBadge.php
+?? xampp/htdocs/app/Services/AccountNotificationService.php
+?? xampp/htdocs/app/Services/BadgeGiftService.php
+?? xampp/htdocs/app/Services/BadgeMarketplaceListingService.php
+?? xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php
+?? xampp/htdocs/app/Services/BadgePixelArtService.php
+?? xampp/htdocs/app/Services/BadgeSellerEligibilityService.php
+?? xampp/htdocs/app/Services/BadgeSubmissionModerationService.php
+?? xampp/htdocs/app/Services/CreditRefundService.php
+?? xampp/htdocs/app/Services/EmulatorPresenceService.php
+?? xampp/htdocs/config/badge_marketplace.php
+?? xampp/htdocs/database/migrations/2026_08_30_164800_create_credit_refunds_table.php
+?? xampp/htdocs/database/migrations/2026_08_30_171500_create_badge_creator_tables.php
+?? xampp/htdocs/database/migrations/2026_08_31_063000_add_badge_submission_housekeeping_permission.php
+?? xampp/htdocs/database/migrations/2026_08_31_072000_create_account_notifications_table.php
+?? xampp/htdocs/database/migrations/2026_08_31_074800_create_badge_gifts_table.php
+?? xampp/htdocs/database/migrations/2026_08_31_082500_create_emulator_heartbeats_table.php
+?? xampp/htdocs/database/migrations/2026_08_31_091500_create_badge_seller_foundation_tables.php
+?? xampp/htdocs/database/migrations/2026_08_31_113000_create_hotel_roles_and_replace_badge_designers.php
+?? xampp/htdocs/database/migrations/2026_08_31_115500_make_website_teams_multi_role.php
+?? xampp/htdocs/database/migrations/2026_08_31_121500_remove_team_system_key.php
+?? xampp/htdocs/database/migrations/2026_08_31_124500_add_badge_marketplace_housekeeping_permission.php
+?? xampp/htdocs/database/migrations/2026_08_31_130500_create_badge_marketplace_listings_table.php
+?? xampp/htdocs/database/migrations/2026_08_31_133000_create_badge_marketplace_sales_table.php
+?? xampp/htdocs/database/migrations/2026_08_31_143000_add_hotel_distribution_right_to_creator_badges.php
+?? xampp/htdocs/nitro-react/_backups/
+?? xampp/htdocs/nitro-react/_holo_backup_20260829-130621/
+?? xampp/htdocs/nitro-react/_holo_backup_20260829-131918/
+?? xampp/htdocs/nitro-react/_holo_backup_v10_20260829-140213/
+?? xampp/htdocs/nitro-react/_holo_backup_v13_20260829-142350/
+?? xampp/htdocs/nitro-react/_holo_backup_v14_20260829-142735/
+?? xampp/htdocs/nitro-react/_holo_backup_v6_20260829-133355/
+?? xampp/htdocs/nitro-react/_holo_backup_v7_20260829-134005/
+?? xampp/htdocs/nitro-react/_holo_backup_v8_20260829-134955/
+?? xampp/htdocs/nitro-react/_holo_v5_backup_20260829-132306/
+?? xampp/htdocs/nitro-react/cls
+?? xampp/htdocs/nitro-react/powershell
+?? xampp/htdocs/nitro-react/src/README.txt
+?? xampp/htdocs/nitro-react/src/components/wired/views/actions/WiredActionAvatarSyncView.tsx.20260828-120601.bak
+?? xampp/htdocs/nitro-react/src/components/wired/views/actions/WiredActionAvatarSyncView.tsx.20260828-120752.bak
+?? xampp/htdocs/nitro-react/src/components/wired/views/actions/WiredActionAvatarSyncView.tsx.20260828-120849.bak
+?? xampp/htdocs/nitro-react/src/components/wired/views/actions/WiredActionAvatarSyncView.tsx.20260828-123827.bak
+?? xampp/htdocs/nitro-react/src/components/wired/views/actions/WiredActionAvatarSyncView.tsx.STABLE-before-hydration-20260828-124315.bak
+?? xampp/htdocs/nitro-react/src/components/wired/views/actions/WiredActionAvatarSyncView.tsx.STABLE-before-hydration-20260828-124510.bak
+?? xampp/htdocs/nitro-react/src/files/
+?? xampp/htdocs/prueba-apache.txt
+?? xampp/htdocs/public/prueba-apache.txt
+?? xampp/htdocs/resources/themes/atom/views/client/characters.blade.php.broken-20260829-060041
+?? xampp/htdocs/resources/themes/atom/views/marketplace/
+?? xampp/htdocs/resources/themes/atom/views/notifications/
+?? xampp/htdocs/resources/views/filament/pages/applications.blade.php
+?? xampp/htdocs/resources/views/livewire/
+?? xampp/htdocs/storage/app/
+?? xampp/htdocs/storage/backups/
+
+======================================================================
+BADGE-RELATED STATUS
+======================================================================
+ M xampp/htdocs/app/Console/Kernel.php
+?? xampp/htdocs/app/Console/Commands/BadgeSellerLicenseMaintenanceCommand.php
+?? xampp/htdocs/app/Filament/Pages/Applications.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeGiftController.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeHotelDistributionController.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplaceListingController.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplacePurchaseController.php
+?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeSellerApplicationController.php
+?? xampp/htdocs/app/Livewire/Filament/BadgeSellerApplicationsTable.php
+?? xampp/htdocs/app/Models/BadgeMarketplaceListing.php
+?? xampp/htdocs/app/Models/BadgeMarketplaceSale.php
+?? xampp/htdocs/app/Models/BadgeSellerLicense.php
+?? xampp/htdocs/app/Models/BadgeSubmission.php
+?? xampp/htdocs/app/Models/CreatorBadge.php
+?? xampp/htdocs/app/Services/BadgeGiftService.php
+?? xampp/htdocs/app/Services/BadgeMarketplaceListingService.php
+?? xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php
+?? xampp/htdocs/app/Services/BadgeSellerEligibilityService.php
+?? xampp/htdocs/config/badge_marketplace.php
+?? xampp/htdocs/resources/themes/atom/views/marketplace/badges.blade.php
+?? xampp/htdocs/resources/views/filament/pages/applications.blade.php
+ M xampp/htdocs/routes/web.php
+
+======================================================================
+BADGE MIGRATIONS
+======================================================================
+FILE=xampp/htdocs/database/migrations/2025_01_06_132851_create_website_badges_table.php
+SHA256=6fdbb4b3484b531bfb8010fbae72f8c46e3eb432a86bd80b2c4b1d4102e9bc69
+STATUS=clean/tracked
+FILE=xampp/htdocs/database/migrations/2026_08_30_171500_create_badge_creator_tables.php
+SHA256=b974bf8dfbbdd53135c630b780d15dbe8fdff313b02a8ff19d0b421e5170f569
+STATUS=?? xampp/htdocs/database/migrations/2026_08_30_171500_create_badge_creator_tables.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_063000_add_badge_submission_housekeeping_permission.php
+SHA256=835511dc25942ebd2a353502f39bfd9929664b113aa8a4d12dab36d3552a6d30
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_063000_add_badge_submission_housekeeping_permission.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_074800_create_badge_gifts_table.php
+SHA256=e2a96abbbfd9726ceb2a740414c6b105a84aff0edf9e44597a0cab840fdcbc33
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_074800_create_badge_gifts_table.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_091500_create_badge_seller_foundation_tables.php
+SHA256=3c6d3b7f69c68e2ceebddc98733cda38758167b62032d786044e84a6c7ab3e93
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_091500_create_badge_seller_foundation_tables.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_113000_create_hotel_roles_and_replace_badge_designers.php
+SHA256=137551a62819978e75cd8802c2212e87103eee5df0de4601bdb2230b6baeccc7
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_113000_create_hotel_roles_and_replace_badge_designers.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_124500_add_badge_marketplace_housekeeping_permission.php
+SHA256=d313fb07b59bb94593546879a9515c7537d632a3e2718bdec19a1305fff3fb1c
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_124500_add_badge_marketplace_housekeeping_permission.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_130500_create_badge_marketplace_listings_table.php
+SHA256=9e7e83035960f9896efbccbbd1da667d85912c4996aab7de56b759327a75d57d
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_130500_create_badge_marketplace_listings_table.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_133000_create_badge_marketplace_sales_table.php
+SHA256=8842f13655ca71ad9d753e823111be00eb795a7b9e003a4e1a96863775b03dbd
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_133000_create_badge_marketplace_sales_table.php
+FILE=xampp/htdocs/database/migrations/2026_08_31_143000_add_hotel_distribution_right_to_creator_badges.php
+SHA256=dd518587538b894eab1db2ad12ae3e63eb4bb95f73e6c49b743e6124afe6d873
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_143000_add_hotel_distribution_right_to_creator_badges.php
+
+======================================================================
+BADGE-RELATED UNTRACKED FILES
+======================================================================
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/events/room/RoomObjectBadgeAssetEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/events/session/BadgeImageReadyEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/events/session/RoomSessionUserBadgesEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/group/GroupBadgePartsEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/inventory/badges/BadgePointLimitsEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/inventory/badges/BadgeReceivedEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/inventory/badges/BadgesEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/inventory/badges/IsBadgeRequestFulfilledEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/inventory/badges/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceBuyOfferResultEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceCanMakeOfferResult.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceCancelOfferResultEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceConfigurationEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceItemStatsEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceMakeOfferResult.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceOffersEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceOwnOffersEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/marketplace/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/user/HabboGroupBadgesMessageEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/incoming/user/data/UserCurrentBadgesEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/group/GroupBadgePartsComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/group/GroupSaveBadgeComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/GetBadgePointLimitsComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/GetIsBadgeRequestFulfilledComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/RequestABadgeComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/RequestBadgesComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/SetActivatedBadgesComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/BuyMarketplaceOfferMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/BuyMarketplaceTokensMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/CancelMarketplaceOfferMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceCanMakeOfferComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceConfigurationMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceItemStatsComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceOffersMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceOwnOffersMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/MakeOfferMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/RedeemMarketplaceOfferCreditsMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/marketplace/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/user/GetHabboGroupBadgesMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/outgoing/user/data/UserCurrentBadgesComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/group/GroupBadgePartsParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/group/utils/GroupDataBadgePart.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgeAndPointLimit.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgePointLimitsParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgeReceivedParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgesParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/inventory/badges/IsBadgeRequestFulfilledParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/inventory/badges/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceBuyOfferResultParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceCanMakeOfferResultParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceCancelOfferResultParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceConfigurationMessageParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceItemPostedParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceItemStatsParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOffer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOfferData.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOffersParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOwnOffersParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/marketplace/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/user/HabboGroupBadgesMessageParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/communication/messages/parser/user/data/UserCurrentBadgesParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/localization/BadgeBaseAndLevel.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/room/messages/ObjectGroupBadgeUpdateMessage.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/room/object/logic/furniture/FurnitureBadgeDisplayLogic.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/room/object/visualization/furniture/FurnitureBadgeDisplayVisualization.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/room/object/visualization/furniture/FurnitureGuildIsometricBadgeVisualization.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/room/utils/RoomObjectBadgeImageAssetListener.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/session/badge/BadgeImageManager.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/session/badge/BadgeInfo.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/session/badge/GroupBadge.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/session/badge/GroupBadgePart.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/node_modules-renderer/src/nitro/session/badge/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/events/room/RoomObjectBadgeAssetEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/events/session/BadgeImageReadyEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/events/session/RoomSessionUserBadgesEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/group/GroupBadgePartsEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/inventory/badges/BadgePointLimitsEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/inventory/badges/BadgeReceivedEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/inventory/badges/BadgesEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/inventory/badges/IsBadgeRequestFulfilledEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/inventory/badges/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceBuyOfferResultEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceCanMakeOfferResult.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceCancelOfferResultEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceConfigurationEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceItemStatsEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceMakeOfferResult.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceOffersEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/MarketplaceOwnOffersEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/marketplace/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/user/HabboGroupBadgesMessageEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/incoming/user/data/UserCurrentBadgesEvent.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/group/GroupBadgePartsComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/group/GroupSaveBadgeComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/GetBadgePointLimitsComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/GetIsBadgeRequestFulfilledComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/RequestABadgeComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/RequestBadgesComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/SetActivatedBadgesComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/inventory/badges/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/BuyMarketplaceOfferMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/BuyMarketplaceTokensMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/CancelMarketplaceOfferMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceCanMakeOfferComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceConfigurationMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceItemStatsComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceOffersMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/GetMarketplaceOwnOffersMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/MakeOfferMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/RedeemMarketplaceOfferCreditsMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/marketplace/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/user/GetHabboGroupBadgesMessageComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/outgoing/user/data/UserCurrentBadgesComposer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/group/GroupBadgePartsParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/group/utils/GroupDataBadgePart.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgeAndPointLimit.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgePointLimitsParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgeReceivedParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/inventory/badges/BadgesParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/inventory/badges/IsBadgeRequestFulfilledParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/inventory/badges/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceBuyOfferResultParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceCanMakeOfferResultParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceCancelOfferResultParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceConfigurationMessageParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceItemPostedParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceItemStatsParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOffer.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOfferData.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOffersParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/MarketplaceOwnOffersParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/marketplace/index.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/user/HabboGroupBadgesMessageParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/communication/messages/parser/user/data/UserCurrentBadgesParser.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/localization/BadgeBaseAndLevel.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/room/messages/ObjectGroupBadgeUpdateMessage.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/room/object/logic/furniture/FurnitureBadgeDisplayLogic.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/room/object/visualization/furniture/FurnitureBadgeDisplayVisualization.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/room/object/visualization/furniture/FurnitureGuildIsometricBadgeVisualization.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/room/utils/RoomObjectBadgeImageAssetListener.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/session/badge/BadgeImageManager.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/session/badge/BadgeInfo.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/session/badge/GroupBadge.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/session/badge/GroupBadgePart.ts
+Archivo/RECOVERY-InventoryLock-20260829-170323/submodules-renderer/src/nitro/session/badge/index.ts
+badge_marketplace_QA_results.txt
+badge_marketplace_closeout_audit.txt
+badge_marketplace_notification_diagnostic.txt
+badge_marketplace_payout_and_qa_audit.txt
+badge_seller_waitlist_inactivity_audit.txt
+xampp/htdocs/app/Console/Commands/BadgeSellerLicenseMaintenanceCommand.php
+xampp/htdocs/app/Filament/Resources/Hotel/BadgeSubmissionResource.php
+xampp/htdocs/app/Filament/Resources/Hotel/BadgeSubmissionResource/Pages/ManageBadgeSubmissions.php
+xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php
+xampp/htdocs/app/Http/Controllers/Marketplace/BadgeGiftController.php
+xampp/htdocs/app/Http/Controllers/Marketplace/BadgeHotelDistributionController.php
+xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplaceListingController.php
+xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplacePurchaseController.php
+xampp/htdocs/app/Http/Controllers/Marketplace/BadgeSellerApplicationController.php
+xampp/htdocs/app/Livewire/Filament/BadgeApplicationsTable.php
+xampp/htdocs/app/Livewire/Filament/BadgeSellerApplicationsTable.php
+xampp/htdocs/app/Models/BadgeDesigner.php
+xampp/htdocs/app/Models/BadgeMarketplaceListing.php
+xampp/htdocs/app/Models/BadgeMarketplaceSale.php
+xampp/htdocs/app/Models/BadgeSellerLicense.php
+xampp/htdocs/app/Models/BadgeSubmission.php
+xampp/htdocs/app/Models/CreatorBadge.php
+xampp/htdocs/app/Services/BadgeGiftService.php
+xampp/htdocs/app/Services/BadgeMarketplaceListingService.php
+xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php
+xampp/htdocs/app/Services/BadgePixelArtService.php
+xampp/htdocs/app/Services/BadgeSellerEligibilityService.php
+xampp/htdocs/app/Services/BadgeSubmissionModerationService.php
+xampp/htdocs/config/badge_marketplace.php
+xampp/htdocs/database/migrations/2026_08_30_171500_create_badge_creator_tables.php
+xampp/htdocs/database/migrations/2026_08_31_063000_add_badge_submission_housekeeping_permission.php
+xampp/htdocs/database/migrations/2026_08_31_074800_create_badge_gifts_table.php
+xampp/htdocs/database/migrations/2026_08_31_091500_create_badge_seller_foundation_tables.php
+xampp/htdocs/database/migrations/2026_08_31_113000_create_hotel_roles_and_replace_badge_designers.php
+xampp/htdocs/database/migrations/2026_08_31_124500_add_badge_marketplace_housekeeping_permission.php
+xampp/htdocs/database/migrations/2026_08_31_130500_create_badge_marketplace_listings_table.php
+xampp/htdocs/database/migrations/2026_08_31_133000_create_badge_marketplace_sales_table.php
+xampp/htdocs/database/migrations/2026_08_31_143000_add_hotel_distribution_right_to_creator_badges.php
+xampp/htdocs/resources/themes/atom/views/marketplace/badges.blade.php
+xampp/htdocs/resources/views/livewire/filament/badge-applications-table.blade.php
+xampp/htdocs/resources/views/livewire/filament/badge-seller-applications-table.blade.php
+xampp/htdocs/storage/app/badge_creator/previews/1/033c2244-299c-43bc-afba-b2f284f3e61f/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/033c2244-299c-43bc-afba-b2f284f3e61f/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/08b29a0c-7078-438c-bbbe-3ba8c6591d6d/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/08b29a0c-7078-438c-bbbe-3ba8c6591d6d/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/1a3851b8-9f0c-4dd9-858e-72d0b55693db/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/1a3851b8-9f0c-4dd9-858e-72d0b55693db/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/22263db8-df39-43ca-b8fa-2c921a83b035/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/22263db8-df39-43ca-b8fa-2c921a83b035/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/250a9d95-7813-4d71-94a8-b08fd712f336/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/250a9d95-7813-4d71-94a8-b08fd712f336/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/29eefe4d-e73f-47df-819e-8a0ee9e2ec7d/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/29eefe4d-e73f-47df-819e-8a0ee9e2ec7d/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/3b60b1fa-66bc-4ff3-a87f-ecbdd3cf1ecf/processed.png
+xampp/htdocs/storage/app/badge_creator/previews/1/3b60b1fa-66bc-4ff3-a87f-ecbdd3cf1ecf/source.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/3c1b80b3-e627-45bd-8bc1-4650a01a426e/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/3c1b80b3-e627-45bd-8bc1-4650a01a426e/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/4183f9f3-fbe1-41df-b48d-818c894e67c6/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/4183f9f3-fbe1-41df-b48d-818c894e67c6/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/451a596b-f521-44cd-b44f-9e45f0fe7df2/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/451a596b-f521-44cd-b44f-9e45f0fe7df2/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/4a75c584-bcfe-4a1f-ae8e-172f65463fbf/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/4a75c584-bcfe-4a1f-ae8e-172f65463fbf/source.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/4f8a6f70-4ee4-462b-9bf8-3218acdfd81d/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/4f8a6f70-4ee4-462b-9bf8-3218acdfd81d/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/569a7cc6-fe88-4895-808f-27f7a2359654/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/569a7cc6-fe88-4895-808f-27f7a2359654/source.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/5c1a4dd0-1be6-432b-bb84-8c49141225a8/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/5c1a4dd0-1be6-432b-bb84-8c49141225a8/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/64c7cae7-7fbc-42f8-8362-a4f1029af5a3/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/64c7cae7-7fbc-42f8-8362-a4f1029af5a3/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/7d583363-af55-4735-bb5e-65cd5c97e0a3/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/7d583363-af55-4735-bb5e-65cd5c97e0a3/source.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/89f677d2-b823-42d1-bfc2-837d4ecf2621/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/89f677d2-b823-42d1-bfc2-837d4ecf2621/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/8ebfc4aa-6d75-4505-b7dd-0c703a2b545b/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/8ebfc4aa-6d75-4505-b7dd-0c703a2b545b/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/9cc8c0e6-b620-4931-a6c4-980318a0aa67/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/9cc8c0e6-b620-4931-a6c4-980318a0aa67/source.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/a4718e5b-2a41-41cf-aa1b-ec24a2a45c6b/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/a4718e5b-2a41-41cf-aa1b-ec24a2a45c6b/source.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/a9c6b212-86bd-47bf-aa28-6d78769b7609/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/a9c6b212-86bd-47bf-aa28-6d78769b7609/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/bd7009b7-9629-4e89-bd4d-f6ce51127648/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/bd7009b7-9629-4e89-bd4d-f6ce51127648/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/c0827b2c-1858-4292-a3ba-00f20014e4ca/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/c0827b2c-1858-4292-a3ba-00f20014e4ca/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/c3096120-0e86-451d-bbaa-9265fac2c781/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/c3096120-0e86-451d-bbaa-9265fac2c781/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/cb7edb09-361d-4536-94b9-fa89c4e5e3e4/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/cb7edb09-361d-4536-94b9-fa89c4e5e3e4/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/d1d4cd40-f709-4165-b06a-a94dbfbca20b/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/d1d4cd40-f709-4165-b06a-a94dbfbca20b/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/d836dbc7-f6b7-4116-90de-13fa32811d38/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/d836dbc7-f6b7-4116-90de-13fa32811d38/source.png
+xampp/htdocs/storage/app/badge_creator/previews/1/efa5eab9-d4ee-4eee-b702-b9ab3cc16670/processed.gif
+xampp/htdocs/storage/app/badge_creator/previews/1/efa5eab9-d4ee-4eee-b702-b9ab3cc16670/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/1df6f08a-db0e-44fd-a267-68d72164abcf/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/1df6f08a-db0e-44fd-a267-68d72164abcf/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/534d3482-3c53-42f2-b1a8-c1f6ec20f719/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/534d3482-3c53-42f2-b1a8-c1f6ec20f719/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/53940ed2-5f33-4e41-bcbb-73ac570fc1f8/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/53940ed2-5f33-4e41-bcbb-73ac570fc1f8/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/83b2d1ab-7b89-46a9-b440-138cb93d6d19/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/83b2d1ab-7b89-46a9-b440-138cb93d6d19/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/a936ba47-8459-4bb6-bd45-1427182a4166/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/a936ba47-8459-4bb6-bd45-1427182a4166/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/d2746429-1bd1-452b-9807-aa3a2248f190/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/d2746429-1bd1-452b-9807-aa3a2248f190/source.gif
+xampp/htdocs/storage/app/badge_creator/submissions/e8682686-7533-4c5e-908b-8760c5d7f2f7/processed.gif
+xampp/htdocs/storage/app/badge_creator/submissions/e8682686-7533-4c5e-908b-8760c5d7f2f7/source.gif
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115524/app__Filament__Resources__Hotel__BadgeSubmissionResource.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115524/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115524/app____Services____BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115524/apply-patches.php
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115524/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115524/routes__web.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/app__Filament__Resources__Hotel__BadgeSubmissionResource.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/app____Services____BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/apply-patches.php
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/routes__web.php.bak
+xampp/htdocs/storage/backups/badge-applications-hub-20260831-115854/smoke.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/app__Filament__Resources__Hotel__BadgeTextEditorResource.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/app__Services__BadgeSubmissionModerationService.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/patch.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/postflight.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/preflight.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/public__dist__renderer-config.json.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-063932/routes__api.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/SUCCESS.txt
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/app__Filament__Resources__Hotel__BadgeTextEditorResource.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/app__Services__BadgeSubmissionModerationService.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/check-http-json.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/endpoint-response.json
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/patch.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/postflight.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/preflight.php
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/public__dist__renderer-config.json.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-display-text-endpoint-20260831-064124/routes__api.php.bak
+xampp/htdocs/storage/backups/badge-gift-20260831-100129/blade-check.php
+xampp/htdocs/storage/backups/badge-gift-20260831-100129/db-preflight.php
+xampp/htdocs/storage/backups/badge-gift-20260831-100129/patch.php
+xampp/htdocs/storage/backups/badge-gift-20260831-100129/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-gift-20260831-100129/routes__web.php.bak
+xampp/htdocs/storage/backups/badge-gift-20260831-100129/schema-check.php
+xampp/htdocs/storage/backups/badge-gift-ux-20260831-103907/app__Http__Controllers__Marketplace__BadgeGiftController.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-20260831-103907/app__Services__BadgeGiftService.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-20260831-103907/patch.php
+xampp/htdocs/storage/backups/badge-gift-ux-20260831-103907/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v2-20260831-104216/app__Http__Controllers__Marketplace__BadgeGiftController.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v2-20260831-104216/app__Services__BadgeGiftService.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v2-20260831-104216/patch.php
+xampp/htdocs/storage/backups/badge-gift-ux-v2-20260831-104216/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v3-20260831-104458/app__Http__Controllers__Marketplace__BadgeGiftController.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v3-20260831-104458/app__Services__BadgeGiftService.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v3-20260831-104458/blade-check.php
+xampp/htdocs/storage/backups/badge-gift-ux-v3-20260831-104458/patch.php
+xampp/htdocs/storage/backups/badge-gift-ux-v3-20260831-104458/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-gift-ux-v3-20260831-104458/smoke.php
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/ExternalTexts.mirror.before.json
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/ExternalTexts.public.before.json
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/SUCCESS.txt
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/app__Filament__Resources__Hotel__BadgeTextEditorResource.php.bak
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/app__Services__BadgeSubmissionModerationService.php.bak
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/patch.php
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/postflight.php
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/preflight.php
+xampp/htdocs/storage/backups/badge-integration-final-20260831-063458/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-integration-fix-20260831-062645/preflight.php
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/app__Console__Commands__ImportBadgeData.php.bak
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/app__Filament__Resources__Hotel__BadgeTextEditorResource.php.bak
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/app__Services__BadgeSubmissionModerationService.php.bak
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/nitro_external_texts.before.json
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/nitro_external_texts.path.txt
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/patch.php
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/postflight.php
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/preflight.php
+xampp/htdocs/storage/backups/badge-integration-fix-v2-20260831-062859/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-cms-pagination-fixed-20260831-140012/app__Services__BadgeMarketplaceListingService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-cms-pagination-fixed-20260831-140012/apply.php
+xampp/htdocs/storage/backups/badge-marketplace-cms-pagination-fixed-20260831-140012/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-cms-pagination-fixed2-20260831-140226/app__Services__BadgeMarketplaceListingService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-cms-pagination-fixed2-20260831-140226/apply.php
+xampp/htdocs/storage/backups/badge-marketplace-cms-pagination-fixed2-20260831-140226/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-final-polish-20260831-145644/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-final-polish-20260831-145644/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-foundation-20260831-110255/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/ROLLBACK_THIS_PATCH.ps1
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/app__Services__BadgeMarketplacePurchaseService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/failed_purchase_before_reset.json
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/patch_service.php
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/reset_failed_purchase.php
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/rollback_db.php
+xampp/htdocs/storage/backups/badge-marketplace-fresh-flow-20260831-153507/verify_service.php
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/app__Services__BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/apply-patches.php
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/backfill-seller-approval-notification.php
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/routes__web.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-listings-20260831-122544/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-notify-fix-20260831-154311/app__Services__BadgeMarketplacePurchaseService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-notify-fix-20260831-154311/patch.php
+xampp/htdocs/storage/backups/badge-marketplace-notify-fix-20260831-154311/verify_and_backfill.php
+xampp/htdocs/storage/backups/badge-marketplace-payout-ledger-20260831-160208/app__Services__BadgeMarketplacePurchaseService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-payout-ledger-20260831-160208/backfill.php
+xampp/htdocs/storage/backups/badge-marketplace-payout-ledger-20260831-160208/backfill_state.json
+xampp/htdocs/storage/backups/badge-marketplace-payout-ledger-20260831-160208/patch.php
+xampp/htdocs/storage/backups/badge-marketplace-payout-ledger-20260831-160208/rollback_backfill.php
+xampp/htdocs/storage/backups/badge-marketplace-payout-ledger-20260831-160208/verify.php
+xampp/htdocs/storage/backups/badge-marketplace-purchase-core-20260831-133334/apply-route.php
+xampp/htdocs/storage/backups/badge-marketplace-purchase-core-20260831-133334/routes__web.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-purchase-core-20260831-133334/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-purchase-fix-20260831-151214/app__Services__BadgeMarketplacePurchaseService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-purchase-fix-20260831-151214/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-realtime-20260831-144030/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-realtime-20260831-144030/app__Services__BadgeMarketplaceListingService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-realtime-20260831-144030/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-realtime-20260831-144030/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-realtime-fixed-20260831-144444/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-realtime-fixed-20260831-144444/app__Services__BadgeMarketplaceListingService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-realtime-fixed-20260831-144444/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-realtime-fixed-20260831-144444/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-ui-20260831-123156/badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-bright-20260831-123924/badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-bright-fixed-20260831-125638/badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-fixed-20260831-123323/badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-20260831-134442/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-20260831-134442/app__Services__BadgeMarketplaceListingService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-20260831-134442/apply.php
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-20260831-134442/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-fixed-20260831-134837/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-fixed-20260831-134837/app__Services__BadgeMarketplaceListingService.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-fixed-20260831-134837/apply.php
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-fixed-20260831-134837/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-purchase-fixed-20260831-134837/smoke.php
+xampp/htdocs/storage/backups/badge-marketplace-ui-stable-20260831-140632/apply.php
+xampp/htdocs/storage/backups/badge-marketplace-ui-stable-20260831-140632/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-marketplace-ui-stable-20260831-140632/smoke.php
+xampp/htdocs/storage/backups/badge-seller-card-final-20260831-150116/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/badge-seller-card-final-20260831-150116/smoke.php
+xampp/htdocs/storage/backups/badge-seller-inactivity-waitlist-20260831-175238/app__Console__Kernel.php.bak
+xampp/htdocs/storage/backups/badge-seller-inactivity-waitlist-20260831-175238/app__Services__BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/badge-seller-inactivity-waitlist-20260831-175238/config__badge_marketplace.php.bak
+xampp/htdocs/storage/backups/badge-seller-inactivity-waitlist-20260831-175238/patch.php
+xampp/htdocs/storage/backups/badge-seller-inactivity-waitlist-20260831-175238/smoke.php
+xampp/htdocs/storage/backups/badge-seller-warning-reset-fix-20260831-175609/app__Services__BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/badge-seller-warning-reset-fix-20260831-175609/patch.php
+xampp/htdocs/storage/backups/badge-seller-warning-reset-fix-20260831-175609/smoke.php
+xampp/htdocs/storage/backups/badge-submission-moderation-20260831-061300/preflight.php
+xampp/htdocs/storage/backups/badge-submission-moderation-v2-20260831-061737/preflight.php
+xampp/htdocs/storage/backups/badge-submission-moderation-v2-20260831-061821/SUCCESS.txt
+xampp/htdocs/storage/backups/badge-submission-moderation-v2-20260831-061821/postflight.php
+xampp/htdocs/storage/backups/badge-submission-moderation-v2-20260831-061821/preflight.php
+xampp/htdocs/storage/backups/badge-validation-filament-buttons-20260831-121630/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/badge-validation-filament-buttons-20260831-121630/app__Livewire__Filament__BadgeApplicationsTable.php.bak
+xampp/htdocs/storage/backups/badge-validation-filament-buttons-20260831-121630/app__Livewire__Filament__BadgeSellerApplicationsTable.php.bak
+xampp/htdocs/storage/backups/badge-validation-filament-buttons-20260831-121630/smoke.php
+xampp/htdocs/storage/backups/creator-badges-auto-fix-20260830-180621/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-auto-fix-20260830-180621/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-auto-pipeline-20260831-044701/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-auto-pipeline-20260831-044701/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174307/app____Http____Controllers____Marketplace____BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174307/app____Services____BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174307/resources____themes____atom____views____marketplace____badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174345/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174345/app____Http____Controllers____Marketplace____BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174345/app____Services____BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-fixes-20260830-174345/resources____themes____atom____views____marketplace____badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-pending-ui-20260831-055717/BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-pending-ui-20260831-055717/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-pending-ui-20260831-055717/badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-phase1-20260830-173037/MANIFEST.txt
+xampp/htdocs/storage/backups/creator-badges-phase1-20260830-173037/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-phase1-20260830-173037/inner-install-phase1.ps1
+xampp/htdocs/storage/backups/creator-badges-phase1-20260830-173037/inner-web.php.before-creator-badges-20260830-173039.bak
+xampp/htdocs/storage/backups/creator-badges-phase1-20260830-173037/routes-web.php.original
+xampp/htdocs/storage/backups/creator-badges-quality-20260830-175456/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-quality-20260830-175456/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-quality-20260830-175456/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-quality-20260830-175456/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-rembg-magick-v2-20260831-050542/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-rembg-magick-v2-20260831-050542/smoke_badge_external.php
+xampp/htdocs/storage/backups/creator-badges-rembg-magick-v3-20260831-050918/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-rembg-magick-v3-20260831-050918/smoke_badge_external.php
+xampp/htdocs/storage/backups/creator-badges-rembg-magick-v3-20260831-051029/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-rembg-magick-v3-20260831-051029/smoke_badge_external.php
+xampp/htdocs/storage/backups/creator-badges-require-transparency-20260831-054619/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-require-transparency-20260831-054619/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-require-transparency-20260831-054619/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-transparency-info-only-20260831-054812/BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-transparency-info-only-20260831-054812/badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-transparency-info-only-20260831-054815/BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-transparency-info-only-20260831-054815/badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-transparency-info-only-v2-20260831-054904/BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-transparency-info-only-v2-20260831-054904/badges.blade.php.bak
+xampp/htdocs/storage/backups/creator-badges-upload-only-20260831-054214/SUCCESS.txt
+xampp/htdocs/storage/backups/creator-badges-upload-only-20260831-054214/app__Http__Controllers__Marketplace__BadgeCreatorController.php.bak
+xampp/htdocs/storage/backups/creator-badges-upload-only-20260831-054214/app__Services__BadgePixelArtService.php.bak
+xampp/htdocs/storage/backups/creator-badges-upload-only-20260831-054214/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/emulator-presence-20260831-103051/xampp__htdocs__app__Services__BadgeGiftService.php.bak
+xampp/htdocs/storage/backups/fix-badge-seller-filament-20260831-120611/app__Livewire__Filament__BadgeApplicationsTable.php.bak
+xampp/htdocs/storage/backups/fix-badge-seller-filament-20260831-120611/app__Livewire__Filament__BadgeSellerApplicationsTable.php.bak
+xampp/htdocs/storage/backups/fix-badge-seller-filament-20260831-120611/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/fix-badge-seller-filament-20260831-120611/smoke.php
+xampp/htdocs/storage/backups/fix-creator-badge-img-20260831-064350/badges.blade.php.bak
+xampp/htdocs/storage/backups/fix-creator-badge-img-20260831-064350/compile-check.php
+xampp/htdocs/storage/backups/fix-creator-badge-img-20260831-064350/compiled-badges.php
+xampp/htdocs/storage/backups/fix-creator-badge-img-20260831-064350/patch.php
+xampp/htdocs/storage/backups/generic-account-notifications-20260831-072101/app__Services__BadgeSubmissionModerationService.php.bak
+xampp/htdocs/storage/backups/generic-account-notifications-20260831-072205/app__Services__BadgeSubmissionModerationService.php.bak
+xampp/htdocs/storage/backups/hotel-distribution-right-20260831-163208/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/hotel-distribution-right-20260831-163435/resources__themes__atom__views__marketplace__badges.blade.php.bak
+xampp/htdocs/storage/backups/hotel-roles-foundation-20260831-112151/app____Services____BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/remove-team-system-key-20260831-114630/app____Services____BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/website-teams-multi-role-20260831-113705/app____Services____BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/website-teams-multi-role-20260831-113840/app____Services____BadgeSellerEligibilityService.php.bak
+xampp/htdocs/storage/backups/website-teams-multi-role-20260831-113954/app____Services____BadgeSellerEligibilityService.php.bak
+
+======================================================================
+ROOT DOCUMENTS METADATA
+======================================================================
+FILE=DOCUMENTACION-RETRO.md
+SHA256=b2f06a85b72f73182a1e3b88f9e5379151ce79ba67e105cc4c59e3c51b3142a9
+BYTES=33503
+STATUS=?? DOCUMENTACION-RETRO.md
+FILE=DOCUMENTACION-SUBASTAS-V1.md
+SHA256=890c7d64ec2b486117f66cdc4df5a84cd16bcf41ab0586254f77e817c9620b1d
+BYTES=7031
+STATUS=?? DOCUMENTACION-SUBASTAS-V1.md
+FILE=DOCUMENTACION-UI-HOLO-v14.md
+SHA256=ac47d80c8662b6d4e98636901f5c8822a801dcfbff907001c695d4a81b6a702f
+BYTES=9640
+STATUS=?? DOCUMENTACION-UI-HOLO-v14.md
+FILE=DOCUMENTACION-WIREDS-CUSTOM.md
+SHA256=8be3f79c14ed27027b12b4dba5767b80c9b86711f633280b34a66c4af7f1f1bd
+BYTES=42421
+STATUS=?? DOCUMENTACION-WIREDS-CUSTOM.md
+FILE=HOLO_RPG_MOVEMENT_ENGINE_ROADMAP.md
+SHA256=6e3cfcc3bd14c110e4e2d0d8fc3da8d61dd5dc11cbef89028d0fb04a5ea47bc1
+BYTES=26940
+STATUS=clean/tracked
+FILE=MONETIZACION.md
+SHA256=796049f96bf24d8797effe267ef6769b81c18761a91acf2a2e693022cffaa203
+BYTES=16975
+STATUS=?? MONETIZACION.md
+FILE=PENDIENTES.md
+SHA256=086645897a25d1c78552fe60d81b16d3d457f978dd875d1386622881b7362e76
+BYTES=8269
+STATUS=?? PENDIENTES.md
+FILE=RPGENGINE_CHANGELOG_2026-08-30.md
+SHA256=7e1a58f62c15a9e05d737ee826178b7e2a893c516f0ed752fd17f6d6609488cd
+BYTES=1294
+STATUS=?? RPGENGINE_CHANGELOG_2026-08-30.md
+FILE=RPGENGINE_DECISIONS_2026-08-30.md
+SHA256=de0c0157b7814d0c310736ad8176adaa3e43f41bc75cb9932ea60a9b857fd0c9
+BYTES=2809
+STATUS=?? RPGENGINE_DECISIONS_2026-08-30.md
+FILE=RPGENGINE_HANDOFF_2026-08-30.md
+SHA256=7a3185d27d01c7ce8918ba9608b223a06f48f1bd865b17aa20b3005a814648e6
+BYTES=3257
+STATUS=?? RPGENGINE_HANDOFF_2026-08-30.md
+FILE=RPGENGINE_V1_SCOPE_2026-08-30.md
+SHA256=d14122cfb2b876aa38c8dfce2c1e4214a054bae51577d63d83f364dbb7d52cde
+BYTES=3832
+STATUS=?? RPGENGINE_V1_SCOPE_2026-08-30.md
+
+======================================================================
+DOCUMENT SOURCE: DOCUMENTACION-RETRO.md
+======================================================================
+SHA256=b2f06a85b72f73182a1e3b88f9e5379151ce79ba67e105cc4c59e3c51b3142a9
+----- SOURCE BEGIN -----
+# DocumentaciÃ³n tÃ©cnica del retro
+
+Actualizado: 27/08/2026
+
+## Estado general
+
+Copia de trabajo real:
+C:\Users\erale\Desktop\Habbo
+
+Copia secundaria/congelada:
+C:\Users\erale\Desktop\Habbo 2
+
+IMPORTANTE:
+- Todo desarrollo nuevo se hace sobre `C:\Users\erale\Desktop\Habbo`.
+- `Habbo 2` no debe usarse como copia de trabajo ni borrarse por ahora.
+- El retro real contiene las modificaciones actuales, incluidos PokÃ©mon/RPG, furnis personalizados y Subastas.
+
+## Estructura principal
+
+RaÃ­z:
+C:\Users\erale\Desktop\Habbo
+
+Contenido relevante:
+- `1- Install`
+- `Emulator`
+- `PokemonBackend`
+- `Translations`
+- `xampp`
+- `Desarrollo\Subastas`
+- `PackAIO-V4.sql`
+- `Tutorials.txt`
+- `DOCUMENTACION-RETRO.md`
+
+## Emulador
+
+Ruta:
+C:\Users\erale\Desktop\Habbo\Emulator
+
+JAR principal:
+Habbo-3.6.0-jar-with-dependencies.jar
+
+VersiÃ³n que muestra al arrancar:
+Arcturus Morningstar 3.6.1
+
+SHA256 del JAR:
+CC6E5105457B2594AB3A51D109A74283BBDF826D10EB35C1D0EC3C43D2D542F7
+
+TecnologÃ­a:
+- Java
+- Bytecode Java 16 (major version 60)
+- Plugins mediante archivos `.jar` en `Emulator\plugins`
+
+Java/Maven:
+- JDK 25 Eclipse Adoptium disponible para Maven.
+- Los plugins propios se compilan con `release 16`.
+- Maven 3.9.16 disponible en:
+  `C:\Users\erale\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16`
+- Dependencia local del emulador instalada en:
+  `C:\Users\erale\.m2\repository\com\eu\habbo\Habbo\3.6.0\Habbo-3.6.0.jar`
+
+Comando de compilaciÃ³n de plugins si `mvn` no estÃ¡ en PATH:
+`& "C:\Users\erale\Downloads\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin\mvn.cmd" clean package`
+
+Puertos:
+- GameServer: `0.0.0.0:3000`
+- RCON: `127.0.0.1:3001`
+- Nitro WebSocket: `ws://0.0.0.0:2096`
+
+## Sistema de plugins
+
+Clase base:
+`com.eu.habbo.plugin.HabboPlugin`
+
+Los plugins pueden implementar:
+`com.eu.habbo.plugin.EventListener`
+
+MÃ©todos principales:
+- `onEnable()`
+- `onDisable()`
+- `hasPermission(...)`
+
+Eventos:
+`Emulator.getPluginManager().registerEvents(plugin, listener)`
+
+Acceso a base de datos:
+`Emulator.getDatabase().getDataSource().getConnection()`
+
+Acceso al gestor de paquetes:
+`Emulator.getGameServer().getPacketManager()`
+
+PacketManager permite:
+- `registerHandler(Integer, Class<? extends MessageHandler>)`
+- `registerCallable(Integer, ICallable)`
+
+MessageHandler dispone de:
+- `client`
+- `packet`
+- `isCancelled`
+- `handle()`
+
+IMPORTANTE:
+No registrar paquetes personalizados directamente en `onEnable()`, porque GameServer puede seguir siendo `null`.
+
+PatrÃ³n confirmado:
+1. Registrar eventos en `onEnable()`.
+2. Esperar a `EmulatorLoadedEvent`.
+3. Registrar los handlers personalizados cuando el emulador ya estÃ¡ cargado.
+
+Esto permite crear paquetes personalizados desde plugins sin modificar el JAR principal del emulador.
+
+## Plugin Subastas
+
+Proyecto:
+C:\Users\erale\Desktop\Habbo\Desarrollo\Subastas
+
+Group:
+`com.retro`
+
+Artifact:
+`subastas`
+
+Clase principal:
+`com.retro.subastas.Subastas`
+
+Descriptor:
+`plugin.json`
+
+JAR desplegado:
+C:\Users\erale\Desktop\Habbo\Emulator\plugins\Subastas.jar
+
+Estado confirmado:
+- El plugin carga correctamente.
+- Espera a `EmulatorLoadedEvent`.
+- El paquete 5000 se registra correctamente.
+- Nitro ha enviado el paquete 5000 y el emulador lo ha recibido correctamente.
+
+Mensajes de prueba confirmados:
+- `[Subastas] Plugin cargado, esperando al emulador`
+- `[Subastas] Paquete 5000 registrado correctamente`
+- `[Subastas] Paquete 5000 recibido`
+
+## Base de datos / MariaDB / XAMPP
+
+Base de datos del retro:
+`habbo`
+
+Ruta fÃ­sica:
+C:\Users\erale\Desktop\Habbo\xampp\mysql\data\habbo
+
+ConfiguraciÃ³n principal:
+C:\Users\erale\Desktop\Habbo\xampp\mysql\bin\my.ini
+
+ConfiguraciÃ³n corregida:
+- Puerto: `3306`
+- `basedir` y `datadir` apuntan a la instalaciÃ³n real dentro de `Habbo`.
+
+TambiÃ©n existÃ­a:
+C:\Users\erale\Desktop\Habbo\xampp\mysql\data\my.ini
+
+Ese archivo tenÃ­a un `datadir` incorrecto (`c:/xampp/mysql/data`) y fue corregido para apuntar a:
+`C:/Users/erale/Desktop/Habbo/xampp/mysql/data`
+
+Backup del archivo anterior:
+`my.ini.backup-20260827`
+
+### RecuperaciÃ³n de MariaDB
+
+Se detectÃ³ corrupciÃ³n masiva en metadatos de replicaciÃ³n de MariaDB.
+
+Archivos sospechosos encontrados:
+1534
+
+No se borraron. Se movieron a:
+C:\Users\erale\Desktop\RESCATE-HABBO-DB\replicacion-corrupta-20260827
+
+Backups adicionales:
+- `C:\Users\erale\Desktop\RESCATE-HABBO-DB\mysql-Habbo-antiguo`
+- `C:\Users\erale\Desktop\RESCATE-HABBO-DB\mysql-Habbo2-actual`
+
+DespuÃ©s de apartar los metadatos corruptos, MariaDB arrancÃ³ correctamente y mostrÃ³:
+- `Reading of all Master_info entries succeeded`
+- `Added new Master_info '' to hash table`
+- `ready for connections`
+
+VersiÃ³n:
+MariaDB 10.4.32
+
+Integridad confirmada:
+- La tabla `users` responde correctamente.
+- Usuarios comprobados: `Systemaccount`, `Admin`, `Hokusei`, `Yserinde`.
+- Tablas PokÃ©mon/RPG presentes:
+  - `pokemon_abilities`
+  - `pokemon_inventory`
+  - `pokemon_items`
+  - `pokemon_natures`
+  - `pokemon_pokedex`
+  - `pokemon_routes`
+  - `pokemon_storage`
+  - `pokemon_trainers`
+  - `usuarios_rpg_stats`
+
+### Estado operativo actual de MariaDB
+
+Actualmente MariaDB se mantiene arrancado manualmente desde CMD/consola.
+
+Comando usado:
+`C:\Users\erale\Desktop\Habbo\xampp\mysql\bin\mysqld.exe --defaults-file="C:\Users\erale\Desktop\Habbo\xampp\mysql\bin\my.ini" --console`
+
+IMPORTANTE:
+- Mientras esa instancia estÃ© ejecutÃ¡ndose, NO iniciar otra instancia MySQL desde el panel de XAMPP.
+- No copiar manualmente archivos individuales InnoDB.
+- No borrar `ibdata1`.
+- No importar `PackAIO-V4.sql` salvo que exista una razÃ³n concreta y se haya hecho backup.
+- Este arranque manual es el estado operativo actual hasta solucionar definitivamente el comportamiento de XAMPP con MySQL/MariaDB.
+
+## Apache / Atom CMS
+
+Apache funciona correctamente.
+
+Puertos reales:
+- HTTP: `80`
+- HTTPS: `443`
+
+DocumentRoot real:
+C:\Users\erale\Desktop\Habbo\xampp\htdocs\public
+
+La pÃ¡gina del hotel:
+`http://localhost/game/nitro`
+
+Atom CMS carga Nitro mediante un iframe hacia:
+`http://localhost/dist/index.html?sso=...`
+
+Por tanto, el cliente Nitro que usa realmente el hotel estÃ¡ servido desde:
+C:\Users\erale\Desktop\Habbo\xampp\htdocs\public\dist
+
+## Cliente Nitro
+
+VersiÃ³n:
+Nitro React 2.1.1
+
+Renderer:
+1.6.6
+
+CÃ³digo fuente real:
+C:\Users\erale\Desktop\Habbo\xampp\htdocs\nitro-react
+
+CÃ³digo React:
+`src`
+
+Renderer fuente:
+`submodules\renderer`
+
+Dependencia usada por Nitro:
+`node_modules\@nitrots\nitro-renderer`
+
+ComunicaciÃ³n:
+`submodules\renderer\src\nitro\communication`
+
+Archivo central:
+`NitroMessages.ts`
+
+Mensajes:
+- `messages\incoming`
+- `messages\outgoing`
+- `messages\parser`
+
+Headers servidor -> Nitro:
+`messages\incoming\IncomingHeader.ts`
+
+Headers Nitro -> servidor:
+`messages\outgoing\OutgoingHeader.ts`
+
+Nitro registra eventos con:
+`this._events.set(IncomingHeader.X, XMessageEvent)`
+
+Nitro registra compositores con:
+`this._composers.set(OutgoingHeader.X, XMessageComposer)`
+
+### Build de Nitro
+
+Anteriormente `yarn build` generaba un `dist` dentro del proyecto y despuÃ©s habÃ­a que mover los archivos manualmente.
+
+Ahora Vite estÃ¡ configurado para compilar directamente sobre el cliente que usa Atom CMS:
+
+Destino:
+C:\Users\erale\Desktop\Habbo\xampp\htdocs\public\dist
+
+`vite.config.mjs`:
+- `outDir: resolve(__dirname, '../public/dist')`
+- `emptyOutDir: false`
+
+`package.json`:
+- `build: vite build --base=/dist/`
+
+Resultado:
+`yarn build` actualiza directamente el Nitro usado por el hotel y ya no es necesario mover los archivos despuÃ©s de compilar.
+
+`emptyOutDir: false` se mantiene para conservar archivos existentes como:
+- `renderer-config.json`
+- `ui-config.json`
+- favicons y otros archivos estÃ¡ticos
+
+Incidencia corregida:
+Al editar `package.json` y `vite.config.mjs` con Windows PowerShell 5.1 se introdujo BOM UTF-8 y Vite fallÃ³ al parsear JSON.
+Los archivos se reescribieron como UTF-8 sin BOM.
+
+## IDs personalizados
+
+Comprobado en Nitro:
+`5000-5050` libres.
+
+Comprobado tambiÃ©n contra el registro de PacketManager del emulador:
+no aparecen IDs `5000-5050`.
+
+IMPORTANTE:
+Solo estÃ¡ comprobado/reservado el rango `5000-5050`. No asumir rangos mayores sin verificarlos.
+
+Primer paquete de Subastas:
+`5000 = ABRIR_SUBASTAS`
+
+## Paquete 5000 de Subastas
+
+Nitro:
+- `OutgoingHeader.ABRIR_SUBASTAS = 5000`
+- `AbrirSubastasComposer`
+- Registro en `NitroMessages.ts`
+- API React `AbrirSubastas()`
+- EnvÃ­o mediante `SendMessageComposer`
+
+Servidor:
+- Handler `AbrirSubastas`
+- Registro durante `EmulatorLoadedEvent`
+
+Prueba de extremo a extremo confirmada el 27/08/2026:
+1. Se ejecutÃ³ `AbrirSubastas()` desde Nitro.
+2. Nitro resolviÃ³ el composer al header `5000`.
+3. El paquete se codificÃ³ y se enviÃ³ por la conexiÃ³n del cliente.
+4. Arcturus recibiÃ³ el paquete.
+5. El plugin mostrÃ³:
+   `[Subastas] Paquete 5000 recibido`
+
+La prueba temporal se hizo desde el botÃ³n Navegador y desde `NavigatorDoorStateView`.
+Ambas llamadas temporales fueron eliminadas despuÃ©s de confirmar el funcionamiento.
+
+## Sistema de Subastas
+
+Objetivo:
+- Sistema nativo mediante panel de Nitro.
+- Sin comandos para los usuarios.
+- Backend mediante `Subastas.jar`.
+- MySQL/MariaDB para persistencia.
+- Servidor autoritativo para pujas, objetos y economÃ­a.
+
+Arquitectura prevista:
+
+Nitro
+  -> paquetes personalizados
+Subastas.jar
+  -> GestorSubastas
+  -> inventario / economÃ­a / MariaDB
+Subastas.jar
+  -> paquetes de respuesta
+Nitro
+
+Nombres previstos del backend:
+- `GestorSubastas`
+- `ProgramadorSubastas`
+- `ColaSubastas`
+- `SubastaActual`
+- `ServicioPujas`
+- `ServicioLiquidacion`
+- `RepositorioSubastas`
+- `DifusorSubastas`
+
+Tablas previstas:
+- `subastas`
+- `pujas_subastas`
+- `configuracion_subastas`
+
+Estados previstos:
+- `en_cola`
+- `activa`
+- `vendida`
+- `sin_vender`
+- `cancelada`
+
+Interfaz prevista:
+- En curso
+- Vender
+- Mis subastas
+- Historial
+
+Funcionamiento previsto:
+- Horario configurable de apertura.
+- Usuarios ponen objetos en cola.
+- Se subasta un objeto cada vez.
+- Pujas controladas por el servidor.
+- Mensajes globales de inicio, nuevas pujas y resultado.
+- DuraciÃ³n configurable por objeto.
+- Incremento mÃ­nimo.
+- Posible anti-sniping.
+- Posible comisiÃ³n.
+- Posible lÃ­mite de objetos por usuario/dÃ­a.
+- Escrow/bloqueo del objeto mientras estÃ¡ en subasta.
+- LiquidaciÃ³n atÃ³mica.
+- RecuperaciÃ³n ante caÃ­da del servidor.
+
+Estado actual:
+- Arquitectura base definida.
+- Proyecto Java creado.
+- Plugin compilado y desplegado.
+- ComunicaciÃ³n Nitro -> plugin confirmada mediante paquete 5000.
+- Build de Nitro automatizado directamente a `public\dist`.
+- Pruebas temporales retiradas.
+
+Siguiente fase:
+1. Crear el panel real de Subastas en Nitro.
+2. Definir los paquetes de respuesta servidor -> Nitro.
+3. Crear las tablas de base de datos.
+4. Implementar cola, subasta activa y pujas.
+5. AÃ±adir liquidaciÃ³n, seguridad y recuperaciÃ³n.
+6. Probar cada fase antes de avanzar.
+
+## Notas de seguridad operativa
+
+- Trabajar siempre sobre `C:\Users\erale\Desktop\Habbo`.
+- No usar `Habbo 2` para desarrollo.
+- No levantar dos procesos MariaDB/MySQL a la vez.
+- No borrar backups de rescate.
+- No tocar el JAR principal del emulador salvo necesidad real.
+- Priorizar plugins y paquetes personalizados para mantener el nÃºcleo actualizable.
+- Hacer backup antes de cambios estructurales de base de datos o cliente.
+
+---
+
+## Estado actual real de Subastas - 27/08/2026
+
+> Esta secciÃ³n sustituye al bloque antiguo de "Estado actual / Siguiente fase" que quedÃ³ desactualizado.
+
+### Backend y economÃ­a
+- Panel Nitro nativo con pestaÃ±as `En curso`, `Vender`, `Mis subastas` e `Historial`.
+- Cola real con furnis bloqueados en escrow mediante `items.user_id = -1`.
+- Motor automÃ¡tico de cola.
+- RecuperaciÃ³n tras reinicio/caducidad.
+- Pujas autoritativas en servidor.
+- El mejor postor reserva crÃ©ditos al pujar.
+- Al ser superado, recupera su puja anterior.
+- Si el mismo mejor postor aumenta su oferta, paga solo la diferencia.
+- El vendedor no puede pujar por su propio furni.
+- Entrega automÃ¡tica del furni al ganador.
+- Pago automÃ¡tico al vendedor.
+- ComisiÃ³n configurable para quema de crÃ©ditos; actualmente en pruebas a `0%`.
+- Anti-sniping interno configurable: umbral 5 s y extensiÃ³n +5 s.
+- LÃ­mite simultÃ¡neo configurable: 3 normal / 5 VIP-club.
+
+### Sesiones y cupos
+- Existe `sesiones_subastas`.
+- Cada furni pertenece a una sesiÃ³n concreta.
+- Cada sesiÃ³n tiene fecha de inicio, fin y cupo mÃ¡ximo.
+- El cupo se calcula automÃ¡ticamente segÃºn duraciÃ³n de sesiÃ³n, duraciÃ³n por furni, transiciÃ³n y margen.
+- `vendida`, `sin_vender`, `activa` y `en_cola` consumen plaza.
+- `cancelada` libera plaza.
+- `no_emitida` no consume plaza.
+- Si una sesiÃ³n termina con furnis pendientes, vuelven automÃ¡ticamente al vendedor.
+- No se arrastran silenciosamente a semanas posteriores.
+- Horario de producciÃ³n previsto: viernes 22:00-00:00.
+- Durante pruebas sigue usÃ¡ndose horario ampliado/configurable.
+
+### Avisos
+- `5014` se reserva para avisos globales de sesiÃ³n.
+- PolÃ­tica acordada: solo aviso global al abrir y al cerrar la sesiÃ³n.
+- No hay avisos globales por cada puja, furni o venta.
+- Aviso de apertura confirmado visualmente en Nitro.
+- Aviso de cierre pendiente de verificaciÃ³n final con sesiÃ³n corta.
+- Aviso global centrado en la parte superior de la pantalla.
+
+### Historial
+- Historial pÃºblico muestra solo subastas `vendida`.
+- No muestra `sin_vender`, `cancelada` ni `no_emitida`.
+- Incluye imagen, vendedor, ganador, precio final y fecha.
+- PaginaciÃ³n de 20 resultados con `Anterior / Siguiente`.
+
+### Feed en tiempo real
+- Disponible dentro de `En curso`.
+- MÃ¡ximo 20 eventos recientes.
+- Consulta cada 2 segundos solo mientras la pestaÃ±a estÃ¡ visible.
+- Eventos: inicio de furni, puja, venta y final sin pujas.
+- Se deriva de `subastas` y `pujas_subastas`; no modifica la lÃ³gica econÃ³mica.
+
+### Interfaz En curso
+- DiseÃ±o actual: actividad en directo a la izquierda.
+- Furni e informaciÃ³n de la subasta a la derecha.
+- Campo de puja y botÃ³n en la parte inferior izquierda.
+- Puja mÃ­nima, puja actual y tiempo restante se muestran bajo el furni.
+- Anti-sniping no se muestra en la interfaz porque es una regla interna.
+- Estado sin subasta usa "PrÃ³xima subasta" / "AquÃ­ se muestra el prÃ³ximo furni".
+
+### Paquetes de Subastas
+- `5000` Abrir subastas.
+- `5001` Estado de subasta.
+- `5002/5003` Inventario de subastas.
+- `5004/5005` Poner en subasta / resultado.
+- `5006/5007` Mis subastas.
+- `5008/5009` Retirar subasta / resultado.
+- `5010/5011` Pujar / resultado.
+- `5012/5013` Estado de sesiÃ³n y cupo.
+- `5014` Aviso global de sesiÃ³n.
+- `5015/5016` Historial de ventas.
+- `5017/5018` Feed de actividad.
+
+### Pendiente
+- Buscador y filtros en `Vender`.
+- SelecciÃ³n de cantidad desde stacks.
+- MÃ¡s detalle en `Mis subastas`: ganador, precio final, neto recibido y comisiÃ³n.
+- ActualizaciÃ³n en tiempo real de posiciones de cola / Mis subastas.
+- Pruebas de concurrencia y desconexiones.
+- EstadÃ­sticas.
+- RÃ©cords.
+- Precio medio histÃ³rico por furni.
+- Confirmar aviso de cierre.
+- Fijar horario y comisiÃ³n definitivos de producciÃ³n.
+## Estado actual del sistema de subastas - 27/08/2026
+
+### Funcional
+- Panel Nitro nativo con pestaÃ±as **En curso**, **Vender**, **Mis subastas** e **Historial**.
+- Cola con escrow real del furni (`items.user_id = -1` mientras estÃ¡ bloqueado).
+- LÃ­mite de subastas simultÃ¡neas configurable: normal 3, VIP/club 5.
+- Motor automÃ¡tico de cola y recuperaciÃ³n tras reinicio.
+- Pujas autoritativas en servidor, reserva de crÃ©ditos, devoluciÃ³n al postor superado y entrega al ganador.
+- Anti-sniping interno configurable; actualmente umbral 5 s y extensiÃ³n +5 s.
+- ComisiÃ³n configurable en `configuracion_subastas`; valor actual de pruebas: 0%.
+- Sesiones con cupo propio. Un furni no pasa silenciosamente a semanas posteriores.
+- Si una sesiÃ³n termina con furnis pendientes, vuelven al vendedor como `no_emitida`.
+- Avisos globales Ãºnicamente al abrir/cerrar sesiÃ³n; no hay spam por cada puja o furni.
+- Historial pÃºblico: solo subastas `vendida`, 20 resultados por pÃ¡gina con Anterior/Siguiente.
+- Feed en tiempo real dentro de **En curso**, hasta 20 eventos y consulta cada 2 segundos solo mientras esa pestaÃ±a estÃ¡ visible.
+- DiseÃ±o **En curso**: actividad a la izquierda, furni y datos a la derecha, campo de puja inferior. Anti-sniping no se muestra al usuario.
+
+### Vender
+- Inventario agrupado visualmente por furni, manteniendo instancias individuales en backend.
+- Preview mediante `RoomPreviewer`.
+- Cupo y sesiÃ³n visibles.
+- Buscador por nombre.
+- Filtro por tipo: todos / suelo / pared.
+- Filtro dinÃ¡mico por rareza.
+- Filtro de furnis con varias unidades.
+- Contador de resultados filtrados.
+
+### Paquetes aÃ±adidos
+- `5000` abrir subastas.
+- `5001` estado de subasta.
+- `5002/5003` inventario.
+- `5004/5005` publicar.
+- `5006/5007` Mis subastas.
+- `5008/5009` retirar.
+- `5010/5011` pujar.
+- `5012/5013` estado de sesiÃ³n/cupo.
+- `5014` aviso global de sesiÃ³n.
+- `5015/5016` historial de ventas.
+- `5017/5018` feed de actividad.
+
+### Pendiente
+- Confirmar aviso global de cierre con una sesiÃ³n corta de prueba.
+- Elegir horario definitivo de producciÃ³n; objetivo actual: viernes 22:00-00:00.
+- Elegir comisiÃ³n definitiva para quema de crÃ©ditos.
+- Permitir seleccionar cantidad desde stacks.
+- AÃ±adir mÃ¡s detalle en **Mis subastas**: ganador, importe final, neto recibido y comisiÃ³n.
+- ActualizaciÃ³n en tiempo real de posiciones de cola / Mis subastas.
+- Pruebas de concurrencia y desconexiones.
+- EstadÃ­sticas, rÃ©cords y precio medio histÃ³rico por furni.
+- BÃºsqueda/filtros adicionales en Historial si llegan a ser necesarios.
+## Lotes / stacks en Subastas
+
+- Un stack se publica como **una sola subasta**, no como varias subastas.
+- Un lote ocupa **1 posicion de cola, 1 cupo de sesion y 1 limite simultaneo**, independientemente del numero de unidades.
+- En `Vender` se puede elegir cualquier cantidad entre 1 y las unidades realmente disponibles, incluido el boton `Todas`.
+- El precio inicial indicado corresponde al lote completo.
+- El paquete `5004` ahora envia: cantidad, IDs reales de todas las instancias y precio inicial.
+- Se anade `subastas.cantidad`, con valor 1 para las subastas antiguas.
+- Se anade `subastas_items` para relacionar una subasta con todas las instancias reales del lote.
+- Las subastas antiguas se migran automaticamente como lotes de una unidad.
+- Todas las unidades pasan a escrow (`items.user_id = -1`) dentro de la misma transaccion.
+- Al venderse, todas las unidades pasan al ganador.
+- Si queda sin pujas, se retira o no llega a emitirse, todas las unidades vuelven al vendedor.
+- El nombre visible de nuevos lotes incluye `xN` para que En curso, Mis subastas, feed e Historial indiquen claramente la cantidad sin cambiar sus paquetes.
+- El servidor valida que todos los IDs pertenezcan al usuario, esten en inventario, sean comerciables y correspondan al mismo furni base.
+### Limpieza visual de Vender
+- El panel de venta muestra solo informaciÃ³n Ãºtil para el jugador.
+- Se eliminaron de la interfaz datos tÃ©cnicos como ID de instancia, ID interno del furni, `Rareza: 0` y `LTD: 0:0`.
+- La vista previa utiliza la imagen directa del furni para evitar que el RoomPreviewer muestre suelo/paredes sin aportar valor.
+- Se mantiene el nombre del furni y, cuando hay varias unidades, un contador de disponibles.
+- El selector de lote se simplificÃ³ a `Cantidad` con controles `- / nÃºmero / + / Todas`.
+- Se mantiene Ãºnicamente `Precio inicial` y el botÃ³n de publicaciÃ³n.
+- El backend de lotes/stacks no cambia: una cantidad N sigue siendo una Ãºnica subasta y un Ãºnico cupo.
+### Mis subastas: detalle de venta
+- `Mis subastas` se actualiza automÃ¡ticamente cada 2 segundos mientras la pestaÃ±a estÃ¡ visible.
+- Las subastas vendidas muestran el nombre del ganador.
+- Se guarda en la propia fila de `subastas` la comisiÃ³n realmente aplicada al finalizar.
+- Se guarda tambiÃ©n el neto realmente recibido por el vendedor.
+- Nuevas columnas: `comision_aplicada` y `neto_vendedor`.
+- Esto evita recalcular ventas histÃ³ricas con una comisiÃ³n futura diferente.
+- Las ventas antiguas anteriores a este cambio conservan esos campos como `NULL`; no se inventan datos histÃ³ricos.
+- El paquete `5007` aÃ±ade al final de cada fila: ganador, comisiÃ³n aplicada y neto del vendedor.
+## Estadisticas y mercado de Subastas
+- Nueva pestaÃ±a `Estadisticas`.
+- `5019 = OBTENER_ESTADISTICAS_SUBASTAS`, Nitro -> servidor.
+- `5020 = ESTADISTICAS_SUBASTAS`, servidor -> Nitro.
+- Resumen global: ventas, volumen de creditos, precio medio por unidad y tasa de venta.
+- Ranking de furnis por numero de ventas y volumen.
+- Buscador de furnis dentro del ranking.
+- Detalle por furni: ventas, unidades, media, ultimo precio, minimo, maximo, volumen, tasa de venta y pujas medias.
+- Grafico de linea con las ultimas 20 ventas.
+- El historico utiliza **precio por unidad**, no precio del lote, para que un stack x10 pueda compararse correctamente con una venta x1.
+- El precio completo del lote tambien viaja en los puntos historicos para uso futuro.
+- Radar `Perfil de mercado` con indices 0-100:
+  - Valor: precio medio por unidad relativo al furni con mayor media.
+  - Demanda: numero de ventas relativo al mas vendido.
+  - Volumen: creditos movidos relativos al mayor volumen.
+  - Actividad: pujas medias por venta relativas al maximo del mercado.
+  - Exito: porcentaje real de subastas vendidas frente a vendidas + sin vender.
+- No se aÃ±ade ninguna libreria de graficos: linea y radar se dibujan con SVG nativo en Nitro.
+### Estadisticas: buscador global y UI compacta
+- Los cuatro KPIs superiores se compactaron a una franja fija de 48 px.
+- El buscador ya no filtra solo los furnis cargados inicialmente.
+- `5019` ahora recibe `furniId + busqueda`.
+- Sin busqueda se muestran los 12 furnis con mas ventas/volumen.
+- Con busqueda, MariaDB busca por `public_name` e `item_name` entre todos los furnis con ventas y devuelve hasta 20 coincidencias.
+- La busqueda usa debounce de 250 ms para evitar una peticion por cada pulsacion inmediata.
+- La lista de resultados tiene altura fija y scroll, evitando que desaparezca por el layout flexible.
+- Se mantiene el detalle seleccionado mientras se escribe; al pulsar un resultado se abre ese furni.
+### Estadisticas: layout mercado izquierda/derecha
+- La columna izquierda queda dedicada exclusivamente a busqueda y lista de furnis.
+- Todas las tarjetas del buscador tienen una altura fija de 38 px para evitar diferencias visuales entre furnis.
+- La columna derecha contiene todas las estadisticas globales y del furni seleccionado.
+- El resumen superior se identifica como `Estadisticas totales de las subastas`.
+- `Volumen total` se refiere al volumen de creditos de todas las ventas del mercado.
+- `Volumen vendido de este furni` se refiere solo al furni seleccionado.
+- Las seis metricas del furni se muestran en una sola fila: media, ultimo, minimo, maximo, exito y pujas/venta.
+- El radar se mueve a la zona inferior derecha junto con volumen y record de venta.
+- El record de venta permite salto de linea para evitar solapes con nombres largos.
+- El grafico historico ocupa el ancho principal de la columna derecha.
+### Estadisticas: refinado visual final
+- Las tarjetas de furnis del buscador usan una altura uniforme de 44 px.
+- Los iconos de furnis se muestran dentro de un viewport fijo para que sprites grandes no deformen ni corten la tarjeta.
+- El detalle del furni utiliza el mismo criterio: icono contenido en un area fija y nombre con elipsis si fuera necesario.
+- Se elimina el texto Min/Max duplicado del encabezado del grafico historico.
+- Las seis metricas del furni pasan a tarjetas compactas de una sola fila.
+- El radar aumenta a 190x170 px y sus etiquetas suben a 10 px para mejorar legibilidad y evitar pixelado.
+- La zona inferior se divide claramente en radar + tarjetas de volumen y record de mercado.
+- Volumen y record ya no comparten una misma linea de texto, evitando solapes.
+### Estadisticas: iconos y radar refinados
+- Los iconos de furnis del buscador y del detalle aumentan ligeramente de tamaÃ±o para mejorar su lectura.
+- Se mantiene un viewport fijo para que sprites grandes no deformen el layout.
+- Las etiquetas del radar se colocan respecto al borde real del pentagono con anclajes distintos por lado.
+- `Valor`, `Demanda`, `Volumen`, `Actividad` y `Exito` quedan a una distancia visual similar del grafico.
+## Configuracion final de produccion - Subastas
+- Sesion semanal: viernes de 22:00 a 00:00.
+- `dia_semana = 5` porque Java `DayOfWeek.getValue()` usa lunes=1 y viernes=5.
+- Duracion base de cada subasta: 60 segundos.
+- Transicion entre subastas: 1 segundo.
+- Anti-sniping: si una puja valida entra con <=5 segundos, se aÃ±aden 5 segundos.
+- Margen de cupo: 85%.
+- Ventana semanal: 7200 segundos.
+- Capacidad teorica con bloques de 61 segundos: 118 subastas.
+- Cupo publicado con margen del 85%: 100 subastas por sesion.
+- Limite simultaneo normal: 3.
+- Limite simultaneo VIP: 5.
+- Comision: 5% sobre la puja final, usando aritmetica entera del servidor.
+- La comision funciona como sumidero de creditos: el vendedor recibe `puja final - comision`; la comision no se acredita a ningun usuario.
+- Las sesiones programadas/abiertas de pruebas anteriores se conservan pero quedan `cancelada`, para que no compitan con el calendario de produccion.
+### Cupo de sesion en tiempo real
+- Nitro consulta el estado/cupo de la sesion cada 2 segundos mientras el panel de Subastas esta abierto.
+- El contador de ocupacion ya no requiere cambiar de pestana para actualizarse.
+- Si `ocupados >= cupo_maximo`, Vender muestra `No queda cupo disponible en esta sesion (X/Y)`.
+- El boton de publicar queda desactivado mientras la sesion esta completa.
+- El servidor sigue siendo la autoridad final y mantiene su propia comprobacion de cupo.
+- La respuesta de crear subasta refresca el estado de sesion tanto en exito como en error.
+### Proteccion contra doble creacion desde Vender
+- `publicarSubasta()` usa `instanciaPublicando.current` como bloqueo sincronico adicional al state `procesandoSubasta`.
+- Esto evita que un doble click o dos eventos consecutivos envien dos peticiones antes de que React haya renderizado el estado `procesando`.
+- El bloqueo se libera ante cualquier `ResultadoPonerSubastaEvent`, tanto exito como error.
+- El servidor sigue siendo la autoridad y valida propiedad, cupo y limites.
+### Preview segura de furnis custom en Vender
+- La preview grande de `Vender` deja de renderizar el furni seleccionado mediante `LayoutFurniImageView`/RoomEngine.
+- Se reutiliza `grupoSeleccionado.iconUrl`, el mismo recurso seguro que ya utiliza la cuadrÃ­cula del inventario.
+- La imagen se muestra dentro de una caja fija de 185 px con `overflow: hidden`.
+- La imagen ocupa un cuadro de 128x128 px con `object-fit: contain`, por lo que un custom enorme nunca invade el resto del panel.
+- Si el icono no puede cargarse se muestra `Vista previa no disponible`, pero el furni sigue pudiÃ©ndose poner en subasta.
+- El objetivo es aislar Vender de assets custom corruptos o con dimensiones anÃ³malas que puedan romper/crashear el renderer.
+### Preview hibrida de furnis en Vender
+- La preview principal vuelve a usar `LayoutFurniImageView` para mostrar el render real del furni.
+- Se mantiene eliminado el `RoomPreviewer` asociado a seleccionar furnis, evitando volver al flujo que provocaba crashes con ciertos custom.
+- El render real usa escala 1 y una caja interna fija de 156x156 px.
+- Se fuerza `background-size: contain`, centrado y `overflow: hidden`, por lo que los furnis custom grandes no pueden invadir el panel.
+- Un `ErrorBoundary` protege la preview y usa `grupoSeleccionado.iconUrl` como fallback si el render falla.
+- La caja exterior sigue limitada a 185 px de alto.
+### Blindaje global de imagenes de furnis en Subastas
+- Todas las apariciones directas de `LayoutFurniImageView` dentro de `src/components/subastas` pasan por `SubastasFurniImageSeguro`.
+- El wrapper aÃ±ade `ErrorBoundary`, `overflow: hidden`, `background-size: contain`, centrado y limites al 100% del contenedor.
+- Si un custom falla durante el render se sustituye por un fallback local y no debe derribar la pestaÃ±a completa.
+- La preview grande de Vender conserva ademas su fallback por `iconUrl`.
+- Se corrige en origen el fallo de `LayoutFurniImageView` que podia intentar asignar `onload` cuando `imageElement` aun era `null`.
+- Este blindaje cubre En curso, Feed, Historial, Estadisticas, Mis subastas y cualquier otra vista de Subastas que use `LayoutFurniImageView`.
+### Limites fisicos de previews de Subastas
+- `SubastasFurniImageSeguro` limita tambiÃ©n el tamaÃ±o fÃ­sico del div renderizado, no solo el desbordamiento.
+- `scale < 1`: mÃ¡ximo 72 px; `scale = 1`: mÃ¡ximo 96 px; `scale > 1`: mÃ¡ximo 170 px.
+- Los tamaÃ±os explÃ­citos de vistas como Vender y EstadÃ­sticas tienen prioridad.
+- Esto evita que customs enormes hagan crecer tarjetas de Mis subastas, Historial o feeds compactos.
+### PrÃ³xima subasta real
+- Paquete `5021 = OBTENER_PROXIMA_SUBASTA`.
+- Paquete `5022 = PROXIMA_SUBASTA`.
+- Cuando no existe una subasta activa, la pestaÃ±a En curso consulta cada 2 segundos el primer lote `en_cola`.
+- Se prioriza la sesiÃ³n abierta actual; si no la hay, la prÃ³xima sesiÃ³n programada con cola.
+- La vista muestra furni, cantidad del lote, vendedor, precio inicial, posiciÃ³n en cola, sesiÃ³n e inicio.
+- Si la cola estÃ¡ vacÃ­a se muestra `No hay subastas en cola`.
+- La imagen usa `SubastasFurniImageSeguro`, por lo que tambiÃ©n queda protegida frente a customs grandes o rotos.
+- Cuando el motor activa la siguiente subasta, vuelve automÃ¡ticamente a la vista normal de subasta activa.
+### PrÃ³xima subasta: diseÃ±o final
+- Cuando no hay una subasta activa, `En curso` muestra arriba una tarjeta compacta de `PrÃ³xima subasta` y mantiene debajo el feed/actividad reciente.
+- Cuando hay una subasta activa, `EnCursoSubastasView` permanece sin cambios, conservando pujas, contador y actividad en tiempo real.
+- La tarjeta de prÃ³xima subasta coloca los datos a la izquierda y la preview protegida del furni a la derecha.
+- Se elimina cualquier texto tÃ©cnico como `cuando el motor quede libre`.
+- El texto pÃºblico usa `Siguiente en la cola`.
+- `inicioSesion` se formatea en Nitro con locale `es-ES`, por ejemplo `Viernes, 28 de agosto Â· 22:00`, en vez de mostrar el timestamp crudo de base de datos.
+- La tarjeta se limita a 198 px de alto para dejar espacio al feed debajo.
+### PrÃ³xima subasta: compactaciÃ³n y fecha exacta
+- La tarjeta se reduce a 156 px para dejar mÃ¡s espacio al feed.
+- Los datos quedan a la izquierda y la preview del furni a la derecha.
+- Vendedor y precio usan bloques compactos de 36 px, evitando huecos verticales.
+- SesiÃ³n y fecha de inicio comparten una sola lÃ­nea compacta.
+- El servidor devuelve `fecha_inicio` mediante `DATE_FORMAT(..., '%d/%m/%Y %H:%i')`, evitando desplazamientos horarios por `Timestamp`/timezone.
+- Nitro muestra la fecha en espaÃ±ol, por ejemplo `Viernes 28/08/2026 Â· 22:00`.
+- Se mantiene `Siguiente en la cola` y no se muestra terminologÃ­a tÃ©cnica interna.
+### Historial: bÃºsqueda, filtros y precio por unidad
+- `Historial` general usa bÃºsqueda global por nombre de furni en base de datos.
+- Filtros pÃºblicos: Todos, Vendidas y Sin pujas.
+- El paquete 5015 envÃ­a `pagina`, `busqueda` y `filtro`.
+- El paquete 5016 devuelve pÃ¡gina, pÃ¡ginas totales, resultados filtrados y 20 filas por pÃ¡gina.
+- Los lotes muestran cantidad (`xN`) y, cuando `N > 1`, precio total + precio por unidad.
+- Las fechas se devuelven en formato `dd/MM/yyyy HH:mm`.
+- Las filas muestran vendedor y comprador cuando la subasta fue vendida.
+- `Mis subastas` aÃ±ade bÃºsqueda local y filtros de estado sobre las filas cargadas si el layout actual permite insertar el control de forma segura.
+### CorrecciÃ³n de ubicaciÃ³n del buscador de Mis subastas
+- El buscador y filtro personal se muestran Ãºnicamente dentro de la pestaÃ±a `Mis subastas`.
+- Se retirÃ³ su inserciÃ³n accidental de `En curso`.
+- El filtrado sigue usando `misSubastasFiltradas` y no modifica el backend.
+### Pulido final de EstadÃ­sticas y Records
+- Se eliminan sÃ­mbolos Unicode usados como placeholders/flechas porque la fuente del cliente los mostraba como notas musicales.
+- VariaciÃ³n y tendencia usan texto puro (`Sin datos`, `Al alza`, `A la baja`, `Estable`).
+- Las posiciones vacÃ­as de Records muestran `Sin dato`.
+- Los avatares de Records usan `LayoutAvatarImageView` a escala nativa 1 en vez de 0.8 para evitar reescalado fraccional.
+- `MÃ¡s compras` sigue contando operaciones; ademÃ¡s muestra como dato secundario los furnis/unidades comprados.
+- Ejemplo esperado con los datos actuales: Yserinde = 7 compras / 8 furnis.
+- `MÃ¡s pujado` se mantiene como mÃ©trica de hype/interÃ©s y cuenta pujas recibidas.
+### Ajuste vertical de Records
+- Las cuatro tablas de Records pasan de 358 px a 378 px de alto.
+- La zona del puesto #1 pasa de 150 px a 170 px.
+- El nombre del usuario dispone de una lÃ­nea fija de 18 px centrada para evitar que quede oculto bajo el avatar.
+- Se mantiene el ancho, colores, Top 5 y diseÃ±o general.
+## Subastas V1 â€” cierre definitivo
+
+**Estado: TERMINADA.**
+
+La documentaciÃ³n autoritativa y actual de Subastas es:
+
+`C:\Users\erale\Desktop\Habbo\DOCUMENTACION-SUBASTAS-V1.md`
+
+Las secciones anteriores de este documento que describan Subastas como `prevista`, `pendiente` o `siguiente fase` son histÃ³ricas y quedan supersedidas por la documentaciÃ³n V1 definitiva.
+
+----- SOURCE END -----
+
+======================================================================
+DOCUMENT SOURCE: PENDIENTES.md
+======================================================================
+SHA256=086645897a25d1c78552fe60d81b16d3d457f978dd875d1386622881b7362e76
+----- SOURCE BEGIN -----
+# Pendientes de economÃ­a, seguridad y marketplace
+
+Ãšltima revisiÃ³n: 29/08/2026.
+
+Este documento reÃºne ideas, decisiones todavÃ­a abiertas y sistemas que
+deben diseÃ±arse mÃ¡s adelante.
+
+No describe necesariamente funcionalidades ya implementadas.
+
+---
+
+## 1. Registro global de movimientos de crÃ©ditos
+
+Objetivo futuro prioritario:
+
+**registrar todo movimiento de crÃ©ditos, independientemente de quÃ©
+sistema lo origine.**
+
+El registro deberÃ¡ ser append-only y permitir reconstruir el historial
+econÃ³mico de un personaje.
+
+Cada movimiento deberÃ­a almacenar como mÃ­nimo:
+
+- identificador Ãºnico de transacciÃ³n;
+- `user_id`;
+- `account_id` cuando corresponda;
+- cantidad positiva o negativa;
+- saldo anterior;
+- saldo posterior;
+- origen del movimiento;
+- tipo de operaciÃ³n;
+- actor, si existe;
+- identificador correlacionado de compra/venta/ajuste;
+- fecha y hora;
+- metadatos relevantes.
+
+OrÃ­genes previstos:
+
+- compras web;
+- recargas de crÃ©ditos;
+- slots;
+- restauraciones;
+- VIP;
+- marketplace;
+- devoluciones;
+- ajustes administrativos;
+- comandos o herramientas internas;
+- sistemas nativos del emulador;
+- recompensas que concedan crÃ©ditos;
+- cualquier futura mecÃ¡nica que cree, retire o transfiera crÃ©ditos.
+
+La infraestructura actual ya cubre compras web y ajustes
+administrativos, pero **no debe confundirse con este ledger global
+futuro**.
+
+Idealmente Morningstar deberÃ¡ emitir o persistir los movimientos nativos
+que no atraviesen Laravel.
+
+---
+
+## 2. Ban de personaje y ban de cuenta
+
+Mantener dos niveles distintos.
+
+### Ban de personaje
+
+Afecta Ãºnicamente al personaje sancionado.
+
+Debe impedir como mÃ­nimo:
+
+- entrada al hotel con ese personaje;
+- acciones econÃ³micas propias del personaje cuando corresponda.
+
+No debe bloquear automÃ¡ticamente los demÃ¡s personajes de la cuenta.
+
+### Ban de cuenta
+
+Afecta al propietario completo y a todos sus personajes.
+
+Pensado para casos graves como:
+
+- evasiÃ³n de sanciones;
+- fraude;
+- chargebacks abusivos;
+- abuso econÃ³mico;
+- otras infracciones de propietario.
+
+Pendiente diseÃ±ar:
+
+- modelo/tablas definitivas;
+- duraciÃ³n;
+- motivo;
+- actor administrativo;
+- historial;
+- apelaciones;
+- interacciÃ³n con marketplace y pagos;
+- tratamiento de personajes nuevos durante un ban de cuenta.
+
+---
+
+## 3. Marketplace P2P de crÃ©ditos
+
+Modelo decidido a alto nivel:
+
+- los usuarios podrÃ¡n vender crÃ©ditos por dinero real;
+- los crÃ©ditos publicados pasan a escrow;
+- no pueden permanecer simultÃ¡neamente gastables y en venta;
+- si se cancela la publicaciÃ³n, vuelven al vendedor;
+- si se completa, pasan al personaje comprador;
+- el dinero del vendedor no se mantiene como saldo interno del Holo;
+- la plataforma cobra comisiÃ³n.
+
+Pendiente:
+
+- proveedor definitivo de pagos;
+- flujo de payout al vendedor;
+- comisiÃ³n base;
+- reducciones por VIP;
+- lÃ­mites mensuales definitivos;
+- mÃ¡ximo de anuncios simultÃ¡neos;
+- mÃ­nimos/mÃ¡ximos por operaciÃ³n;
+- cancelaciones;
+- disputas;
+- chargebacks;
+- retenciones de seguridad;
+- reglas antifraude;
+- resoluciÃ³n administrativa de incidencias;
+- conciliaciÃ³n del dinero real con el movimiento de crÃ©ditos.
+
+La implementaciÃ³n deberÃ¡ reutilizar identificadores idempotentes y el
+sistema de auditorÃ­a econÃ³mica.
+
+---
+
+## 4. AuditorÃ­a de tradeos entre usuarios
+
+Crear en el futuro un sistema de registro de tradeos del emulador.
+
+Cada trade deberÃ­a poder registrar:
+
+- personaje A;
+- cuenta A;
+- personaje B;
+- cuenta B;
+- objetos entregados por A;
+- objetos entregados por B;
+- cantidades;
+- identificadores Ãºnicos de los objetos cuando existan;
+- fecha y hora;
+- resultado del trade;
+- identificador de transacciÃ³n.
+
+Objetivo:
+
+detectar transferencias usadas para saltarse el marketplace o mover
+valor de forma fraudulenta.
+
+SeÃ±ales futuras posibles:
+
+- transferencias sistemÃ¡ticamente unidireccionales;
+- objetos de alto valor entregados sin contraprestaciÃ³n;
+- mÃºltiples operaciones entre las mismas cuentas;
+- patrones circulares;
+- concentraciÃ³n anÃ³mala de objetos;
+- cuentas relacionadas que intercambian valor de forma repetitiva.
+
+Este sistema debe vivir dentro de **AuditorÃ­a**, pero separado del
+historial de ajustes administrativos de crÃ©ditos.
+
+---
+
+## 5. Antifraude econÃ³mico
+
+Construir seÃ±ales combinando:
+
+- marketplace;
+- crÃ©ditos;
+- tradeos;
+- cuentas;
+- personajes;
+- historial administrativo;
+- chargebacks;
+- restauraciones;
+- comportamiento de venta.
+
+No bloquear automÃ¡ticamente por una sola seÃ±al.
+
+Las alertas deberÃ­an terminar inicialmente en revisiÃ³n administrativa.
+
+---
+
+## 6. ResoluciÃ³n de incidencias econÃ³micas
+
+`Incidencias econÃ³micas` es actualmente de solo lectura.
+
+En el futuro podrÃ­a aÃ±adirse un flujo seguro para:
+
+- inspeccionar una incidencia;
+- ver compras y movimientos relacionados;
+- marcarla como revisada;
+- realizar una devoluciÃ³n explÃ­cita;
+- completar manualmente una operaciÃ³n cuando sea demostrablemente
+  seguro;
+- registrar quiÃ©n resolviÃ³ el caso y por quÃ©.
+
+Nunca debe existir un botÃ³n genÃ©rico de "arreglar automÃ¡ticamente".
+
+---
+
+## 7. VIP
+
+Decisiones actuales:
+
+- VIP pertenece al personaje;
+- precio previsto: 80 crÃ©ditos / 8 EUR;
+- recompensa mensual desde 1 crÃ©dito;
+- crecimiento por antigÃ¼edad;
+- mÃ¡ximo previsto de 10 crÃ©ditos mensuales.
+
+Pendiente:
+
+- duraciÃ³n/ciclo definitivo;
+- beneficios jugables;
+- beneficios de perfil;
+- ventajas definitivas del marketplace;
+- reducciÃ³n exacta de comisiones;
+- reglas al expirar;
+- renovaciÃ³n;
+- tratamiento de perÃ­odos discontinuos de VIP.
+
+---
+
+## 8. LÃ­mites de marketplace por VIP
+
+Modelo orientativo actual:
+
+| VIPs activos en la cuenta | LÃ­mite mensual |
+|---|---:|
+| 0 | 300 crÃ©ditos |
+| 1 | 400 crÃ©ditos |
+| 2 | 500 crÃ©ditos |
+| 3+ | 600 crÃ©ditos |
+
+Los valores todavÃ­a no son definitivos.
+
+A partir de cierto nÃºmero de VIPs puede ser preferible reducir comisiÃ³n
+en vez de seguir aumentando el lÃ­mite.
+
+---
+
+## 9. EconomÃ­a inicial y catÃ¡logo
+
+Pendiente retirar el comportamiento heredado basado en:
+
+`setting('start_credits')`
+
+Objetivo:
+
+- no regalar una cantidad elevada de moneda premium a cada personaje
+  nuevo;
+- catÃ¡logo normal gratuito;
+- ocultar precios absurdos de `0 crÃ©ditos`;
+- crÃ©ditos reservados para economÃ­a premium;
+- diamantes obtenidos principalmente por horas/actividad;
+- duckets obtenidos por actividades, eventos, minijuegos y logros.
+
+Pendiente definir la cantidad inicial definitiva de cada moneda.
+
+---
+
+## 10. Slots
+
+Decidido:
+
+- 3 gratuitos;
+- 50 crÃ©ditos por slot extra;
+- propiedad permanente de la cuenta.
+
+Pendiente:
+
+- mÃ¡ximo total de slots por cuenta;
+- posibles lÃ­mites especiales;
+- reglas futuras para cuentas de staff.
+
+---
+
+## 11. Resets diarios
+
+Pendiente implementar de forma uniforme los resets diarios a:
+
+**00:00 Europe/Madrid**.
+
+Los sistemas futuros que dependan de dÃ­a natural deberÃ¡n utilizar la
+misma zona horaria.
+
+---
+
+## 12. Compra de crÃ©ditos con dinero real
+
+Pendiente seleccionar proveedor.
+
+La implementaciÃ³n futura debe:
+
+- ser independiente del proveedor cuando sea posible;
+- no confiar en importes enviados por el navegador;
+- validar el pago en servidor;
+- utilizar el identificador del proveedor como referencia estable;
+- entregar crÃ©ditos de forma idempotente;
+- permitir seleccionar el personaje destinatario;
+- registrar pago y entrega;
+- tolerar reintentos/webhooks duplicados;
+- contemplar refunds y chargebacks.
+
+---
+
+## 13. Logs del emulador
+
+Mantener capacidad de logging de CreditBridge.
+
+En producciÃ³n:
+
+- `INFO` puede conservar el evento de que un comando RCON fue procesado;
+- los payloads detallados con usuario, cantidad, UUID y balances pueden
+  permanecer en `DEBUG`;
+- el historial econÃ³mico persistente no debe depender de archivos de
+  log del emulador.
+
+Los logs son soporte de diagnÃ³stico, no el ledger econÃ³mico principal.
+
+---
+
+## 14. Otros sistemas econÃ³micos futuros
+
+Cualquier sistema nuevo que mueva crÃ©ditos deberÃ¡ decidir antes de
+implementarse:
+
+1. quiÃ©n es el propietario econÃ³mico;
+2. quÃ© `users.id` paga o recibe;
+3. cÃ³mo funciona conectado;
+4. cÃ³mo funciona desconectado;
+5. quÃ© UUID garantiza idempotencia;
+6. dÃ³nde queda el ledger;
+7. cÃ³mo se revierte;
+8. quÃ© ocurre tras un crash;
+9. cÃ³mo lo ve AuditorÃ­a;
+10. cÃ³mo lo reconcilia el sistema.
+----- SOURCE END -----
+
+======================================================================
+DOCUMENT SOURCE: MONETIZACION.md
+======================================================================
+SHA256=796049f96bf24d8797effe267ef6769b81c18761a91acf2a2e693022cffaa203
+----- SOURCE BEGIN -----
+# Monetización y economía
+
+Última actualización: 2026-08-29
+
+Este documento recoge las decisiones actuales sobre monetización, economía, cuentas, personajes y marketplace.
+
+---
+
+## 1. Principio general
+
+La arquitectura separa claramente:
+
+- **Cuenta (`accounts`)**: identidad comercial y administrativa.
+- **Personaje (`users`)**: identidad jugable y economía dentro del hotel.
+
+No existe por ahora una suscripción Premium a nivel de cuenta.
+
+La monetización recurrente principal será el **VIP por personaje**.
+
+Los servicios permanentes o puntuales de cuenta/personajes se venderán como compras únicas.
+
+---
+
+## 2. Personajes y slots
+
+### Slots gratuitos
+
+Cada cuenta nueva tendrá:
+
+- **3 slots gratuitos**.
+
+### Slots adicionales
+
+Los slots extra serán una compra permanente.
+
+Precio inicial:
+
+- **50 créditos por slot adicional**.
+
+Funcionamiento:
+
+1. El usuario elige qué personaje paga el slot.
+2. Se descuentan 50 créditos de ese personaje.
+3. Se aumenta `accounts.character_slots` en 1.
+4. El slot pertenece a la cuenta para siempre.
+
+Los créditos siguen perteneciendo individualmente a cada personaje.
+
+No se creará una bolsa común de créditos de cuenta.
+
+### Cuenta de administración/desarrollo
+
+La cuenta principal de administración puede tener slots concedidos
+manualmente además de los comprados normalmente.
+
+Estado actual de la cuenta de administración:
+
+- 3 slots base.
+- 1 slot adicional concedido administrativamente.
+- 1 slot adicional comprado mediante el sistema económico real.
+- Total actual: **5 slots**.
+
+La compra real permanece registrada en el ledger económico.
+
+---
+## 3. Restauración de personajes
+
+Eliminar un personaje desde el CMS significa **archivarlo**, no borrar
+físicamente sus datos.
+
+### Usuario normal
+
+La restauración es una compra única.
+
+Precio actual:
+
+- **100 créditos por restauración**.
+
+El usuario:
+
+1. selecciona el personaje archivado;
+2. selecciona qué personaje activo paga;
+3. confirma la compra;
+4. el personaje se restaura conservando su mismo `users.id`.
+
+El personaje pagador puede estar **conectado o desconectado**.
+
+- Si está desconectado, el cobro se realiza transaccionalmente en base
+  de datos.
+- Si está conectado, el cobro se realiza mediante CreditBridge para
+  respetar el saldo autoritativo en memoria de Morningstar.
+
+### VIP
+
+VIP no incluye restauraciones gratuitas.
+
+La restauración continúa siendo una compra independiente de **100
+créditos**.
+
+### Administración
+
+Solo los administradores del **máximo nivel** pueden restaurar
+personajes manualmente sin compra.
+
+Moderadores, staff intermedio y administradores inferiores no pueden
+hacerlo.
+
+Toda restauración administrativa queda registrada.
+
+### Reglas de restauración
+
+Para restaurar:
+
+- debe existir un slot libre;
+- se mantiene el mismo `users.id`;
+- se conserva el nombre;
+- se conserva inventario;
+- se conservan créditos;
+- se conserva progreso;
+- se conservan placas;
+- se conservan relaciones y demás datos asociados;
+- no se crea automáticamente un slot adicional.
+
+Una restauración pagada genera trazabilidad económica y registro de la
+restauración.
+
+---
+## 4. VIP
+
+VIP pertenece exclusivamente al personaje.
+
+No existe actualmente Premium de cuenta.
+
+Ejemplos:
+
+- Hokusei puede ser VIP.
+- Yserinde puede no ser VIP.
+- Los beneficios jugables y de perfil de Hokusei no se transfieren a Yserinde.
+
+### Posibles beneficios
+
+Entre otros:
+
+- personalización avanzada del perfil del personaje;
+- ventajas cosméticas;
+- funciones sociales;
+- ventajas concretas dentro del hotel;
+- beneficios indirectos en el marketplace.
+
+La lista definitiva se diseñará más adelante.
+
+---
+
+## 5. Beneficios agregados de tener varios personajes VIP
+
+Aunque VIP pertenece al personaje, el número de personajes VIP de una cuenta puede mejorar ciertos límites de cuenta.
+
+Principal aplicación prevista:
+
+- Marketplace.
+
+Modelo orientativo todavía no definitivo:
+
+| VIPs activos | Límite mensual orientativo |
+|---|---:|
+| 0 | 300 créditos |
+| 1 | 400 créditos |
+| 2 | 500 créditos |
+| 3+ | 600 créditos |
+
+A partir de cierto número de VIPs, en vez de seguir aumentando el límite, podrían reducirse las comisiones.
+
+Ejemplo orientativo:
+
+- 3 VIPs: reducción de comisión.
+- VIPs adicionales: posibles reducciones adicionales hasta un límite.
+
+Los números y porcentajes exactos quedan pendientes.
+
+---
+
+## 6. Marketplace P2P
+
+Existirá un marketplace común donde los usuarios podrán vender créditos por dinero real.
+
+### El dinero real NO se almacena en el Holo
+
+Cuando una venta se completa:
+
+- el comprador paga;
+- el dinero correspondiente al vendedor se envía a su cuenta de PayPal;
+- el Holo no mantiene una bolsa interna de euros del usuario;
+- se aplica la comisión correspondiente de la plataforma.
+
+La implementación concreta del flujo PayPal se diseñará posteriormente.
+
+### Créditos en escrow
+
+Cuando un personaje publica créditos:
+
+1. Se retiran inmediatamente de `users.credits`.
+2. Pasan a estado de escrow/bloqueo del marketplace.
+3. Ya no pueden gastarse dentro del hotel.
+4. Si el anuncio se cancela, vuelven al personaje vendedor.
+5. Si la venta se completa, se entregan al personaje comprador.
+6. Nunca pueden existir simultáneamente en el personaje y en el marketplace.
+
+### Límite mensual
+
+El límite para introducir créditos en el marketplace será **por cuenta**, no por personaje.
+
+Ejemplo:
+
+Una cuenta tiene un límite mensual de 300.
+
+Puede aportar:
+
+- Hokusei: 100.
+- Yserinde: 150.
+- N: 50.
+
+Total:
+
+- 300 / 300.
+
+Crear más personajes no permite evadir el límite.
+
+Los VIPs de los distintos personajes pueden aumentar ese límite según las reglas definidas anteriormente.
+
+---
+
+## 7. Monedas
+
+Se evita crear una moneda Premium adicional.
+
+### Créditos
+
+Los créditos son la moneda premium.
+
+Características:
+
+- se compran con dinero real;
+- pertenecen al personaje;
+- pueden utilizarse para servicios premium;
+- pueden pagar slots adicionales;
+- pueden participar en el marketplace P2P;
+- podrán utilizarse para otras compras premium.
+
+No deben regalarse de forma habitual por simplemente estar conectado o realizar actividades normales.
+
+### Diamantes
+
+Moneda obtenida principalmente por:
+
+- tiempo real de juego.
+
+Tendrá:
+
+- su propia tienda;
+- contenido específico.
+
+Su objetivo es recompensar permanencia y actividad continuada.
+
+### Duckets
+
+Moneda obtenida mediante:
+
+- actividades del hotel;
+- minijuegos;
+- eventos;
+- logros;
+- participación.
+
+Tendrá:
+
+- su propia tienda;
+- contenido específico.
+
+### Catálogo normal
+
+El catálogo normal será gratuito.
+
+Los objetos gratuitos:
+
+- no mostrarán un precio absurdo de `0 créditos`;
+- simplemente aparecerán como disponibles/gratuitos.
+
+---
+
+## 8. Compras y destinatarios
+
+Cada operación debe distinguir claramente entre:
+
+- quién paga;
+- qué cuenta recibe el beneficio;
+- qué personaje recibe el beneficio.
+
+### Slot adicional
+
+Paga:
+
+- un personaje seleccionado.
+
+Se aplica a:
+
+- `accounts.character_slots`.
+
+### VIP
+
+Paga:
+
+- un personaje / mecanismo de compra definido.
+
+Se aplica a:
+
+- un `users.id` concreto.
+
+### Recarga de créditos
+
+El comprador selecciona:
+
+- qué personaje recibe los créditos.
+
+Los créditos se añaden únicamente a ese `users.id`.
+
+### Restauración
+
+El comprador selecciona:
+
+- qué personaje archivado restaurar.
+
+Se aplica al mapping existente de ese personaje.
+
+### Principio de seguridad
+
+Las confirmaciones externas de pago nunca deben depender de cuál sea el personaje principal en ese momento.
+
+Las operaciones deben guardar explícitamente:
+
+- `account_id`;
+- `user_id` pagador cuando proceda;
+- `target_user_id` cuando proceda;
+- tipo de producto;
+- importe;
+- estado;
+- referencia externa de pago.
+
+---
+
+## 9. Bans
+
+Existirán dos niveles.
+
+### Ban de personaje
+
+Afecta únicamente a:
+
+- un `users.id`.
+
+Los demás personajes de la cuenta pueden seguir funcionando si la sanción lo permite.
+
+### Ban de cuenta
+
+Afecta a:
+
+- `account_id`;
+- todos los personajes actuales;
+- cualquier personaje futuro de esa cuenta.
+
+Se utilizará para sanciones graves como evasiones, fraude, chargebacks u otras infracciones a nivel de propietario.
+
+---
+
+## 10. Resets diarios
+
+Todos los sistemas diarios deben resetearse a:
+
+- **00:00 HPE — Hora Peninsular Española**.
+
+No deben utilizarse ciclos del tipo:
+
+- 86400 segundos desde el arranque;
+- 24 horas desde el último reset;
+- reset automático al iniciar el emulador.
+
+Se auditarán todos los sistemas diarios del emulador y CMS.
+
+Primer sistema identificado:
+
+- respetos diarios.
+
+---
+
+## 11. Estado online
+
+`users.online` actualmente es:
+
+- `ENUM('0','1','2')`.
+
+Atom y Arcturus utilizan actualmente:
+
+- `'0'` = offline;
+- `'1'` = online.
+
+El funcionamiento normal ha sido comprobado correctamente.
+
+No se modificará la estructura hasta encontrar un problema reproducible que justifique normalizarla.
+
+---
+
+## 12. Decisiones pendientes
+
+Las decisiones e ideas todavía no cerradas se mantienen ahora en un
+documento independiente:
+
+- [`PENDIENTES.md`](PENDIENTES.md)
+
+Entre ellas están:
+
+- beneficios definitivos de VIP;
+- ciclo/duración definitiva de VIP;
+- límite máximo de slots;
+- límites y comisiones definitivos del marketplace;
+- integración del proveedor de pagos y payouts;
+- chargebacks y reglas antifraude;
+- auditoría de tradeos entre usuarios;
+- registro global de todos los movimientos de créditos;
+- economía inicial y catálogo gratuito;
+- implementación definitiva del reset diario.
+
+Este documento refleja principalmente decisiones vigentes y
+comportamiento implementado.
+
+---
+## 13. Resumen del modelo
+
+### Cuenta
+
+Contiene:
+
+- identidad;
+- personajes;
+- número de slots;
+- historial comercial;
+- límite del marketplace;
+- bans de cuenta.
+
+### Personaje
+
+Contiene:
+
+- créditos;
+- diamantes;
+- duckets;
+- inventario;
+- progreso;
+- VIP;
+- perfil;
+- bans de personaje.
+
+### Monetización
+
+- VIP: recurrente y por personaje.
+- Slots: pago único.
+- Restauración: pago único.
+- Créditos: compra premium.
+- Marketplace: P2P con comisión.
+- Cosméticos/servicios adicionales: pago único cuando corresponda.
+
+No existe Premium de cuenta mientras no haya suficientes beneficios exclusivos de cuenta que justifiquen una segunda suscripción.
+
+---
+
+## 14. Economía inicial de personajes
+
+Actualmente los personajes nuevos reciben créditos mediante:
+
+- `setting('start_credits')`.
+
+Esto es comportamiento heredado y se modificará cuando se rehaga la economía inicial y el catálogo gratuito.
+
+Objetivo:
+
+- los personajes nuevos no deben recibir automáticamente una cantidad elevada de créditos premium;
+- el catálogo normal será gratuito;
+- los créditos conservarán su función de moneda premium;
+- diamantes y duckets cubrirán las recompensas obtenidas jugando.
+
+La cantidad inicial definitiva de créditos queda pendiente de decidir.
+
+---
+
+## 15. Créditos incluidos con VIP
+
+VIP podrá incluir una asignación periódica de créditos para el personaje
+VIP.
+
+Regla actual prevista:
+
+- Mes 1: **1 crédito**.
+- La recompensa aumenta progresivamente con la antigüedad.
+- Máximo previsto: **10 créditos mensuales**.
+- La entrega pertenece al personaje VIP, no a la cuenta.
+- Cada personaje VIP tendrá su propio control de mensualidades.
+- Debe registrarse la última mensualidad entregada para impedir dobles
+  entregas.
+
+Como los créditos podrán participar en el marketplace P2P por dinero
+real, esta recompensa debe mantenerse coordinada con:
+
+- precio del VIP;
+- comisión del marketplace;
+- límites mensuales de venta;
+- valor efectivo de los créditos.
+
+Debe evitarse que la recompensa mensual de VIP genere un arbitraje
+económico garantizado.
+
+---
+## 16. Precio y retorno mensual de VIP
+
+Decisión actual:
+
+- VIP pertenece al personaje.
+- Precio previsto: **80 créditos / 8 EUR**.
+- El personaje VIP recibirá créditos mensualmente.
+- Mes 1: 1 crédito.
+- La recompensa aumenta progresivamente con la antigüedad.
+- Máximo previsto: **10 créditos mensuales**.
+
+A precio oficial, 10 créditos equivalen aproximadamente a 1 EUR.
+
+El crédito vendido P2P previsiblemente cotizará por debajo del precio oficial y además estará sujeto a comisión del marketplace, por lo que la recompensa mensual de VIP no pretende funcionar como un retorno monetario garantizado.
+
+---
+
+## 17. Compra de slots implementada
+
+Estado implementado:
+
+- 3 slots gratuitos por cuenta.
+- Slot adicional: **50 créditos**.
+- El usuario selecciona qué personaje paga.
+- El personaje pagador puede estar conectado o desconectado.
+- Los créditos siguen perteneciendo individualmente al personaje.
+- No existe una bolsa común de créditos de cuenta.
+- El slot adquirido pertenece permanentemente a la cuenta.
+- Cada compra utiliza un `purchase_id` UUID.
+- La operación queda registrada en `purchase_operations`.
+- El movimiento económico queda registrado en `credit_transactions`.
+- Las operaciones repetidas con el mismo identificador son idempotentes.
+
+Para personajes desconectados, el cobro y el aumento de
+`accounts.character_slots` se realizan dentro de una transacción de
+base de datos.
+
+Para personajes conectados, el débito se realiza mediante CreditBridge
+y la modificación del slot se finaliza después de confirmar el cobro.
+
+---
+
+## 18. Infraestructura de transacciones de créditos
+
+Las compras web que consumen créditos utilizan
+`CreditTransactionService`.
+
+Principios:
+
+- nunca realizar un débito SQL directo de un personaje conectado;
+- personaje desconectado: transacción SQL;
+- personaje conectado: CreditBridge;
+- cada compra utiliza un UUID estable;
+- una misma compra no puede cobrar dos veces;
+- las compensaciones también son idempotentes;
+- los estados inciertos pasan a revisión manual.
+
+### Fallos después de un cobro online
+
+Si el cobro se realizó pero posteriormente falla la operación:
+
+1. se devuelve la misma cantidad;
+2. la devolución utiliza `refund-<purchase_id>`;
+3. la devolución es idempotente;
+4. la compra queda `refunded`;
+5. un reintento no vuelve a cobrar ni a devolver.
+
+### Recuperación después de un crash
+
+Si CreditBridge aplicó el movimiento antes de que PHP terminara:
+
+- el reintento encuentra la operación ya aplicada;
+- no vuelve a ejecutarla;
+- conserva los balances históricos;
+- completa la operación pendiente.
+
+El saldo actual puede ser distinto del `balance_after` histórico si
+existieron movimientos legítimos posteriores.
+
+---
+
+## 19. Ajustes administrativos de créditos
+
+Los créditos no son editables directamente desde el formulario normal
+de usuario de Filament.
+
+Existe la acción:
+
+- **Ajustar créditos**.
+
+Reglas:
+
+- solo administrador del máximo nivel;
+- cantidad positiva o negativa;
+- motivo obligatorio;
+- UUID;
+- actor y personaje objetivo registrados;
+- saldo anterior y posterior;
+- personajes conectados y desconectados;
+- CreditBridge cuando está conectado;
+- ledger económico;
+- idempotencia.
+
+### Auditoría
+
+Dentro de **Auditoría** existen:
+
+- `Registros`;
+- `Historial de créditos`;
+- `Incidencias económicas`.
+
+`Historial de créditos` muestra los ajustes administrativos.
+
+`Incidencias económicas` ejecuta reconciliación económica de solo
+lectura.
+
+### Reconciliación
+
+Comando:
+
+`php artisan credits:reconcile`
+
+Comprueba coherencia entre:
+
+- compras;
+- ajustes administrativos;
+- ledger;
+- CreditBridge;
+- refunds;
+- operaciones pendientes o en revisión manual.
+
+No corrige automáticamente los datos.
+
+---
+
+## 20. Economía web heredada
+
+Las rutas antiguas de Shop, Voucher y PayPal permanecen en el código
+como referencia, pero sus endpoints económicos están desactivados.
+
+No deben utilizarse para nuevas compras.
+
+La futura compra de créditos con dinero real deberá utilizar la
+infraestructura idempotente actual.
+
+El proveedor definitivo de pagos queda pendiente.
+
+---
+
+## 21. Alcance actual del ledger
+
+`credit_transactions` registra actualmente los movimientos gestionados
+por la nueva infraestructura web, incluyendo compras y ajustes
+administrativos.
+
+Esto **no significa todavía que todos los movimientos de créditos del
+emulador estén registrados globalmente**.
+
+El objetivo futuro de registrar absolutamente todo movimiento de
+créditos, además de tradeos y señales antifraude, está documentado en:
+
+- [`PENDIENTES.md`](PENDIENTES.md)
+
+---
+----- SOURCE END -----
+
+======================================================================
+CURRENT BADGE FEATURE HASHES
+======================================================================
+FILE=xampp/htdocs/app/Services/BadgeSellerEligibilityService.php
+SHA256=8b1e76a445a64ab68866351457f2f9a2d8293207e130b46b3b93cf9869a4cd3c
+BYTES=38969
+FILE=xampp/htdocs/config/badge_marketplace.php
+SHA256=ebc1591ff5561640ab3d6a52dd4b571611361b16ca45b682d04733c6cd66a1b7
+BYTES=546
+FILE=xampp/htdocs/app/Console/Kernel.php
+SHA256=3ba26d136330cda5db730e99ee6463a72d2d706945249b3d0dfb1601914366f5
+BYTES=793
+FILE=xampp/htdocs/app/Console/Commands/BadgeSellerLicenseMaintenanceCommand.php
+SHA256=b7c4cc314a2b4bc644324fd76d3fc0f515c9ffeb4475fbb92ea252d81c21c17e
+BYTES=1542
+FILE=xampp/htdocs/app/Http/Controllers/Marketplace/BadgeHotelDistributionController.php
+SHA256=7a730e3dbba9de3389a8e3f986a49a4cb0c235e375304a049e62c57ce427de7e
+BYTES=5944
+FILE=xampp/htdocs/routes/web.php
+SHA256=40b0481acf69e3b92bfd7956cf250789dd82685c3f7de1b86395c1b853646a63
+BYTES=17480
+FILE=xampp/htdocs/resources/themes/atom/views/marketplace/badges.blade.php
+SHA256=368842b9e7e73a0c8e0cc6e672d20286607d794f75f3484ca4f90f41be9e240c
+BYTES=106561
+
+======================================================================
+RECENT COMMITS
+======================================================================
+544fe558f | 2026-08-30 13:48:01 +0200 | checkpoint: RPGEngine movement stats encounter v2 and V1 scope
+046400421 | 2026-08-29 19:24:35 +0200 | WIP RPG Engine movement system
+f3d11d9ed | 2026-08-29 17:37:42 +0200 | Add Subastas and InventoryLock sources and Holo visual skin
+b5308827c | 2026-08-29 17:34:04 +0200 | Clean development artifacts from repository
+4cf4513eb | 2026-08-29 17:31:04 +0200 | Checkpoint Holo: multikeko, monetizacion, AvatarSync, Subastas e InventoryLock
+bda05f0bd | 2026-06-22 19:56:24 +0200 | Commit
+130471c6c | 2026-06-22 19:55:15 +0200 | Commit
+d3136d6bc | 2026-06-20 21:59:30 +0200 | PCView
+b41f7d3b0 | 2026-06-20 18:08:53 +0200 | Pokemon Heal
+04d448880 | 2026-06-19 17:21:41 +0200 | handler
+7b2adefed | 2026-06-19 16:18:57 +0200 | Wired
+35147830b | 2026-06-19 16:01:42 +0200 | Add source code (Nitro React, backend, config) excluding heavy assets
+7394ffc0e | 2026-06-19 15:38:15 +0200 | Initial commit: Core project files and Emulator
+
+======================================================================
+FINAL
+======================================================================
+AUDIT=OK
+READ_ONLY=YES
+PROJECT_FILES_CHANGED=NO
+DB_WRITES=NO
+GIT_CHANGED=NO
