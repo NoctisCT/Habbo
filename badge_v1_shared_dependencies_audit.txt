@@ -1,0 +1,5420 @@
+﻿
+======================================================================
+BRANCH / WORKTREES
+======================================================================
+BRANCH=rpg-engine-wip
+C:/Users/erale/Desktop/Habbo    544fe558f [rpg-engine-wip]
+C:/Users/erale/Desktop/Habbo/cw f3d11d9ed [codex/cinema-reservations]
+
+======================================================================
+STATUS OF SHARED CANDIDATES
+======================================================================
+ M xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php
+ M xampp/htdocs/app/Console/Kernel.php
+ M xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php
+ M xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php
+ M xampp/htdocs/app/Filament/Resources/User/UserResource.php
+ M xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php
+ M xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php
+ M xampp/htdocs/app/Models/User.php
+ M xampp/htdocs/app/Services/Community/TeamService.php
+ M xampp/htdocs/app/Services/CreditBridgeClient.php
+ M xampp/htdocs/app/Services/CreditTransactionService.php
+ M xampp/htdocs/app/Services/User/UserApiService.php
+ M xampp/htdocs/lang/es.json
+ M xampp/htdocs/public/renderer-config.json
+ M xampp/htdocs/routes/api.php
+ M xampp/htdocs/routes/web.php
+
+======================================================================
+DIFF OF SHARED CANDIDATES AGAINST HEAD
+======================================================================
+
+----- xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php -----
+diff --git a/xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php b/xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php
+index bd880f21b..60d2144ef 100644
+--- a/xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php
++++ b/xampp/htdocs/app/Console/Commands/CreditReconcileCommand.php
+@@ -1,581 +1,1263 @@
+ <?php
+ 
+ namespace App\Console\Commands;
+ 
+ use Illuminate\Console\Command;
+ use Illuminate\Support\Carbon;
+ use Illuminate\Support\Facades\DB;
+ 
+ class CreditReconcileCommand extends Command
+ {
+     protected $signature = 'credits:reconcile
+         {--id= : Revisar ├║nicamente una operaci├│n concreta}
+         {--all : Mostrar tambi├®n estados no problem├íticos}';
+ 
+     protected $description =
+-        'Audita compras, ajustes administrativos, ledger y CreditBridge sin modificar datos.';
++        'Audita compras, reembolsos, ajustes administrativos, ledger y CreditBridge sin modificar datos.';
+ 
+     private int $issues = 0;
+ 
+     public function handle(): int
+     {
+         $id = trim((string) $this->option('id'));
+         $showAll = (bool) $this->option('all');
+ 
+         $this->newLine();
+         $this->info('=== RECONCILIACI├ôN ECON├ôMICA ===');
+ 
+         if ($id !== '') {
+             $this->line("Filtro: {$id}");
+         }
+ 
+         $this->auditPurchases($id, $showAll);
++        $this->auditRefunds($id, $showAll);
+         $this->auditAdminAdjustments($id, $showAll);
+         $this->auditLedger($id, $showAll);
+         $this->auditBridge($id, $showAll);
+ 
+         $this->newLine();
+         $this->info('=== RESULTADO ===');
+ 
+         if ($this->issues === 0) {
+-            $this->info('OK: no se han encontrado inconsistencias.');
++            $this->info(
++                'OK: no se han encontrado inconsistencias.'
++            );
+ 
+             return self::SUCCESS;
+         }
+ 
+         $this->error(
+             "INCIDENCIAS: {$this->issues}"
+         );
+ 
+         return self::FAILURE;
+     }
+ 
+     private function auditPurchases(
+         string $filterId,
+         bool $showAll
+     ): void {
+         $this->newLine();
+         $this->comment('COMPRAS');
+ 
+         $query = DB::table('purchase_operations')
+             ->orderBy('created_at');
+ 
+         if ($filterId !== '') {
+             $query->where('id', $filterId);
+         }
+ 
+         $rows = $query->get();
+ 
+         if ($rows->isEmpty()) {
+-            $this->line('Sin compras coincidentes.');
++            $this->line(
++                'Sin compras coincidentes.'
++            );
+ 
+             return;
+         }
+ 
+         foreach ($rows as $row) {
+             $problems = [];
+ 
+-            $ledger = DB::table('credit_transactions')
+-                ->where('purchase_id', $row->id)
++            $ledger = DB::table(
++                'credit_transactions'
++            )
++                ->where(
++                    'purchase_id',
++                    $row->id
++                )
+                 ->get();
+ 
+             $bridge = DB::table(
+                 'credit_bridge_transactions'
+             )
+-                ->where('transaction_id', $row->id)
++                ->where(
++                    'transaction_id',
++                    $row->id
++                )
+                 ->first();
+ 
+-            $refund = DB::table(
+-                'credit_bridge_transactions'
++            $refunds = DB::table(
++                'credit_refunds'
+             )
+                 ->where(
+-                    'transaction_id',
+-                    'refund-' . $row->id
++                    'original_purchase_id',
++                    $row->id
+                 )
+-                ->first();
++                ->orderBy('created_at')
++                ->get();
+ 
+-            if ((string) $row->status === 'completed') {
++            if (
++                (string) $row->status ===
++                'completed'
++            ) {
+                 if ($ledger->count() !== 1) {
+                     $problems[] =
+                         'completed pero ledger=' .
+                         $ledger->count();
+                 }
+ 
+-                if ($row->payment_json) {
+-                    $payment = json_decode(
+-                        $row->payment_json,
+-                        true
+-                    );
+-
+-                    if (! is_array($payment)) {
+-                        $problems[] =
+-                            'payment_json inv├ílido';
+-                    } else {
+-                        $channel =
+-                            $payment['channel'] ??
+-                            $payment['payment_channel'] ??
+-                            null;
+-
+-                        if (
+-                            $channel ===
+-                            'online_credit_bridge'
+-                        ) {
+-                            if (! $bridge) {
+-                                $problems[] =
+-                                    'pago online sin journal Bridge';
+-                            } elseif (
+-                                (string) $bridge->status !==
+-                                'applied'
+-                            ) {
+-                                $problems[] =
+-                                    'Bridge online status=' .
+-                                    $bridge->status;
+-                            }
+-                        }
+-                    }
+-                }
++                $this->checkPurchasePaymentBridge(
++                    $row,
++                    $bridge,
++                    $problems
++                );
+             }
+ 
+-            if ((string) $row->status === 'processing') {
++            if (
++                (string) $row->status ===
++                'processing'
++            ) {
+                 $expired =
+                     ! $row->lease_expires_at ||
+                     Carbon::parse(
+                         $row->lease_expires_at
+                     )->isPast();
+ 
+                 if ($expired) {
+                     $problems[] =
+                         'processing con lease caducado';
+                 }
+             }
+ 
+             if (
+                 (string) $row->status ===
+                 'manual_review'
+             ) {
+                 $problems[] =
+                     'requiere revisi├│n manual: ' .
+-                    ($row->error_code ?? 'sin c├│digo');
++                    (
++                        $row->error_code ??
++                        'sin c├│digo'
++                    );
+             }
+ 
+-            if ((string) $row->status === 'refunded') {
+-                if (
+-                    $bridge &&
+-                    (string) $bridge->status === 'applied'
+-                ) {
+-                    if (! $refund) {
+-                        $problems[] =
+-                            'refunded con debit aplicado pero sin refund Bridge';
+-                    } elseif (
++            if (
++                (string) $row->status ===
++                'refunded'
++            ) {
++                /*
++                 * Un reembolso NO borra el d├®bito original.
++                 * El ledger de compra es historial contable y
++                 * debe conservarse junto al cr├®dito compensatorio.
++                 */
++                if ($ledger->count() !== 1) {
++                    $problems[] =
++                        'refunded pero ledger original=' .
++                        $ledger->count() .
++                        ' (esperado 1)';
++                }
++
++                if ($refunds->count() !== 1) {
++                    $problems[] =
++                        'refunded pero credit_refunds=' .
++                        $refunds->count() .
++                        ' (esperado 1)';
++                } else {
++                    $refund = $refunds->first();
++
++                    if (
+                         (string) $refund->status !==
+-                        'applied'
++                        'completed'
+                     ) {
+                         $problems[] =
+-                            'refund Bridge no aplicado';
++                            'credit_refund status=' .
++                            $refund->status;
+                     }
+-                }
+ 
+-                if ($ledger->count() !== 0) {
+-                    $problems[] =
+-                        'refunded conserva ledger de compra';
++                    if (
++                        (int) $refund->amount !==
++                        (int) $row->amount
++                    ) {
++                        $problems[] =
++                            'importe refund != compra';
++                    }
++
++                    if (
++                        (int) $refund->account_id !==
++                        (int) $row->account_id
++                    ) {
++                        $problems[] =
++                            'refund account_id != compra';
++                    }
++
++                    if (
++                        (int) $refund->user_id !==
++                        (int) $row->user_id
++                    ) {
++                        $problems[] =
++                            'refund user_id != compra';
++                    }
+                 }
+             }
+ 
+             if ($bridge) {
+                 $this->checkBridgeArithmetic(
+                     $bridge,
+                     "compra {$row->id}",
+                     $problems
+                 );
+             }
+ 
+-            if ($refund) {
+-                $this->checkBridgeArithmetic(
+-                    $refund,
+-                    "refund {$row->id}",
++            foreach ($ledger as $entry) {
++                $this->checkLedgerArithmetic(
++                    $entry,
+                     $problems
+                 );
++
++                if (
++                    (int) $entry->amount !==
++                    -1 * (int) $row->amount
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'tiene importe distinto a la compra';
++                }
++
++                if (
++                    (int) $entry->account_id !==
++                    (int) $row->account_id
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'account_id distinto';
++                }
++
++                if (
++                    (int) $entry->user_id !==
++                    (int) $row->user_id
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'user_id distinto';
++                }
++            }
++
++            $this->printRow(
++                'PURCHASE',
++                (string) $row->id,
++                (string) $row->status,
++                $problems,
++                $showAll
++            );
++        }
++    }
++
++    private function auditRefunds(
++        string $filterId,
++        bool $showAll
++    ): void {
++        $this->newLine();
++        $this->comment('REEMBOLSOS');
++
++        $query = DB::table(
++            'credit_refunds'
++        )->orderBy('created_at');
++
++        if ($filterId !== '') {
++            $query->where(
++                function ($query) use (
++                    $filterId
++                ) {
++                    $query
++                        ->where(
++                            'id',
++                            $filterId
++                        )
++                        ->orWhere(
++                            'original_purchase_id',
++                            $filterId
++                        )
++                        ->orWhere(
++                            'bridge_transaction_id',
++                            $filterId
++                        );
++                }
++            );
++        }
++
++        $rows = $query->get();
++
++        if ($rows->isEmpty()) {
++            $this->line(
++                'Sin reembolsos coincidentes.'
++            );
++
++            return;
++        }
++
++        foreach ($rows as $row) {
++            $problems = [];
++
++            $purchase = DB::table(
++                'purchase_operations'
++            )
++                ->where(
++                    'id',
++                    $row->original_purchase_id
++                )
++                ->first();
++
++            $ledgerId =
++                'refund-' .
++                $row->id;
++
++            $ledger = DB::table(
++                'credit_transactions'
++            )
++                ->where(
++                    'purchase_id',
++                    $ledgerId
++                )
++                ->get();
++
++            $bridge = null;
++
++            if (
++                $row->bridge_transaction_id
++            ) {
++                $bridge = DB::table(
++                    'credit_bridge_transactions'
++                )
++                    ->where(
++                        'transaction_id',
++                        $row->bridge_transaction_id
++                    )
++                    ->first();
++            }
++
++            if (! $purchase) {
++                $problems[] =
++                    'sin compra original';
++            } else {
++                if (
++                    (string) $purchase->status !==
++                    'refunded'
++                ) {
++                    $problems[] =
++                        'compra original status=' .
++                        $purchase->status .
++                        ' (esperado refunded)';
++                }
++
++                if (
++                    (int) $purchase->amount !==
++                    (int) $row->amount
++                ) {
++                    $problems[] =
++                        'importe != compra original';
++                }
++
++                if (
++                    (int) $purchase->account_id !==
++                    (int) $row->account_id
++                ) {
++                    $problems[] =
++                        'account_id != compra original';
++                }
++
++                if (
++                    (int) $purchase->user_id !==
++                    (int) $row->user_id
++                ) {
++                    $problems[] =
++                        'user_id != compra original';
++                }
++            }
++
++            if (
++                (string) $row->status ===
++                'completed'
++            ) {
++                if (
++                    $row->completed_at === null
++                ) {
++                    $problems[] =
++                        'completed_at NULL';
++                }
++
++                if (
++                    $row->balance_before === null ||
++                    $row->balance_after === null
++                ) {
++                    $problems[] =
++                        'balances del refund incompletos';
++                } elseif (
++                    (int) $row->balance_before +
++                    (int) $row->amount !==
++                    (int) $row->balance_after
++                ) {
++                    $problems[] =
++                        'refund before + amount != after';
++                }
++
++                if ($ledger->count() !== 1) {
++                    $problems[] =
++                        'refund completed pero ledger=' .
++                        $ledger->count();
++                }
++            }
++
++            if (
++                (string) $row->status ===
++                'processing'
++            ) {
++                $expired =
++                    ! $row->lease_expires_at ||
++                    Carbon::parse(
++                        $row->lease_expires_at
++                    )->isPast();
++
++                if ($expired) {
++                    $problems[] =
++                        'processing con lease caducado';
++                }
++            }
++
++            if (
++                (string) $row->status ===
++                'manual_review'
++            ) {
++                $problems[] =
++                    'requiere revisi├│n manual: ' .
++                    (
++                        $row->error_code ??
++                        'sin c├│digo'
++                    );
+             }
+ 
+             foreach ($ledger as $entry) {
++                $this->checkLedgerArithmetic(
++                    $entry,
++                    $problems
++                );
++
++                if (
++                    (string) $entry->type !==
++                    'credit_refund'
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'type != credit_refund';
++                }
++
+                 if (
+-                    (int) $entry->balance_before +
+                     (int) $entry->amount !==
+-                    (int) $entry->balance_after
++                    (int) $row->amount
+                 ) {
+                     $problems[] =
+-                        "ledger #{$entry->id} no cuadra matem├íticamente";
++                        "ledger #{$entry->id} " .
++                        'importe != refund';
+                 }
++
++                if (
++                    (int) $entry->account_id !==
++                    (int) $row->account_id
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'account_id != refund';
++                }
++
++                if (
++                    (int) $entry->user_id !==
++                    (int) $row->user_id
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'user_id != refund';
++                }
++
++                if (
++                    $row->balance_before !== null &&
++                    (int) $entry->balance_before !==
++                    (int) $row->balance_before
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'balance_before != refund';
++                }
++
++                if (
++                    $row->balance_after !== null &&
++                    (int) $entry->balance_after !==
++                    (int) $row->balance_after
++                ) {
++                    $problems[] =
++                        "ledger #{$entry->id} " .
++                        'balance_after != refund';
++                }
++            }
++
++            $channel =
++                (string)
++                ($row->payment_channel ?? '');
++
++            if (
++                (string) $row->status ===
++                'completed'
++            ) {
++                if (
++                    $channel ===
++                    'offline_db'
++                ) {
++                    if (
++                        $row->bridge_transaction_id
++                    ) {
++                        $problems[] =
++                            'offline_db referencia Bridge';
++                    }
++                } elseif (
++                    $channel ===
++                    'online_credit_bridge'
++                ) {
++                    if (
++                        ! $row->bridge_transaction_id
++                    ) {
++                        $problems[] =
++                            'online refund sin bridge_transaction_id';
++                    } elseif (! $bridge) {
++                        $problems[] =
++                            'online refund sin journal Bridge';
++                    } else {
++                        if (
++                            (string) $bridge->status !==
++                            'applied'
++                        ) {
++                            $problems[] =
++                                'refund Bridge status=' .
++                                $bridge->status;
++                        }
++
++                        if (
++                            (string) $bridge->operation !==
++                            'credit'
++                        ) {
++                            $problems[] =
++                                'refund Bridge operation != credit';
++                        }
++
++                        if (
++                            (int) $bridge->amount !==
++                            (int) $row->amount
++                        ) {
++                            $problems[] =
++                                'refund Bridge amount != refund';
++                        }
++
++                        if (
++                            (int) $bridge->user_id !==
++                            (int) $row->user_id
++                        ) {
++                            $problems[] =
++                                'refund Bridge user_id != refund';
++                        }
++
++                        if (
++                            $row->balance_before !== null &&
++                            (int) $bridge->balance_before !==
++                            (int) $row->balance_before
++                        ) {
++                            $problems[] =
++                                'refund Bridge balance_before != refund';
++                        }
++
++                        if (
++                            $row->balance_after !== null &&
++                            (int) $bridge->balance_after !==
++                            (int) $row->balance_after
++                        ) {
++                            $problems[] =
++                                'refund Bridge balance_after != refund';
++                        }
++                    }
++                } else {
++                    $problems[] =
++                        'payment_channel de refund desconocido: ' .
++                        (
++                            $channel !== ''
++                                ? $channel
++                                : 'vac├¡o'
++                        );
++                }
++            }
++
++            if ($bridge) {
++                $this->checkBridgeArithmetic(
++                    $bridge,
++                    "refund {$row->id}",
++                    $problems
++                );
+             }
+ 
+             $this->printRow(
+-                'PURCHASE',
+-                $row->id,
++                'REFUND',
++                (string) $row->id,
+                 (string) $row->status,
+                 $problems,
+                 $showAll
+             );
+         }
+     }
+ 
+     private function auditAdminAdjustments(
+         string $filterId,
+         bool $showAll
+     ): void {
+         $this->newLine();
+-        $this->comment('AJUSTES ADMINISTRATIVOS');
++        $this->comment(
++            'AJUSTES ADMINISTRATIVOS'
++        );
+ 
+         $query = DB::table(
+             'admin_credit_adjustments'
+         )->orderBy('created_at');
+ 
+         if ($filterId !== '') {
+             $query->where('id', $filterId);
+         }
+ 
+         $rows = $query->get();
+ 
+         if ($rows->isEmpty()) {
+-            $this->line('Sin ajustes coincidentes.');
++            $this->line(
++                'Sin ajustes coincidentes.'
++            );
+ 
+             return;
+         }
+ 
+         foreach ($rows as $row) {
+             $problems = [];
+ 
+-            $ledger = DB::table('credit_transactions')
+-                ->where('purchase_id', $row->id)
++            $ledger = DB::table(
++                'credit_transactions'
++            )
++                ->where(
++                    'purchase_id',
++                    $row->id
++                )
+                 ->get();
+ 
+             $bridge = DB::table(
+                 'credit_bridge_transactions'
+             )
+-                ->where('transaction_id', $row->id)
++                ->where(
++                    'transaction_id',
++                    $row->id
++                )
+                 ->first();
+ 
+-            if ((string) $row->status === 'completed') {
++            if (
++                (string) $row->status ===
++                'completed'
++            ) {
+                 if ($ledger->count() !== 1) {
+                     $problems[] =
+                         'completed pero ledger=' .
+                         $ledger->count();
+                 }
+ 
+-                if ($row->balance_before === null) {
++                if (
++                    $row->balance_before === null
++                ) {
+                     $problems[] =
+                         'balance_before NULL';
+                 }
+ 
+-                if ($row->balance_after === null) {
++                if (
++                    $row->balance_after === null
++                ) {
+                     $problems[] =
+                         'balance_after NULL';
+                 }
+ 
+                 if (
+                     $row->balance_before !== null &&
+                     $row->balance_after !== null &&
+                     (int) $row->balance_before +
+                     (int) $row->delta !==
+                     (int) $row->balance_after
+                 ) {
+                     $problems[] =
+                         'before + delta != after';
+                 }
+ 
+-                if ($row->bridge_transaction_id) {
++                if (
++                    $row->bridge_transaction_id
++                ) {
++                    $bridge = DB::table(
++                        'credit_bridge_transactions'
++                    )
++                        ->where(
++                            'transaction_id',
++                            $row->bridge_transaction_id
++                        )
++                        ->first();
++
+                     if (! $bridge) {
+                         $problems[] =
+                             'bridge_transaction_id sin journal Bridge';
+                     } elseif (
+                         (string) $bridge->status !==
+                         'applied'
+                     ) {
+                         $problems[] =
+                             'Bridge status=' .
+                             $bridge->status;
+                     }
+                 } elseif ($bridge) {
+                     $problems[] =
+                         'Bridge existe pero journal admin no lo referencia';
+                 }
+             }
+ 
+-            if ((string) $row->status === 'processing') {
++            if (
++                (string) $row->status ===
++                'processing'
++            ) {
+                 $expired =
+                     ! $row->lease_expires_at ||
+                     Carbon::parse(
+                         $row->lease_expires_at
+                     )->isPast();
+ 
+                 if ($expired) {
+                     $problems[] =
+                         'processing con lease caducado';
+                 }
+             }
+ 
+             if (
+                 (string) $row->status ===
+                 'manual_review'
+             ) {
+                 $problems[] =
+                     'requiere revisi├│n manual: ' .
+-                    ($row->error_code ?? 'sin c├│digo');
++                    (
++                        $row->error_code ??
++                        'sin c├│digo'
++                    );
+             }
+ 
+             foreach ($ledger as $entry) {
+-                if (
+-                    (int) $entry->balance_before +
+-                    (int) $entry->amount !==
+-                    (int) $entry->balance_after
+-                ) {
+-                    $problems[] =
+-                        "ledger #{$entry->id} no cuadra matem├íticamente";
+-                }
++                $this->checkLedgerArithmetic(
++                    $entry,
++                    $problems
++                );
+ 
+                 if (
+                     (int) $entry->amount !==
+                     (int) $row->delta
+                 ) {
+                     $problems[] =
+-                        "ledger #{$entry->id} tiene importe distinto";
++                        "ledger #{$entry->id} " .
++                        'tiene importe distinto';
+                 }
+             }
+ 
+             if ($bridge) {
+                 $this->checkBridgeArithmetic(
+                     $bridge,
+                     "ajuste {$row->id}",
+                     $problems
+                 );
+             }
+ 
+             $this->printRow(
+                 'ADMIN',
+-                $row->id,
++                (string) $row->id,
+                 (string) $row->status,
+                 $problems,
+                 $showAll
+             );
+         }
+     }
+ 
+     private function auditLedger(
+         string $filterId,
+         bool $showAll
+     ): void {
+         $this->newLine();
+         $this->comment('LEDGER');
+ 
+-        $query = DB::table('credit_transactions')
+-            ->whereNotNull('purchase_id')
++        $query = DB::table(
++            'credit_transactions'
++        )
++            ->whereNotNull(
++                'purchase_id'
++            )
+             ->orderBy('id');
+ 
+         if ($filterId !== '') {
++            $refundIds = DB::table(
++                'credit_refunds'
++            )
++                ->where(
++                    'original_purchase_id',
++                    $filterId
++                )
++                ->orWhere(
++                    'id',
++                    $filterId
++                )
++                ->pluck('id')
++                ->map(
++                    static fn ($id) =>
++                        'refund-' .
++                        $id
++                )
++                ->all();
++
+             $query->where(
+-                'purchase_id',
+-                $filterId
++                function ($query) use (
++                    $filterId,
++                    $refundIds
++                ) {
++                    $query->where(
++                        'purchase_id',
++                        $filterId
++                    );
++
++                    foreach (
++                        $refundIds
++                        as $refundLedgerId
++                    ) {
++                        $query->orWhere(
++                            'purchase_id',
++                            $refundLedgerId
++                        );
++                    }
++                }
+             );
+         }
+ 
+         $rows = $query->get();
+ 
+         if ($rows->isEmpty()) {
+-            $this->line('Sin ledger coincidente.');
++            $this->line(
++                'Sin ledger coincidente.'
++            );
+ 
+             return;
+         }
+ 
+         foreach ($rows as $row) {
+             $problems = [];
+ 
++            $purchaseId =
++                (string)
++                $row->purchase_id;
++
+             $purchaseExists = DB::table(
+                 'purchase_operations'
+             )
+-                ->where('id', $row->purchase_id)
++                ->where(
++                    'id',
++                    $purchaseId
++                )
+                 ->exists();
+ 
+             $adminExists = DB::table(
+                 'admin_credit_adjustments'
+             )
+-                ->where('id', $row->purchase_id)
++                ->where(
++                    'id',
++                    $purchaseId
++                )
+                 ->exists();
+ 
+-            if (! $purchaseExists && ! $adminExists) {
++            $refundExists = false;
++
++            if (
++                str_starts_with(
++                    $purchaseId,
++                    'refund-'
++                )
++            ) {
++                $refundId = substr(
++                    $purchaseId,
++                    strlen('refund-')
++                );
++
++                $refundExists = DB::table(
++                    'credit_refunds'
++                )
++                    ->where(
++                        'id',
++                        $refundId
++                    )
++                    ->exists();
++            }
++
++            if (
++                ! $purchaseExists &&
++                ! $adminExists &&
++                ! $refundExists
++            ) {
+                 $problems[] =
+                     'sin operaci├│n de origen';
+             }
+ 
++            $this->checkLedgerArithmetic(
++                $row,
++                $problems
++            );
++
+             if (
+-                (int) $row->balance_before +
+-                (int) $row->amount !==
+-                (int) $row->balance_after
++                (string) $row->type ===
++                'credit_refund' &&
++                ! $refundExists
+             ) {
+                 $problems[] =
+-                    'before + amount != after';
++                    'credit_refund sin refund de origen';
+             }
+ 
+             $this->printRow(
+                 'LEDGER',
+-                (string) $row->purchase_id,
++                $purchaseId,
+                 (string) $row->type,
+                 $problems,
+                 $showAll
+             );
+         }
+     }
+ 
+     private function auditBridge(
+         string $filterId,
+         bool $showAll
+     ): void {
+         $this->newLine();
+         $this->comment('CREDITBRIDGE');
+ 
+         $query = DB::table(
+             'credit_bridge_transactions'
+         )->orderBy('created_at');
+ 
+         if ($filterId !== '') {
+-            $query->where(function ($query) use (
+-                $filterId
+-            ) {
+-                $query
+-                    ->where(
++            $refundBridgeIds = DB::table(
++                'credit_refunds'
++            )
++                ->where(
++                    'id',
++                    $filterId
++                )
++                ->orWhere(
++                    'original_purchase_id',
++                    $filterId
++                )
++                ->whereNotNull(
++                    'bridge_transaction_id'
++                )
++                ->pluck(
++                    'bridge_transaction_id'
++                )
++                ->all();
++
++            $query->where(
++                function ($query) use (
++                    $filterId,
++                    $refundBridgeIds
++                ) {
++                    $query->where(
+                         'transaction_id',
+                         $filterId
+-                    )
+-                    ->orWhere(
+-                        'transaction_id',
+-                        'refund-' . $filterId
+                     );
+-            });
++
++                    foreach (
++                        $refundBridgeIds
++                        as $bridgeId
++                    ) {
++                        $query->orWhere(
++                            'transaction_id',
++                            $bridgeId
++                        );
++                    }
++                }
++            );
+         }
+ 
+         $rows = $query->get();
+ 
+         if ($rows->isEmpty()) {
+-            $this->line('Sin operaciones Bridge coincidentes.');
++            $this->line(
++                'Sin operaciones Bridge coincidentes.'
++            );
+ 
+             return;
+         }
+ 
+         foreach ($rows as $row) {
+             $problems = [];
+ 
+             $transactionId =
+-                (string) $row->transaction_id;
+-
+-            $baseId = str_starts_with(
+-                $transactionId,
+-                'refund-'
+-            )
+-                ? substr(
+-                    $transactionId,
+-                    strlen('refund-')
+-                )
+-                : $transactionId;
++                (string)
++                $row->transaction_id;
+ 
+             $purchaseExists = DB::table(
+                 'purchase_operations'
+             )
+-                ->where('id', $baseId)
++                ->where(
++                    'id',
++                    $transactionId
++                )
+                 ->exists();
+ 
+             $adminExists = DB::table(
+                 'admin_credit_adjustments'
+             )
+-                ->where('id', $baseId)
++                ->where(
++                    'id',
++                    $transactionId
++                )
++                ->orWhere(
++                    'bridge_transaction_id',
++                    $transactionId
++                )
+                 ->exists();
+ 
+-            if (! $purchaseExists && ! $adminExists) {
++            $refundExists = DB::table(
++                'credit_refunds'
++            )
++                ->where(
++                    'bridge_transaction_id',
++                    $transactionId
++                )
++                ->exists();
++
++            /*
++             * Compatibilidad con journals antiguos refund-<purchase>.
++             */
++            $legacyRefundExists = false;
++
++            if (
++                str_starts_with(
++                    $transactionId,
++                    'refund-'
++                )
++            ) {
++                $legacyBaseId = substr(
++                    $transactionId,
++                    strlen('refund-')
++                );
++
++                $legacyRefundExists =
++                    DB::table(
++                        'purchase_operations'
++                    )
++                        ->where(
++                            'id',
++                            $legacyBaseId
++                        )
++                        ->exists();
++            }
++
++            if (
++                ! $purchaseExists &&
++                ! $adminExists &&
++                ! $refundExists &&
++                ! $legacyRefundExists
++            ) {
+                 $problems[] =
+                     'journal Bridge hu├®rfano';
+             }
+ 
+             if (
+                 (string) $row->status ===
+                 'pending'
+             ) {
+                 $problems[] =
+                     'Bridge permanece pending';
+             }
+ 
+             $this->checkBridgeArithmetic(
+                 $row,
+                 $transactionId,
+                 $problems
+             );
+ 
+             $this->printRow(
+                 'BRIDGE',
+                 $transactionId,
+                 (string) $row->status,
+                 $problems,
+                 $showAll
+             );
+         }
+     }
+ 
++    private function checkPurchasePaymentBridge(
++        object $row,
++        ?object $bridge,
++        array &$problems
++    ): void {
++        if (! $row->payment_json) {
++            return;
++        }
++
++        $payment = json_decode(
++            $row->payment_json,
++            true
++        );
++
++        if (! is_array($payment)) {
++            $problems[] =
++                'payment_json inv├ílido';
++
++            return;
++        }
++
++        $channel =
++            $payment['channel'] ??
++            $payment['payment_channel'] ??
++            null;
++
++        if (
++            $channel !==
++            'online_credit_bridge'
++        ) {
++            return;
++        }
++
++        if (! $bridge) {
++            $problems[] =
++                'pago online sin journal Bridge';
++
++            return;
++        }
++
++        if (
++            (string) $bridge->status !==
++            'applied'
++        ) {
++            $problems[] =
++                'Bridge online status=' .
++                $bridge->status;
++        }
++    }
++
++    private function checkLedgerArithmetic(
++        object $row,
++        array &$problems
++    ): void {
++        if (
++            (int) $row->balance_before +
++            (int) $row->amount !==
++            (int) $row->balance_after
++        ) {
++            $problems[] =
++                "ledger #{$row->id} " .
++                'no cuadra matem├íticamente';
++        }
++    }
++
+     private function checkBridgeArithmetic(
+         object $row,
+         string $label,
+         array &$problems
+     ): void {
+-        if ((string) $row->status !== 'applied') {
++        if (
++            (string) $row->status !==
++            'applied'
++        ) {
+             return;
+         }
+ 
+-        $before = (int) $row->balance_before;
+-        $after = (int) $row->balance_after;
+-        $amount = (int) $row->amount;
++        $before =
++            (int) $row->balance_before;
++
++        $after =
++            (int) $row->balance_after;
+ 
+-        if ((string) $row->operation === 'debit') {
+-            if ($before - $amount !== $after) {
++        $amount =
++            (int) $row->amount;
++
++        if (
++            (string) $row->operation ===
++            'debit'
++        ) {
++            if (
++                $before - $amount !==
++                $after
++            ) {
+                 $problems[] =
+                     "{$label}: debit no cuadra";
+             }
+ 
+             return;
+         }
+ 
+-        if ((string) $row->operation === 'credit') {
+-            if ($before + $amount !== $after) {
++        if (
++            (string) $row->operation ===
++            'credit'
++        ) {
++            if (
++                $before + $amount !==
++                $after
++            ) {
+                 $problems[] =
+                     "{$label}: credit no cuadra";
+             }
+ 
+             return;
+         }
+ 
+         $problems[] =
+             "{$label}: operaci├│n Bridge desconocida";
+     }
+ 
+     private function printRow(
+         string $kind,
+         string $id,
+         string $status,
+         array $problems,
+         bool $showAll
+     ): void {
+         if ($problems === []) {
+             if ($showAll) {
+                 $this->line(
+                     "[OK] {$kind} {$id} | {$status}"
+                 );
+             }
+ 
+             return;
+         }
+ 
+-        $this->issues += count($problems);
++        $this->issues +=
++            count($problems);
+ 
+         $this->error(
+             "[!] {$kind} {$id} | {$status}"
+         );
+ 
+-        foreach ($problems as $problem) {
+-            $this->line("    - {$problem}");
++        foreach (
++            $problems
++            as $problem
++        ) {
++            $this->line(
++                "    - {$problem}"
++            );
+         }
+     }
+-}
+\ No newline at end of file
++}
+
+----- xampp/htdocs/app/Console/Kernel.php -----
+diff --git a/xampp/htdocs/app/Console/Kernel.php b/xampp/htdocs/app/Console/Kernel.php
+index 4c1dd5abf..6de21b5ae 100644
+--- a/xampp/htdocs/app/Console/Kernel.php
++++ b/xampp/htdocs/app/Console/Kernel.php
+@@ -1,27 +1,34 @@
+ <?php
+ 
+ namespace App\Console;
+ 
+ use Illuminate\Console\Scheduling\Schedule;
+ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+ 
+ class Kernel extends ConsoleKernel
+ {
+     /**
+      * Define the application's command schedule.
+      */
+     protected function schedule(Schedule $schedule): void
+     {
++        $schedule
++            ->command(
++                'badge-marketplace:maintain-seller-licenses'
++            )
++            ->dailyAt('03:15')
++            ->withoutOverlapping();
++
+         // $schedule->command('inspire')->hourly();
+     }
+ 
+     /**
+      * Register the commands for the application.
+      */
+     protected function commands(): void
+     {
+         $this->load(__DIR__ . '/Commands');
+ 
+         require base_path('routes/console.php');
+     }
+ }
+
+----- xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php -----
+diff --git a/xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php b/xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php
+index d17c88e52..77d8227f2 100644
+--- a/xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php
++++ b/xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php
+@@ -1,113 +1,185 @@
+ <?php
+ 
+ namespace App\Filament\Resources\Atom;
+ 
++use App\Filament\Resources\Atom\TeamResource\Pages;
++use App\Filament\Tables\Columns\HabboBadgeColumn;
++use App\Filament\Traits\TranslatableResource;
+ use App\Models\Community\Staff\WebsiteTeam;
+-use App\Models\Team;
+-use Filament\Tables;
++use Filament\Forms\Components\Section;
++use Filament\Forms\Components\TextInput;
++use Filament\Forms\Components\Toggle;
+ use Filament\Forms\Form;
+-use Filament\Tables\Columns\IconColumn;
+-use Filament\Tables\Table;
+ use Filament\Resources\Resource;
+-use Filament\Forms\Components\Toggle;
+-use Filament\Forms\Components\Section;
++use Filament\Tables;
++use Filament\Tables\Columns\IconColumn;
+ use Filament\Tables\Columns\TextColumn;
+-use Filament\Forms\Components\TextInput;
+-use App\Filament\Traits\TranslatableResource;
+-use App\Filament\Tables\Columns\HabboBadgeColumn;
+-use App\Filament\Resources\Atom\TeamResource\Pages;
++use Filament\Tables\Table;
+ use Illuminate\Database\Eloquent\Model;
+ 
+ class TeamResource extends Resource
+ {
+     use TranslatableResource;
+ 
+-    protected static ?string $model = WebsiteTeam::class;
++    protected static ?string $model =
++        WebsiteTeam::class;
+ 
+-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
++    protected static ?string $navigationIcon =
++        'heroicon-o-user-group';
+ 
+-    protected static ?string $navigationGroup = 'Website';
++    protected static ?string $navigationGroup =
++        'Website';
+ 
+-    protected static ?string $slug = 'website/teams';
++    protected static ?string $slug =
++        'website/teams';
+ 
+-    public static string $translateIdentifier = 'teams';
++    public static string $translateIdentifier =
++        'teams';
+ 
+-    public static function form(Form $form): Form
+-    {
++    public static function form(
++        Form $form
++    ): Form {
+         return $form
+             ->schema([
+                 Section::make()
+                     ->schema([
+-                        TextInput::make('rank_name')
++                        TextInput::make(
++                            'rank_name'
++                        )
+                             ->autofocus()
+                             ->maxLength(255)
+                             ->required()
+-                            ->label(__('filament::resources.inputs.name')),
+-
+-                        TextInput::make('job_description')
++                            ->label(
++                                __(
++                                    'filament::resources.inputs.name'
++                                )
++                            ),
++
++                        TextInput::make(
++                            'job_description'
++                        )
+                             ->maxLength(255)
+-                            ->label(__('filament::resources.inputs.description')),
+-
+-                        TextInput::make('badge')
++                            ->label(
++                                __(
++                                    'filament::resources.inputs.description'
++                                )
++                            ),
++
++                        TextInput::make(
++                            'badge'
++                        )
+                             ->maxLength(255)
+-                            ->label(__('filament::resources.inputs.badge_code'))
+-							->required(),
+-
+-                        Toggle::make('hidden_rank')
+-                            ->label(__('filament::resources.inputs.is_hidden')),
++                            ->label(
++                                __(
++                                    'filament::resources.inputs.badge_code'
++                                )
++                            )
++                            ->required(),
++
++                        Toggle::make(
++                            'hidden_rank'
++                        )
++                            ->label(
++                                __(
++                                    'filament::resources.inputs.is_hidden'
++                                )
++                            ),
+                     ]),
+             ]);
+     }
+ 
+-    public static function table(Table $table): Table
+-    {
++    public static function table(
++        Table $table
++    ): Table {
+         return $table
+-            ->defaultSort('id', 'desc')
++            ->defaultSort(
++                'id',
++                'desc'
++            )
+             ->columns([
+                 TextColumn::make('id')
+-                    ->label(__('filament::resources.columns.id')),
+-
+-                HabboBadgeColumn::make('badge')
+-                    ->label(__('filament::resources.columns.badge')),
+-
+-                TextColumn::make('rank_name')
+-                    ->label(__('filament::resources.columns.name')),
+-					
+-				TextColumn::make('job_description')
+-                    ->label(__('filament::resources.inputs.description')),
+-
+-                IconColumn::make('hidden_rank')
+-                    ->label(__('filament::resources.columns.is_hidden'))
+-                    ->icon(fn (Model $record) => $record->hidden_rank ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
++                    ->label(
++                        __(
++                            'filament::resources.columns.id'
++                        )
++                    ),
++
++                HabboBadgeColumn::make(
++                    'badge'
++                )
++                    ->label(
++                        __(
++                            'filament::resources.columns.badge'
++                        )
++                    ),
++
++                TextColumn::make(
++                    'rank_name'
++                )
++                    ->label(
++                        __(
++                            'filament::resources.columns.name'
++                        )
++                    ),
++
++                TextColumn::make(
++                    'job_description'
++                )
++                    ->label(
++                        __(
++                            'filament::resources.inputs.description'
++                        )
++                    ),
++
++                IconColumn::make(
++                    'hidden_rank'
++                )
++                    ->label(
++                        __(
++                            'filament::resources.columns.is_hidden'
++                        )
++                    )
++                    ->icon(
++                        fn (
++                            Model $record
++                        ) =>
++                            $record
++                                ->hidden_rank
++                                ? 'heroicon-o-check-circle'
++                                : 'heroicon-o-x-circle'
++                    )
+                     ->colors([
+                         'danger' => false,
+                         'success' => true,
+                     ]),
+             ])
+-            ->filters([
+-                //
+-            ])
++            ->filters([])
+             ->actions([
+                 Tables\Actions\EditAction::make(),
+             ])
+             ->bulkActions([
+                 Tables\Actions\DeleteBulkAction::make(),
+             ]);
+     }
+ 
+     public static function getRelations(): array
+     {
+-        return [
+-            //
+-        ];
++        return [];
+     }
+ 
+     public static function getPages(): array
+     {
+         return [
+-            'index' => Pages\ListTeams::route('/'),
+-            'create' => Pages\CreateTeam::route('/create'),
+-            'edit' => Pages\EditTeam::route('/{record}/edit'),
++            'index' =>
++                Pages\ListTeams::route('/'),
++            'create' =>
++                Pages\CreateTeam::route(
++                    '/create'
++                ),
++            'edit' =>
++                Pages\EditTeam::route(
++                    '/{record}/edit'
++                ),
+         ];
+     }
+ }
+
+----- xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php -----
+diff --git a/xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php b/xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php
+index 3e915514e..1b9c1e792 100644
+--- a/xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php
++++ b/xampp/htdocs/app/Filament/Resources/Hotel/BadgeTextEditorResource.php
+@@ -16,71 +16,71 @@ class BadgeTextEditorResource extends Resource
+ {
+     protected static ?string $model = WebsiteBadge::class;
+ 
+     protected static ?string $navigationGroup = 'Hotel';
+     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+     protected static ?string $navigationLabel = 'Badge Editor';
+     protected static ?string $modelLabel = 'Badge Text';
+     protected static ?string $slug = 'hotel/badge-text-editor';
+ 
+     public static function form(Forms\Form $form): Forms\Form
+     {
+         return $form
+             ->schema([
+                 Forms\Components\TextInput::make('badge_key')
+                     ->required()
+                     ->label('Badge Key - You must add badge_desc_')
+                     ->default('badge_desc_')
+                     ->placeholder('e.g., badge_desc_XXXX'),
+                 Forms\Components\TextInput::make('badge_name')
+                     ->required()
+                     ->label('Badge Name')
+                     ->placeholder('e.g., XXXX'),
+                 Forms\Components\Textarea::make('badge_description')
+                     ->required()
+                     ->label('Badge Description')
+                     ->placeholder('Please add a description for the badge.'),
+             ]);
+     }
+ 
+     public static function table(Tables\Table $table): Tables\Table
+     {
+         $settingsService = app(SettingsService::class);
+         $badgesPath = $settingsService->getOrDefault('badges_path', '/gamedata/c_images/album1584/');
+ 
+         return $table
+             ->columns([
+                 Tables\Columns\ImageColumn::make('badge_key')
+                     ->label('Badge Image')
+                     ->getStateUsing(function ($record) use ($badgesPath) {
+                         $badgeName = str_replace('badge_desc_', '', $record->badge_key);
+-                        $imageUrl = asset($badgesPath . $badgeName . '.gif');
++                        $imageUrl = asset(rtrim($badgesPath, '/\\') . '/' . $badgeName . '.gif');
+                         return $imageUrl;
+                     })
+-                    ->width(50)
+-                    ->height(50),
++                    ->width(40)
++                    ->height(40),
+                 TextColumn::make('badge_name')
+                     ->label('Badge Name')
+                     ->searchable()
+                     ->sortable(),
+                 TextColumn::make('badge_description')
+                     ->label('Badge Description')
+                     ->getStateUsing(fn ($record) => Str::limit($record->badge_description, 65))
+                     ->searchable(),
+             ])
+             ->filters([])
+             ->defaultSort('badge_key', 'asc')
+             ->actions([
+                 Tables\Actions\EditAction::make(),
+                 Tables\Actions\DeleteAction::make(),
+             ]);
+     }
+ 
+     public static function getPages(): array
+     {
+         return [
+             'index' => Pages\ListBadgeTextEditors::route('/'),
+             'create' => Pages\CreateBadgeTextEditor::route('/create'),
+             'edit' => Pages\EditBadgeTextEditor::route('/{record}/edit'),
+         ];
+     }
+ }
+
+----- xampp/htdocs/app/Filament/Resources/User/UserResource.php -----
+diff --git a/xampp/htdocs/app/Filament/Resources/User/UserResource.php b/xampp/htdocs/app/Filament/Resources/User/UserResource.php
+index 070198c54..5a89e2692 100644
+--- a/xampp/htdocs/app/Filament/Resources/User/UserResource.php
++++ b/xampp/htdocs/app/Filament/Resources/User/UserResource.php
+@@ -1,45 +1,44 @@
+ <?php
+ 
+ namespace App\Filament\Resources\User;
+ 
+-use App\Models\Community\Staff\WebsiteTeam;
+ use App\Models\Game\Permission;
+ use App\Models\User;
+ use Filament\Tables;
+ use Filament\Forms\Form;
+ use Filament\Tables\Table;
+ use Filament\Resources\Resource;
+ use Filament\Forms\Components\Tabs;
+ use Illuminate\Support\Facades\Hash;
+ use Filament\Forms\Components\Select;
+ use Filament\Forms\Components\Toggle;
+ use Filament\Forms\Components\Section;
+ use Filament\Forms\Components\Tabs\Tab;
+ use Filament\Tables\Columns\IconColumn;
+ use Filament\Tables\Columns\TextColumn;
+ use Illuminate\Database\Eloquent\Model;
+ use Filament\Forms\Components\TextInput;
+ use Illuminate\Database\Eloquent\Builder;
+ use App\Filament\Traits\TranslatableResource;
+ use Filament\Forms\Components\DateTimePicker;
+ use App\Filament\Tables\Columns\UserAvatarColumn;
+ use App\Filament\Resources\User\UserResource\Pages;
+ use App\Filament\Resources\User\UserResource\RelationManagers;
+ use Rmsramos\Activitylog\RelationManagers\ActivitylogRelationManager;
+ 
+ class UserResource extends Resource
+ {
+     use TranslatableResource;
+ 
+     protected static ?string $model = User::class;
+ 
+     protected static ?string $navigationIcon = 'heroicon-o-users';
+ 
+     protected static ?string $navigationGroup = 'User Management';
+ 
+     protected static ?string $slug = 'user-management/users';
+ 
+     public static string $translateIdentifier = 'users';
+ 
+     public static function form(Form $form): Form
+     {
+@@ -71,84 +70,99 @@ public static function form(Form $form): Form
+                                     ->required(),
+ 
+                                 DateTimePicker::make('account_created')
+                                     ->native(false)
+                                     ->displayFormat('Y-m-d H:i:s')
+                                     ->dehydrateStateUsing(fn(Model $record) => $record->account_created)
+                                     ->disabled()
+                                     ->label(__('filament::resources.inputs.created_at')),
+ 
+                                 DateTimePicker::make('last_login')
+                                     ->native(false)
+                                     ->displayFormat('Y-m-d H:i:s')
+                                     ->dehydrateStateUsing(fn(Model $record) => $record->last_login)
+                                     ->disabled()
+                                     ->label(__('filament::resources.inputs.last_login')),
+ 
+                                 DateTimePicker::make('last_online')
+                                     ->native(false)
+                                     ->displayFormat('Y-m-d H:i:s')
+                                     ->dehydrateStateUsing(fn(Model $record) => $record->last_online)
+                                     ->disabled()
+                                     ->label(__('filament::resources.inputs.last_online')),
+ 
+                                 TextInput::make('ip_register')
+                                     ->label(__('filament::resources.inputs.ip_register'))
+                                     ->disabled(),
+ 
+                                 TextInput::make('ip_current')
+                                     ->label(__('filament::resources.inputs.ip_current'))
+                                     ->disabled(),
+ 
+                                 TextInput::make('referral_code')
+                                     ->label(__('filament::resources.inputs.referral_code'))
+                                     ->disabled(),
+ 
+                                 TextInput::make('referrer_code')
+                                     ->label(__('filament::resources.inputs.referrer_code'))
+                                     ->nullable()
+                                     ->maxLength(15),
+ 
+-                                Select::make('team_id')
++                                Select::make('teams')
+                                     ->native(false)
+-                                    ->label(__('filament::resources.inputs.team_id'))
+-                                    ->options(WebsiteTeam::all()->pluck('rank_name', 'id'))
++                                    ->label('Teams / cargos')
++                                    ->helperText(
++                                        'Puedes asignar varios cargos compatibles. No modifican el rango de autoridad.'
++                                    )
++                                    ->relationship(
++                                        'teams',
++                                        'rank_name'
++                                    )
++                                    ->multiple()
++                                    ->preload()
++                                    ->searchable()
++                                    ->visible(
++                                        fn (): bool =>
++                                            hasHousekeepingPermission(
++                                                'manage_teams'
++                                            )
++                                    )
+                                     ->columnSpanFull()
+                             ])->columns(['sm' => 2]),
+ 
+                         Tab::make(__('filament::resources.tabs.Currencies'))
+                             ->schema([
+                                 TextInput::make('credits')
+                                     ->label(__('filament::resources.common.Credits'))
+                                     ->numeric()
+                                     ->disabled()
+                                     ->dehydrated(false)
+                                     ->columnSpanFull(),
+ 
+                                 TextInput::make('currency_0')
+                                     ->label(__('filament::resources.common.Duckets'))
+                                     ->numeric()
+                                     ->minValue(0)
+                                     ->columnSpanFull(),
+ 
+                                 TextInput::make('currency_5')
+                                     ->label(__('filament::resources.common.Diamonds'))
+                                     ->numeric()
+                                     ->minValue(0)
+                                     ->columnSpanFull(),
+ 
+                                 TextInput::make('currency_101')
+                                     ->label(__('filament::resources.common.Points'))
+                                     ->numeric()
+                                     ->minValue(0)
+                                     ->columnSpanFull(),
+                             ])
+                             ->columns(['sm' => 2]),
+ 
+                         Tab::make(__('filament::resources.tabs.Security'))
+                             ->schema([
+                                 Section::make(__('filament::resources.tabs.Change Username'))
+                                     ->description(__('filament::resources.helpers.change_username_description'))
+                                     ->schema([
+                                         Toggle::make('allow_change_username')
+                                             ->label(__('filament::resources.inputs.allow_change_username'))
+                                     ])->collapsible()->collapsed(),
+
+----- xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php -----
+diff --git a/xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php b/xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php
+index 6979d71ba..b2c71b15a 100644
+--- a/xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php
++++ b/xampp/htdocs/app/Http/Controllers/Client/CharacterSelectController.php
+@@ -1,65 +1,69 @@
+ <?php
+ 
+ namespace App\Http\Controllers\Client;
+ 
+ use App\Exceptions\CreditTransactionException;
+ use App\Http\Controllers\Controller;
+ use App\Services\CreditTransactionService;
++use App\Services\EmulatorPresenceService;
+ use App\Models\User;
+ use App\Rules\WebsiteWordfilterRule;
+ use Illuminate\Http\RedirectResponse;
+ use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Facades\Hash;
+ use Illuminate\Support\Str;
+ use Illuminate\Validation\Rule;
+ use Illuminate\Validation\ValidationException;
+ use Illuminate\View\View;
+ 
+ class CharacterSelectController extends Controller
+ {
+     private const SLOT_PRICE = 50;
+ 
+     public function __invoke(): View
+     {
++        app(EmulatorPresenceService::class)
++            ->normalizeGlobalPresence();
++
+         $accountId = $this->accountId();
+ 
+         $account = DB::table('accounts')
+             ->where('id', $accountId)
+             ->first();
+ 
+         abort_unless($account, 404);
+ 
+         $characters = User::query()
+             ->join('account_characters as ac', 'ac.user_id', '=', 'users.id')
+             ->where('ac.account_id', $accountId)
+             ->whereNull('ac.archived_at')
+             ->orderBy('ac.slot')
+             ->get([
+                 'users.*',
+                 'ac.slot',
+                 'ac.is_primary',
+             ]);
+ 
+         $archivedCount = DB::table('account_characters')
+             ->where('account_id', $accountId)
+             ->whereNotNull('archived_at')
+             ->count();
+ 
+         return view('client.characters', [
+             'characters' => $characters,
+             'slotsUsed' => $characters->count(),
+             'slotsTotal' => (int) $account->character_slots,
+             'archivedCount' => $archivedCount,
+             'slotPrice' => self::SLOT_PRICE,
+         ]);
+     }
+ 
+     public function store(Request $request): RedirectResponse
+     {
+         $validated = $request->validate([
+             'username' => [
+                 'required',
+                 'string',
+                 sprintf('regex:%s', setting('username_regex')),
+
+----- xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php -----
+diff --git a/xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php b/xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php
+index 3e0e5d90d..3b772baca 100644
+--- a/xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php
++++ b/xampp/htdocs/app/Models/Community/Staff/WebsiteTeam.php
+@@ -1,28 +1,41 @@
+ <?php
+ 
+ namespace App\Models\Community\Staff;
+ 
+ use App\Models\User;
+-use App\Models\Compositions\HasBadge;
+ use Illuminate\Database\Eloquent\Model;
+-use Illuminate\Database\Eloquent\Relations\HasMany;
++use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+ 
+ class WebsiteTeam extends Model
+ {
+     protected $guarded = [];
+ 
+-    public function users(): HasMany
++    public function users(): BelongsToMany
+     {
+-        return $this->hasMany(User::class, 'team_id', 'id');
++        return $this->belongsToMany(
++            User::class,
++            'user_website_team',
++            'website_team_id',
++            'user_id'
++        )
++            ->withPivot([
++                'assigned_by_user_id',
++                'created_at',
++                'updated_at',
++            ]);
+     }
+ 
+     public function getBadgePath(): string
+     {
+-        return sprintf('%s%s.gif', setting('badges_path'), $this->getBadgeName());
++        return sprintf(
++            '%s%s.gif',
++            setting('badges_path'),
++            $this->getBadgeName()
++        );
+     }
+ 
+     public function getBadgeName(): string
+     {
+         return $this->badge ?: '';
+     }
+ }
+
+----- xampp/htdocs/app/Models/User.php -----
+diff --git a/xampp/htdocs/app/Models/User.php b/xampp/htdocs/app/Models/User.php
+index 4865bb393..b90ffb5f1 100644
+--- a/xampp/htdocs/app/Models/User.php
++++ b/xampp/htdocs/app/Models/User.php
+@@ -1,71 +1,72 @@
+ <?php
+ 
+ namespace App\Models;
+ 
+ use App\Models\Articles\WebsiteArticle;
+ use App\Models\Articles\WebsiteArticleComment;
+ use App\Models\Community\Staff\WebsiteStaffApplications;
+ use App\Models\Community\Staff\WebsiteTeam;
+ use App\Models\Game\Furniture\Item;
+ use App\Models\Game\Permission;
+ use App\Models\Game\Player\MessengerFriendship;
+ use App\Models\Game\Player\UserBadge;
+ use App\Models\Game\Player\UserCurrency;
+ use App\Models\Game\Player\UserSetting;
+ use App\Models\Game\Player\UserSubscription;
+ use App\Models\Game\Room;
+ use App\Models\Help\WebsiteHelpCenterTicket;
+ use App\Models\Miscellaneous\CameraWeb;
+ use App\Models\Miscellaneous\WebsiteBetaCode;
+ use App\Models\Shop\WebsitePaypalTransaction;
+ use App\Models\Shop\WebsiteUsedShopVoucher;
+ use App\Models\User\Ban;
+ use App\Models\User\ClaimedReferralLog;
+ use App\Models\User\Referral;
+ use App\Models\User\UserReferral;
+ use App\Models\User\WebsiteUserGuestbook;
+ use Filament\Models\Contracts\FilamentUser;
+ use Filament\Models\Contracts\HasName;
+ use Filament\Panel;
+ use Illuminate\Database\Eloquent\Factories\HasFactory;
+ use Illuminate\Database\Eloquent\Relations\BelongsTo;
++use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+ use Illuminate\Database\Eloquent\Relations\HasMany;
+ use Illuminate\Database\Eloquent\Relations\HasOne;
+ use Illuminate\Foundation\Auth\User as Authenticatable;
+ use Illuminate\Notifications\Notifiable;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Facades\Hash;
+ use Illuminate\Support\Str;
+ use Laravel\Fortify\TwoFactorAuthenticatable;
+ use Laravel\Fortify\TwoFactorAuthenticationProvider;
+ use Laravel\Sanctum\HasApiTokens;
+ use Spatie\Activitylog\Traits\LogsActivity;
+ use Spatie\Activitylog\LogOptions;
+ 
+ 
+ class User extends Authenticatable implements FilamentUser, HasName
+ {
+     use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
+ 	use LogsActivity;
+ 
+ 
+     protected static function booted(): void
+     {
+         static::updated(function (User $user) {
+             if (!$user->wasChanged([
+                 'two_factor_secret',
+                 'two_factor_recovery_codes',
+                 'two_factor_confirmed',
+                 'two_factor_confirmed_at',
+             ])) {
+                 return;
+             }
+ 
+             $user->syncAccountTwoFactor();
+         });
+     }
+ 
+     private function syncAccountTwoFactor(): void
+     {
+         $accountId = DB::table('account_characters')
+             ->where('user_id', $this->id)
+@@ -177,83 +178,106 @@ public function referralsNeeded()
+     {
+         $referrals = 0;
+ 
+         if (!is_null($this->referrals)) {
+             $referrals = $this->referrals->referrals_total;
+         }
+ 
+         return setting('referrals_needed') - $referrals;
+     }
+ 
+     public function ban(): HasOne
+     {
+         return $this->hasOne(Ban::class, 'user_id')->where('ban_expire', '>', time())->whereIn('type', ['account', 'super']);
+     }
+ 
+     public function settings(): HasOne
+     {
+         return $this->hasOne(UserSetting::class);
+     }
+ 
+     public function ssoTicket(): string
+     {
+         $sso = sprintf('%s-%s', Str::replace(' ', '', setting('hotel_name')), Str::uuid());
+ 
+         if (User::where('auth_ticket', $sso)->exists()) {
+             return $this->ssoTicket();
+         }
+ 
+         $this->update([
+             'auth_ticket' => $sso,
+         ]);
+ 
+         return $sso;
+     }
+ 
+     public function betaCode(): HasOne
+     {
+         return $this->hasOne(WebsiteBetaCode::class);
+     }
+ 
++    /**
++     * Relaci├│n legacy de un solo Team.
++     *
++     * @deprecated Usa teams() para los cargos compatibles.
++     */
+     public function team(): BelongsTo
+     {
+-        return $this->belongsTo(WebsiteTeam::class, 'team_id');
++        return $this->belongsTo(
++            WebsiteTeam::class,
++            'team_id'
++        );
++    }
++
++    public function teams(): BelongsToMany
++    {
++        return $this->belongsToMany(
++            WebsiteTeam::class,
++            'user_website_team',
++            'user_id',
++            'website_team_id'
++        )
++            ->withPivot([
++                'assigned_by_user_id',
++                'created_at',
++                'updated_at',
++            ]);
+     }
+ 
+     public function applications(): HasMany
+     {
+         return $this->hasMany(WebsiteStaffApplications::class, 'user_id');
+     }
+ 
+     public function hcSubscription(): HasOne
+     {
+         return $this->hasOne(UserSubscription::class);
+     }
+ 
+     public function articleComments(): HasMany
+     {
+         return $this->hasMany(WebsiteArticleComment::class);
+     }
+ 
+     public function transactions(): HasMany
+     {
+         return $this->hasMany(WebsitePaypalTransaction::class);
+     }
+ 
+     public function usedShopVouchers(): HasMany
+     {
+         return $this->hasMany(WebsiteUsedShopVoucher::class);
+     }
+ 
+     public function items(): HasMany
+     {
+         return $this->hasMany(Item::class, 'user_id');
+     }
+ 
+     public function tickets(): HasMany
+     {
+         return $this->hasMany(WebsiteHelpCenterTicket::class);
+     }
+ 
+     public function photos(): HasMany
+     {
+         return $this->hasMany(CameraWeb::class);
+
+----- xampp/htdocs/app/Services/Community/TeamService.php -----
+diff --git a/xampp/htdocs/app/Services/Community/TeamService.php b/xampp/htdocs/app/Services/Community/TeamService.php
+index c8c9d4e72..8970f84e3 100644
+--- a/xampp/htdocs/app/Services/Community/TeamService.php
++++ b/xampp/htdocs/app/Services/Community/TeamService.php
+@@ -1,34 +1,66 @@
+ <?php
+ 
+ namespace App\Services\Community;
+ 
+ use App\Models\Community\Staff\WebsiteTeam;
+ use Illuminate\Database\Eloquent\Collection;
+ use Illuminate\Support\Facades\Cache;
+ 
+ class TeamService
+ {
+     public function fetchTeams(): Collection
+     {
+-        $cacheEnabled = setting('enable_caching') === '1';
++        $cacheEnabled =
++            setting('enable_caching') === '1';
+ 
+-        if (Cache::has('hotel_teams') && $cacheEnabled) {
++        if (
++            Cache::has('hotel_teams') &&
++            $cacheEnabled
++        ) {
+             return Cache::get('hotel_teams');
+         }
+ 
+-        $employees = WebsiteTeam::select(['id', 'rank_name', 'badge', 'staff_color', 'staff_background', 'job_description'])
+-            ->where('hidden_rank', false)
++        $employees = WebsiteTeam::select([
++            'id',
++            'rank_name',
++            'system_key',
++            'badge',
++            'staff_color',
++            'staff_background',
++            'job_description',
++        ])
++            ->where(
++                'hidden_rank',
++                false
++            )
+             ->orderByDesc('id')
+-            ->with(['users' => function ($query) {
+-                $query->select('id', 'username', 'look', 'motto', 'rank', 'team_id', 'online');
+-            }])
++            ->with([
++                'users' => function ($query) {
++                    $query->select([
++                        'users.id',
++                        'users.username',
++                        'users.look',
++                        'users.motto',
++                        'users.rank',
++                        'users.online',
++                    ]);
++                },
++            ])
+             ->get();
+ 
+         if ($cacheEnabled) {
+-            $cacheTimer = (int)setting('cache_timer');
+-            Cache::put('hotel_teams', $employees, now()->addMinutes($cacheTimer));
++            $cacheTimer =
++                (int) setting('cache_timer');
++
++            Cache::put(
++                'hotel_teams',
++                $employees,
++                now()->addMinutes(
++                    $cacheTimer
++                )
++            );
+         }
+ 
+         return $employees;
+     }
+ }
+
+----- xampp/htdocs/app/Services/CreditBridgeClient.php -----
+diff --git a/xampp/htdocs/app/Services/CreditBridgeClient.php b/xampp/htdocs/app/Services/CreditBridgeClient.php
+index 823a648ef..51897131e 100644
+--- a/xampp/htdocs/app/Services/CreditBridgeClient.php
++++ b/xampp/htdocs/app/Services/CreditBridgeClient.php
+@@ -1,50 +1,57 @@
+ <?php
+ 
+ namespace App\Services;
+ 
+ use App\Exceptions\CreditBridgeException;
+ use JsonException;
+ use Socket;
+ 
+ class CreditBridgeClient
+ {
++    public function ping(): array
++    {
++        return $this->send('creditbridgeping', [
++            'ping' => 1,
++        ]);
++    }
++
+     public function debit(
+         int $userId,
+         int $amount,
+         string $transactionId
+     ): array {
+         return $this->send('debitcredits', [
+             'user_id' => $userId,
+             'amount' => $amount,
+             'transaction_id' => $transactionId,
+         ]);
+     }
+ 
+     public function credit(
+         int $userId,
+         int $amount,
+         string $transactionId
+     ): array {
+         return $this->send('creditcredits', [
+             'user_id' => $userId,
+             'amount' => $amount,
+             'transaction_id' => $transactionId,
+         ]);
+     }
+ 
+     /**
+      * @throws CreditBridgeException
+      */
+     private function send(string $command, array $data): array
+     {
+         $socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+ 
+         if (! $socket instanceof Socket) {
+             throw new CreditBridgeException('No se pudo crear el socket RCON.');
+         }
+ 
+         try {
+             @socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, [
+                 'sec' => 3,
+                 'usec' => 0,
+             ]);
+
+----- xampp/htdocs/app/Services/CreditTransactionService.php -----
+diff --git a/xampp/htdocs/app/Services/CreditTransactionService.php b/xampp/htdocs/app/Services/CreditTransactionService.php
+index 68c2b7351..640f74899 100644
+--- a/xampp/htdocs/app/Services/CreditTransactionService.php
++++ b/xampp/htdocs/app/Services/CreditTransactionService.php
+@@ -1,58 +1,59 @@
+ <?php
+ 
+ namespace App\Services;
+ 
+ use App\Exceptions\CreditBridgeException;
+ use App\Exceptions\CreditTransactionException;
+ use Closure;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Facades\Log;
+ use Illuminate\Support\Str;
+ use Throwable;
+ 
+ class CreditTransactionService
+ {
+     private const PURCHASE_LEASE_SECONDS = 300;
+ 
+     public function __construct(
+-        private readonly CreditBridgeClient $bridge
++        private readonly CreditBridgeClient $bridge,
++        private readonly EmulatorPresenceService $presence
+     ) {
+     }
+ 
+     public function debitAndRun(
+         int $accountId,
+         int $userId,
+         int $amount,
+         string $type,
+         string $purchaseId,
+         array $purchaseContext,
+         Closure $operation
+     ): array {
+         if ($amount <= 0) {
+             throw new CreditTransactionException(
+                 'invalid_amount',
+                 'El importe del cobro no es valido.'
+             );
+         }
+ 
+         if (! $this->validPurchaseId($purchaseId)) {
+             throw new CreditTransactionException(
+                 'invalid_purchase_id',
+                 'El identificador de compra no es valido.'
+             );
+         }
+ 
+         $fingerprint = $this->fingerprint(
+             $accountId,
+             $userId,
+             $amount,
+             $type,
+             $purchaseContext
+         );
+ 
+         $claim = $this->claimPurchase(
+             $purchaseId,
+             $accountId,
+             $userId,
+             $amount,
+             $type,
+@@ -64,80 +65,88 @@ public function debitAndRun(
+         }
+ 
+         $attemptToken = $claim['attempt_token'];
+ 
+         $recovered = $this->recoverAppliedBridgeDebit(
+             $accountId,
+             $userId,
+             $amount,
+             $type,
+             $purchaseId,
+             $attemptToken,
+             $operation
+         );
+ 
+         if ($recovered !== null) {
+             return $recovered;
+         }
+ 
+         try {
+             $payer = DB::table('users')
+                 ->where('id', $userId)
+                 ->first([
+                     'id',
+                     'username',
+                     'credits',
+                     'online',
+                 ]);
+ 
+             if (! $payer) {
+                 throw new CreditTransactionException(
+                     'payer_not_found',
+                     'No se encontro el personaje pagador.'
+                 );
+             }
+ 
+             $this->assertActiveCharacter(
+                 $accountId,
+                 $userId
+             );
+ 
++            $payer->online =
++                $this->presence->effectiveOnlineState(
++                    $userId,
++                    $payer->online
++                )
++                    ? '1'
++                    : '0';
++
+             if (
+                 (string) $payer->online === '0' &&
+                 $this->hasPendingBridgeDebit($purchaseId)
+             ) {
+                 $this->markManualReview(
+                     $purchaseId,
+                     $attemptToken,
+                     'bridge_debit_pending_offline'
+                 );
+ 
+                 throw new CreditTransactionException(
+                     'purchase_manual_review',
+                     'Existe un cobro pendiente de reconciliar. No se realizara otro cargo.'
+                 );
+             }
+ 
+             if ((string) $payer->online !== '0') {
+                 return $this->debitOnline(
+                     $accountId,
+                     $payer,
+                     $amount,
+                     $type,
+                     $purchaseId,
+                     $attemptToken,
+                     $operation
+                 );
+             }
+ 
+             try {
+                 return $this->debitOffline(
+                     $accountId,
+                     $userId,
+                     $amount,
+                     $type,
+                     $purchaseId,
+                     $attemptToken,
+                     $operation
+                 );
+             } catch (CreditTransactionException $exception) {
+                 if (
+@@ -666,81 +675,81 @@ private function sendDebitSafely(
+                     $userId,
+                     $amount,
+                     $purchaseId
+                 );
+             } catch (CreditBridgeException $secondException) {
+                 $bridge = DB::table(
+                     'credit_bridge_transactions'
+                 )
+                     ->where(
+                         'transaction_id',
+                         $purchaseId
+                     )
+                     ->first([
+                         'user_id',
+                         'amount',
+                         'operation',
+                         'balance_before',
+                         'balance_after',
+                         'status',
+                     ]);
+ 
+                 if (
+                     $bridge &&
+                     (int) $bridge->user_id === $userId &&
+                     (int) $bridge->amount === $amount &&
+                     (string) $bridge->operation === 'debit' &&
+                     (string) $bridge->status === 'applied'
+                 ) {
+                     return [
+                         'status' => 0,
+                         'message' =>
+                             'debited|' .
+                             (int) $bridge->balance_before .
+                             '|' .
+                             (int) $bridge->balance_after,
+                     ];
+                 }
+ 
+                 throw new CreditTransactionException(
+                     'online_unavailable',
+-                    "No se puede procesar el pago mientras {$username} esta conectado. Desconectalo e intentalo de nuevo."
++                    "CreditBridge no esta disponible para {$username}, que sigue conectado al hotel. No se ha realizado ningun cobro; intentalo de nuevo en unos segundos."
+                 );
+             }
+         }
+     }
+ 
+     private function resolveOnlinePayment(
+         int $userId,
+         int $amount,
+         string $purchaseId,
+         array $response
+     ): array {
+         $message =
+             (string) ($response['message'] ?? '');
+ 
+         if ((int) ($response['status'] ?? -1) !== 0) {
+             if (
+                 str_starts_with(
+                     $message,
+                     'insufficient_funds|'
+                 )
+             ) {
+                 $parts = explode('|', $message);
+                 $balance =
+                     (int) ($parts[1] ?? 0);
+ 
+                 throw new CreditTransactionException(
+                     'insufficient_funds',
+                     "Se necesitan {$amount} creditos. Saldo disponible: {$balance}."
+                 );
+             }
+ 
+             throw new CreditTransactionException(
+                 'bridge_rejected',
+                 'Morningstar no pudo confirmar el cobro.'
+             );
+         }
+ 
+         $parts = explode('|', $message);
+ 
+         if (
+
+----- xampp/htdocs/app/Services/User/UserApiService.php -----
+diff --git a/xampp/htdocs/app/Services/User/UserApiService.php b/xampp/htdocs/app/Services/User/UserApiService.php
+index 2365ef7b2..ae6c2d2e9 100644
+--- a/xampp/htdocs/app/Services/User/UserApiService.php
++++ b/xampp/htdocs/app/Services/User/UserApiService.php
+@@ -1,30 +1,51 @@
+ <?php
+ 
+ namespace App\Services\User;
+ 
+ use App\Models\User;
++use App\Services\EmulatorPresenceService;
+ use Illuminate\Database\Eloquent\Builder;
+ 
+ class UserApiService
+ {
+-    public function fetchUser(string $username, array $columns): User
+-    {
+-        return User::select($columns)->where('username', '=', $username)->first();
++    public function __construct(
++        private readonly EmulatorPresenceService $presence
++    ) {
+     }
+ 
+-    public function onlineUsers($columns = ['username', 'motto', 'look'], bool $randomOrder = true): Builder
+-    {
+-        $query = User::select($columns)->where('online', '=', '1');
++    public function fetchUser(
++        string $username,
++        array $columns
++    ): User {
++        return User::select($columns)
++            ->where('username', '=', $username)
++            ->first();
++    }
++
++    public function onlineUsers(
++        $columns = [
++            'username',
++            'motto',
++            'look',
++        ],
++        bool $randomOrder = true
++    ): Builder {
++        $this->presence
++            ->normalizeGlobalPresence();
++
++        $query = User::select($columns)
++            ->where('online', '=', '1');
+ 
+         if ($randomOrder) {
+             $query = $query->inRandomOrder();
+         }
+ 
+         return $query;
+     }
+ 
+     public function onlineUserCount(): int
+     {
+-        return User::where('online', '=', '1')->count();
++        return $this->presence
++            ->onlineUserCount();
+     }
+ }
+
+----- xampp/htdocs/lang/es.json -----
+diff --git a/xampp/htdocs/lang/es.json b/xampp/htdocs/lang/es.json
+index cec208d83..843b68cc2 100644
+--- a/xampp/htdocs/lang/es.json
++++ b/xampp/htdocs/lang/es.json
+@@ -158,82 +158,82 @@
+     "or any other part of its services.": "o cualquier otra parte de sus servicios.",
+     "Do not pretend to be a representative of": "No se haga pasar por un representante de :hotel",
+     "This includes mimicing, acting like them, and or claim to have staff powers.": "Esto incluye imitarlos, actuar como ellos, y o pretender tener poderes de personal.",
+     "Do not threaten to, attempt to, or use any scripts or third party software to enter, disrupt, or modify": "No amenace, intente ni utilice secuencias de comandos o software de terceros para entrar, interrumpir o modificar",
+     "Non-harmful auto-typing, auto-clicking and other programs can only be used if you are the room owner or with permission from the room owner.": "Los programas no perjudiciales de auto-escritura, auto-clic y otros s├│lo se pueden utilizar si usted es el propietario de la sala o con el permiso del propietario de la sala.",
+     "You have reached the limit of maximum allowed accounts": "Has alcanzado el l├¡mite de cuentas m├íximas permitidas.",
+     "Only staff can login during maintenance!": "S├│lo el Staff puede conectarse durante el mantenimiento!",
+     "The Google recaptcha must be completed": "Debe completar el recaptcha de Google",
+     "The google recaptcha was submitted with an invalid type": "El recaptcha de google se ha enviado con un tipo no v├ílido",
+     "Your account settings has been updated": "Se ha actualizado la configuraci├│n de su cuenta",
+     "The language selected is not supported": "El idioma seleccionado no es compatible",
+     "Your password has been changed!": "┬íTu contrase├▒a ha sido modificada!",
+     "You do not have enough referrals to claim your reward": "No tienes suficientes referidos para reclamar la recompensa",
+     "Please logout to claim your reward": "Porfavor, cierra sesi├│n para reclamar tu recompensa",
+     "Woah! You have successfully claimed your reward - Keep up the good work!": "┬íVaya! Has reclamado con ├®xito tu recompensa. - ┬íSigue as├¡!",
+     "Your IP have been restricted - If you think this is a mistake, you can contact us on our Discord.": "Tu IP ha sido baneada - Si crees que se trata de un error, puedes ponerte en contacto con nosotros en nuestro Discord.",
+     "It seems like your current password is wrong.": "Parece que tu contrase├▒a actual es incorrecta.",
+     "The Google recaptcha was not successful.": "El recaptcha de Google no tuvo ├®xito.",
+     "Online Friends": "Online Friends",
+     "Mission": "Mission",
+     "Online Since": "Online Since",
+     "The beta code is invalid.": "The beta code is invalid.",
+     ":hotel staff": ":hotel staff",
+     "": "About the :hotel staff",
+     "The :hotel staff team is one big happy family, each staff member has a different role and duties to fulfill.": "The :hotel staff team is one big happy family, each staff member has a different role and duties to fulfill.",
+     "Most of our team usually consists of players that have been around :hotel for quite a while, but this does not mean we only recruit old & known players, we recruit those who shine out to us!": "Most of our team usually consists of players that have been around :hotel for quite a while, but this does not mean we only recruit old & known players, we recruit those who shine out to us!",
+     "Apply for staff": "Apply for staff",
+     "How to join the staff team": "How to join the staff team",
+     "Every now and then staff applications may open up. Once they do we always make sure to post a news article explaining the process - So make sure you keep an eye out for those in you are interested in joining the :hotel staff team.": "Every now and then staff applications may open up. Once they do we always make sure to post a news article explaining the process - So make sure you keep an eye out for those in you are interested in joining the :hotel staff team.",
+     "You can occasionally also look at the :startTag Staff application page :endTag which will show you all of our current open positions.": "You can occasionally also look at the :startTag Staff application page :endTag which will show you all of our current open positions.",
+     "You entered something that is not allowed on :hotel": "You entered something that is not allowed on :hotel",
+     "Post a comment": "Post a comment",
+     "Post a comment on the article, to let us know what you think about it": "Post a comment on the article, to let us know what you think about it",
+     "Post comment": "Post comment",
+     "Comments": "Comments",
+     "Below you will see all the comments, written on this article": "Below you will see all the comments, written on this article",
+     "You can only comment :amount times per article": "You can only comment :amount times per article",
+     "You comment has been posted!": "You comment has been posted!",
+     "You can only delete your own comments": "You can only delete your own comments",
+     "You comment has been deleted!": "You comment has been deleted!",
+-    "My Profile": "My Profile",
+-    "Administration": "Administration",
++    "My Profile": "Mi perfil",
++    "Administration": "Administraci├│n",
+     "Join server": "Join server",
+     "About the :hotel staff": "About the :hotel staff",
+     "Confirm your password": "Confirm your password",
+     "You must confirm your password to continue": "You must confirm your password to continue",
+     "You must confirm your current password before being able to toggle 2FA.": "You must confirm your current password before being able to toggle 2FA.",
+     "Confirm password": "Confirm password",
+     "Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.": "Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.",
+     "Email Password Reset Link": "Email Password Reset Link",
+     "Reset Password": "Reset Password",
+     "Login to :hotel": "Login to :hotel",
+     "Login to :hotel and take part in the most wonderful online world!": "Login to :hotel and take part in the most wonderful online world!",
+     "Enter the beta code you have been provided with": "Enter the beta code you have been provided with",
+     "Enter your beta code": "Enter your beta code",
+     "Two-factor verification": "Two-factor verification",
+     "Enter your 2-factor authentication code provided on your by the authentication app on your mobile phone.": "Enter your 2-factor authentication code provided on your by the authentication app on your mobile phone.",
+     "Enter the code from your authentication app": "Enter the code from your authentication app",
+     "Recovery code": "Recovery code",
+     "In case you dont have access to your two-factor authentication code, you can use one of your recovery codes.": "In case you dont have access to your two-factor authentication code, you can use one of your recovery codes.",
+     "Confirm 2FA": "Confirm 2FA",
+     "Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you did not receive the email, we will gladly send you another.": "Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you did not receive the email, we will gladly send you another.",
+     "A new verification link has been sent to the email address you provided during registration.": "A new verification link has been sent to the email address you provided during registration.",
+     "Resend Verification Email": "Resend Verification Email",
+     "Log Out": "Log Out",
+     "You have already applied for :position": "You have already applied for :position",
+     "Apply for :position": "Apply for :position",
+     "No positions open": "No positions open",
+     "There is currently no positions open": "There is currently no positions open",
+     "Please come back at a later time to check if we have any positions open by then! Thank you for your interest.": "Please come back at a later time to check if we have any positions open by then! Thank you for your interest.",
+     "Apply for :hotel staff": "Apply for :hotel staff",
+     "Select position to get started": "Select position to get started",
+     "Here at :hotel we open up for staff applications every now and then. Sometimes you will find this page empty other times it might be filled with positions, if you ever come across a position you feel you would fit perfectly into, then do not hesitate to apply for it.": "Here at :hotel we open up for staff applications every now and then. Sometimes you will find this page empty other times it might be filled with positions, if you ever come across a position you feel you would fit perfectly into, then do not hesitate to apply for it.",
+     "About you": "About you",
+     "Applying for :position": "Applying for :position",
+     "Read before applying": "Read before applying",
+     "Please field out all the fields to apply for :position. Remember when applying for a position here at :hotel you must be fully transparent and honest. If found out the information provided is false or incorrect you might risk losing your position if hired.": "Please field out all the fields to apply for :position. Remember when applying for a position here at :hotel you must be fully transparent and honest. If found out the information provided is false or incorrect you might risk losing your position if hired.",
+     "Teams": "Teams",
+     "Staff applications": "Staff applications",
+     "Rare values": "Rare values",
+     "You will receive:": "You will receive:",
+     "Buy for $:cost": "Buy for $:cost",
+@@ -281,42 +281,47 @@
+     "Donate": "Donate",
+     "Please setup the paypal credentials to allow for top ups.": "Please setup the paypal credentials to allow for top ups.",
+     "Voucher": "Voucher",
+     "Use a voucher for free credit": "Use a voucher for free credit",
+     "Use voucher": "Use voucher",
+     "Manage your account settings": "Manage your account settings",
+     "E-mail": "E-mail",
+     "Motto": "Motto",
+     "Change your password by filling out the fields below": "Change your password by filling out the fields below",
+     "Keep an eye on all your active sessions": "Keep an eye on all your active sessions",
+     "IP": "IP",
+     "IP Current Device": "IP Current Device",
+     "Is Desktop": "Is Desktop",
+     "Platform": "Platform",
+     "Last Activity": "Last Activity",
+     "No session logs found": "No session logs found",
+     "Two factor authentication": "Two factor authentication",
+     "Add an extra layer of security to your account by enabling two-factor authentication": "Add an extra layer of security to your account by enabling two-factor authentication",
+     "Disable 2FA": "Disable 2FA",
+     "Validate your two-factor enabling by scanning the following QR-code and enter your auto-generated 2-factor code from your phone.": "Validate your two-factor enabling by scanning the following QR-code and enter your auto-generated 2-factor code from your phone.",
+     "Recovery codes:": "Recovery codes:",
+     "Please save your recovery codes somewhere safe! If you lose access to your 2FA codes, those recovery codes will be needed to regain access your account.": "Please save your recovery codes somewhere safe! If you lose access to your 2FA codes, those recovery codes will be needed to regain access your account.",
+     "Please scan the QR-code above with your phone to retrieve your two-factor authentication code.": "Please scan the QR-code above with your phone to retrieve your two-factor authentication code.",
+     "Code": "Code",
+     "Verify 2FA": "Verify 2FA",
+     "Here at :hotel we take security very serious and therefore we offer you as a user a way to secure your beloved account even further, by allowing you to enable Googles 2-factor authentication!": "Here at :hotel we take security very serious and therefore we offer you as a user a way to secure your beloved account even further, by allowing you to enable Googles 2-factor authentication!",
+     "2-factor authentication adds an extra layer of security to your account, making it physical impossible to access it without having access to your mobile phone as only your phone will contain the 2-factor authentication code which will be re-generated every 30 seconds automatically.": "2-factor authentication adds an extra layer of security to your account, making it physical impossible to access it without having access to your mobile phone as only your phone will contain the 2-factor authentication code which will be re-generated every 30 seconds automatically.",
+     "Activate 2FA": "Activate 2FA",
+     "Claim your referrals reward!": "Claim your referrals reward!",
+     "It seems like you are banned off :hotel": "It seems like you are banned off :hotel",
+     "All the :category rares": "All the :category rares",
+     "Get an overview of all of the rares on :hotel": "Get an overview of all of the rares on :hotel",
+     "We currently have no rares listed here": "We currently have no rares listed here",
+     "Search": "Search",
+     "Search for rares": "Search for rares",
+     "Rare categories": "Rare categories",
+     "Select a category below": "Select a category below",
+     "All values": "All values",
+     "Go back to values": "Go back to values",
+     "Here is a list of all the owned :value`s": "Here is a list of all the owned :value`s",
+-    "owned": "owned"
++    "owned": "owned",
++    "Logo generator": "Generador de logos",
++    "Notifications": "Notificaciones",
++    "You have no notifications yet.": "Todav├¡a no tienes notificaciones.",
++    "Mark all as read": "Marcar todas como le├¡das",
++    "unread notifications": "notificaciones sin leer"
+ }
+
+----- xampp/htdocs/public/renderer-config.json -----
+diff --git a/xampp/htdocs/public/renderer-config.json b/xampp/htdocs/public/renderer-config.json
+index 6b3160156..ddc8e9b64 100644
+--- a/xampp/htdocs/public/renderer-config.json
++++ b/xampp/htdocs/public/renderer-config.json
+@@ -1,50 +1,50 @@
+ {
+     "socket.url": "ws://localhost:2096",
+     "asset.url": "http://localhost/nitro-assets",
+     "image.library.url": "http://localhost/swf/c_images/",
+     "hof.furni.url": "http://localhost/swf/dcr/hof_furni",
+     "images.url": "${asset.url}/images",
+     "gamedata.url": "${asset.url}/gamedata",
+     "sounds.url": "${asset.url}/sounds/%sample%.mp3",
+     "external.texts.url": [
+-        "${gamedata.url}/ExternalTexts.json",
++        "/api/nitro/external-texts",
+         "${gamedata.url}/UITexts.json"
+     ],
+     "external.samples.url": "${hof.furni.url}/mp3/sound_machine_sample_%sample%.mp3",
+     "furnidata.url": "${gamedata.url}/FurnitureData.json",
+     "productdata.url": "${gamedata.url}/ProductData.json",
+     "avatar.actions.url": "${gamedata.url}/HabboAvatarActions.json",
+     "avatar.figuredata.url": "${gamedata.url}/FigureData.json",
+     "avatar.figuremap.url": "${gamedata.url}/FigureMap.json",
+     "avatar.effectmap.url": "${gamedata.url}/EffectMap.json",
+     "avatar.asset.url": "${asset.url}/bundled/figure/%libname%.nitro",
+     "avatar.asset.effect.url": "${asset.url}/bundled/effect/%libname%.nitro",
+     "furni.asset.url": "${asset.url}/bundled/furniture/%libname%.nitro",
+     "furni.asset.icon.url": "${hof.furni.url}/icons/%libname%%param%_icon.png",
+     "pet.asset.url": "${asset.url}/bundled/pet/%libname%.nitro",
+     "generic.asset.url": "${asset.url}/bundled/generic/%libname%.nitro",
+     "badge.asset.url": "${image.library.url}album1584/%badgename%.gif",
+     "furni.rotation.bounce.steps": 20,
+     "furni.rotation.bounce.height": 0.0625,
+     "enable.avatar.arrow": false,
+     "system.log.debug": false,
+     "system.log.warn": false,
+     "system.log.error": false,
+     "system.log.events": false,
+     "system.log.packets": false,
+     "system.fps.animation": 24,
+     "system.fps.max": 60,
+     "system.pong.manually": true,
+     "system.pong.interval.ms": 20000,
+     "room.color.skip.transition": true,
+     "room.landscapes.enabled": true,
+     "avatar.mandatory.libraries": [
+         "bd:1",
+         "li:0"
+     ],
+     "avatar.mandatory.effect.libraries": [
+         "dance.1",
+         "dance.2",
+         "dance.3",
+         "dance.4"
+     ],
+@@ -544,41 +544,41 @@
+         "lion",
+         "rhino",
+         "spider",
+         "turtle",
+         "chicken",
+         "frog",
+         "dragon",
+         "monster",
+         "monkey",
+         "horse",
+         "monsterplant",
+         "bunnyeaster",
+         "bunnyevil",
+         "bunnydepressed",
+         "bunnylove",
+         "pigeongood",
+         "pigeonevil",
+         "demonmonkey",
+         "bearbaby",
+         "terrierbaby",
+         "gnome",
+         "leprechaun",
+         "kittenbaby",
+         "puppybaby",
+         "pigletbaby",
+         "haloompa",
+         "fools",
+         "pterosaur",
+         "velociraptor",
+         "cow",
+         "dragondog"
+     ],
+     "preload.assets.urls": [
+         "${asset.url}/bundled/generic/avatar_additions.nitro",
+         "${asset.url}/bundled/generic/group_badge.nitro",
+         "${asset.url}/bundled/generic/floor_editor.nitro",
+         "${images.url}/loading_icon.png",
+         "${images.url}/clear_icon.png",
+         "${images.url}/big_arrow.png"
+     ]
+-}
+\ No newline at end of file
++}
+
+----- xampp/htdocs/routes/api.php -----
+diff --git a/xampp/htdocs/routes/api.php b/xampp/htdocs/routes/api.php
+index 6897f8546..cae092b33 100644
+--- a/xampp/htdocs/routes/api.php
++++ b/xampp/htdocs/routes/api.php
+@@ -1,19 +1,21 @@
+ <?php
+ 
+ use App\Http\Controllers\Api\HotelApiController;
++use App\Http\Controllers\Api\NitroExternalTextsController;
+ use Illuminate\Support\Facades\Route;
+ 
+ /*
+ |--------------------------------------------------------------------------
+ | API Routes
+ |--------------------------------------------------------------------------
+ |
+ | Here is where you can register API routes for your application. These
+ | routes are loaded by the RouteServiceProvider within a group which
+ | is assigned the "api" middleware group. Enjoy building your API!
+ |
+ */
+ 
+ Route::get('/user/{username}', [HotelApiController::class, 'fetchUser'])->name('api.fetch-user')->middleware('throttle:50,1');
+ Route::get('/online-users', [HotelApiController::class, 'onlineUsers'])->name('api.online-users')->middleware('throttle:50,1');
+ Route::get('/online-count', [HotelApiController::class, 'onlineUserCount'])->name('api.online-count')->middleware('throttle:50,1');
++Route::get('/nitro/external-texts', NitroExternalTextsController::class)->name('api.nitro-external-texts');
+
+----- xampp/htdocs/routes/web.php -----
+diff --git a/xampp/htdocs/routes/web.php b/xampp/htdocs/routes/web.php
+index 02a45415a..e86abe2df 100644
+--- a/xampp/htdocs/routes/web.php
++++ b/xampp/htdocs/routes/web.php
+@@ -182,41 +182,183 @@
+         Route::post('/values/search', [WebsiteRareValuesController::class, 'search'])->name('values.search');
+         Route::get('/values/category/{category}', [WebsiteRareValuesController::class, 'category'])->name('values.category');
+         Route::get('/values/{value}', [WebsiteRareValuesController::class, 'value'])->name('values.value');
+ 
+         // Client route
+         Route::prefix('game')->middleware(['findretros.redirect', 'vpn.checker'])->group(function () {
+             Route::get('/nitro', NitroController::class)->name('nitro-client');
+             Route::get('/characters', CharacterSelectController::class)->name('character-select');
+             Route::get('/characters/archived', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'index'])->name('character-archived-index');
+             Route::post('/characters', [CharacterSelectController::class, 'store'])->name('character-create');
+             Route::post('/characters/slots', [CharacterSelectController::class, 'purchaseSlot'])->name('character-slot-purchase');
+             Route::patch('/characters/{user}/primary', [\App\Http\Controllers\Client\CharacterManagementController::class, 'makePrimary'])->name('character-primary');
+             Route::patch('/characters/{user}/motto', [\App\Http\Controllers\Client\CharacterManagementController::class, 'updateMotto'])->name('character-motto');
+             Route::delete('/characters/{user}', [\App\Http\Controllers\Client\CharacterManagementController::class, 'archive'])->name('character-archive');
+             Route::post('/characters/{user}/restore', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'paid'])->name('character-restore-paid');
+             Route::get('/nitro/character/{user}', CharacterNitroController::class)->name('nitro-character');
+             Route::get('/flash', FlashController::class)->name('flash-client');
+         });
+ 
+         Route::prefix('administration')->group(function () {
+             Route::get('/archived-characters', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'adminIndex'])->name('admin.archived-characters');
+             Route::post('/archived-characters/{user}/restore', [\App\Http\Controllers\Client\CharacterRestoreController::class, 'adminRestore'])->name('admin.character-restore');
+         });
+ 
+         // Logo generator
+         Route::get('/logo-generator', [LogoGeneratorController::class, 'index'])->name('logo-generator.index');
+         Route::post('/logo-generator', [LogoGeneratorController::class, 'store'])->name('store.generated-logo');
+     });
+ });
+ 
+ if (Features::enabled(Features::twoFactorAuthentication())) {
+     $twoFactorLimiter = config('fortify.limiters.two-factor');
+ 
+     Route::post('/two-factor-challenge', [TwoFactorAuthenticatedSessionController::class, 'store'])
+         ->middleware(
+             array_filter([
+                 'guest:' . config('fortify.guard'),
+                 $twoFactorLimiter ? 'throttle:' . $twoFactorLimiter : null,
+             ])
+         );
+-}
+\ No newline at end of file
++}
++
++// HOLO-CREATOR-BADGES-ROUTES
++Route::middleware([
++    'maintenance',
++    'check.ban',
++    'force.staff.2fa',
++    'auth',
++])->prefix('marketplace')->as('marketplace.')->group(function () {
++    Route::get(
++        '/badges',
++        [\App\Http\Controllers\Marketplace\BadgeCreatorController::class, 'index']
++    )->name('badges.index');
++
++    Route::post(
++        '/badges/preview',
++        [\App\Http\Controllers\Marketplace\BadgeCreatorController::class, 'preview']
++    )->middleware('throttle:20,1')->name('badges.preview');
++
++    Route::post(
++        '/badges',
++        [\App\Http\Controllers\Marketplace\BadgeCreatorController::class, 'store']
++    )->middleware('throttle:10,1')->name('badges.store');
++});
++Route::post(
++    '/marketplace/badges/{creatorBadge}/gift',
++    [\App\Http\Controllers\Marketplace\BadgeGiftController::class, 'store']
++)
++    ->middleware([
++        'auth',
++        'throttle:10,1',
++    ])
++    ->name('marketplace.badges.gift');
++
++Route::post(
++    '/marketplace/badges/seller-license',
++    [
++        \App\Http\Controllers\Marketplace\BadgeSellerApplicationController::class,
++        'store',
++    ]
++)
++    ->middleware([
++        'auth',
++        'throttle:3,1',
++    ])
++    ->name(
++        'marketplace.badges.seller-license.apply'
++    );
++Route::post(
++    '/marketplace/badges/{creatorBadge}/listing',
++    [
++        \App\Http\Controllers\Marketplace\BadgeMarketplaceListingController::class,
++        'store',
++    ]
++)
++    ->middleware([
++        'auth',
++        'throttle:20,1',
++    ])
++    ->name(
++        'marketplace.badges.listing.store'
++    );
++
++Route::delete(
++    '/marketplace/badges/{creatorBadge}/listing',
++    [
++        \App\Http\Controllers\Marketplace\BadgeMarketplaceListingController::class,
++        'deactivate',
++    ]
++)
++    ->middleware([
++        'auth',
++        'throttle:20,1',
++    ])
++    ->name(
++        'marketplace.badges.listing.deactivate'
++    );
++
++Route::post(
++    '/marketplace/badges/{creatorBadge}/listing/reactivate',
++    [
++        \App\Http\Controllers\Marketplace\BadgeMarketplaceListingController::class,
++        'reactivate',
++    ]
++)
++    ->middleware([
++        'auth',
++        'throttle:20,1',
++    ])
++    ->name(
++        'marketplace.badges.listing.reactivate'
++    );
++Route::post(
++    '/marketplace/badges/listings/{listing}/purchase',
++    [
++        \App\Http\Controllers\Marketplace\BadgeMarketplacePurchaseController::class,
++        'store',
++    ]
++)
++    ->middleware([
++        'auth',
++        'throttle:10,1',
++    ])
++    ->name(
++        'marketplace.badges.purchase'
++    );
++Route::post(
++    '/marketplace/badges/{creatorBadge}/hotel-distribution',
++    [
++        \App\Http\Controllers\Marketplace\BadgeHotelDistributionController::class,
++        'store',
++    ]
++)
++    ->middleware([
++        'auth',
++        'throttle:5,1',
++    ])
++    ->name(
++        'marketplace.badges.hotel-distribution.grant'
++    );
++// /HOLO-CREATOR-BADGES-ROUTES
++
++/*
++|--------------------------------------------------------------------------
++| Notificaciones de cuenta
++|--------------------------------------------------------------------------
++*/
++Route::middleware('auth')->group(function () {
++    Route::get(
++        '/notifications',
++        [\App\Http\Controllers\AccountNotificationController::class, 'index']
++    )->name('notifications.index');
++
++    Route::post(
++        '/notifications/{notification}/open',
++        [\App\Http\Controllers\AccountNotificationController::class, 'open']
++    )->name('notifications.open');
++
++    Route::post(
++        '/notifications/mark-all-read',
++        [\App\Http\Controllers\AccountNotificationController::class, 'markAllRead']
++    )->name('notifications.mark-all-read');
++});
+
+======================================================================
+UNTRACKED GENERIC DEPENDENCIES
+======================================================================
+
+FILE=xampp/htdocs/app/Exceptions/CreditRefundException.php
+STATUS=?? xampp/htdocs/app/Exceptions/CreditRefundException.php
+SHA256=e3516205b489dd85318c9caa11dcbeddef0e79e86a0dc419ea4c0fb48eea554f
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Exceptions;
+
+use RuntimeException;
+
+class CreditRefundException extends RuntimeException
+{
+    public function __construct(
+        public readonly string $reason,
+        string $message
+    ) {
+        parent::__construct($message);
+    }
+}
+----- SOURCE END -----
+
+FILE=xampp/htdocs/app/Http/Controllers/AccountNotificationController.php
+STATUS=?? xampp/htdocs/app/Http/Controllers/AccountNotificationController.php
+SHA256=68ba0af750232722a3637f399729b775f0d2a54a0097de9131e6cb1ba03a529c
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AccountNotification;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+
+class AccountNotificationController extends Controller
+{
+    public function index()
+    {
+        $accountId = $this->currentAccountId();
+
+        $notifications = AccountNotification::query()
+            ->where('account_id', $accountId)
+            ->latest('created_at')
+            ->paginate(25);
+
+        $unreadCount = AccountNotification::query()
+            ->where('account_id', $accountId)
+            ->whereNull('read_at')
+            ->count();
+
+        return view(
+            'notifications.index',
+            compact(
+                'notifications',
+                'unreadCount'
+            )
+        );
+    }
+    public function open(
+        AccountNotification $notification
+    ): RedirectResponse {
+        $accountId = $this->currentAccountId();
+
+        abort_unless(
+            (int) $notification->account_id === $accountId,
+            403
+        );
+
+        if ($notification->read_at === null) {
+            $notification->forceFill([
+                'read_at' => now(),
+            ])->save();
+        }
+
+        $url = trim((string) $notification->url);
+
+        if ($url !== '' && str_starts_with($url, '/')) {
+            return redirect($url);
+        }
+
+        return redirect()->back();
+    }
+
+    public function markAllRead(): RedirectResponse
+    {
+        $accountId = $this->currentAccountId();
+
+        AccountNotification::query()
+            ->where('account_id', $accountId)
+            ->whereNull('read_at')
+            ->update([
+                'read_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        return redirect()->back();
+    }
+
+    private function currentAccountId(): int
+    {
+        $userId = (int) auth()->id();
+
+        abort_if($userId <= 0, 401);
+
+        $accountId = DB::table('account_characters')
+            ->where('user_id', $userId)
+            ->whereNull('archived_at')
+            ->value('account_id');
+
+        abort_if($accountId === null, 403);
+
+        return (int) $accountId;
+    }
+}
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/app/Models/AccountNotification.php
+STATUS=?? xampp/htdocs/app/Models/AccountNotification.php
+SHA256=ac5bc8f84ed2704a7fe7e2d81f7e56571db8338fbb7a6db6904d3c12a6cbd17b
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class AccountNotification extends Model
+{
+    protected $table = 'account_notifications';
+
+    protected $fillable = [
+        'account_id',
+        'type',
+        'title',
+        'message',
+        'url',
+        'data',
+        'dedupe_key',
+        'read_at',
+    ];
+
+    protected $casts = [
+        'account_id' => 'integer',
+        'data' => 'array',
+        'read_at' => 'datetime',
+    ];
+}
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/app/Models/BadgeDesigner.php
+STATUS=?? xampp/htdocs/app/Models/BadgeDesigner.php
+SHA256=add9063efa69f17eca4f0b26c2269188aab1928d16e287ccbe687e9cd258fb65
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class BadgeDesigner extends Model
+{
+    protected $table = 'badge_designers';
+
+    public $timestamps = false;
+
+    protected $fillable = [
+        'account_id',
+        'active',
+        'granted_by_user_id',
+        'granted_at',
+        'revoked_at',
+        'notes',
+        'created_at',
+        'updated_at',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
+        'granted_at' => 'datetime',
+        'revoked_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+}
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/app/Services/AccountNotificationService.php
+STATUS=?? xampp/htdocs/app/Services/AccountNotificationService.php
+SHA256=0665a993a41a8b0b111d165a55a1cd95c31dbb08dbcced4a6f96e830c33a9c6f
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Services;
+
+use App\Models\AccountNotification;
+use InvalidArgumentException;
+
+class AccountNotificationService
+{
+    public function send(
+        int $accountId,
+        string $type,
+        string $title,
+        string $message,
+        ?string $url = null,
+        array $data = [],
+        ?string $dedupeKey = null
+    ): AccountNotification {
+        $type = trim($type);
+        $title = trim($title);
+        $message = trim($message);
+        $url = $url !== null ? trim($url) : null;
+        $dedupeKey = $dedupeKey !== null
+            ? trim($dedupeKey)
+            : null;
+
+        if ($accountId <= 0) {
+            throw new InvalidArgumentException(
+                'La cuenta destinataria no es vÃ¡lida.'
+            );
+        }
+
+        if ($type === '') {
+            throw new InvalidArgumentException(
+                'El tipo de notificaciÃ³n no puede estar vacÃ­o.'
+            );
+        }
+
+        if ($title === '') {
+            throw new InvalidArgumentException(
+                'El tÃ­tulo de la notificaciÃ³n no puede estar vacÃ­o.'
+            );
+        }
+
+        if ($message === '') {
+            throw new InvalidArgumentException(
+                'El mensaje de la notificaciÃ³n no puede estar vacÃ­o.'
+            );
+        }
+
+        $attributes = [
+            'account_id' => $accountId,
+            'type' => mb_substr($type, 0, 100),
+            'title' => mb_substr($title, 0, 160),
+            'message' => $message,
+            'url' => $url !== '' ? $url : null,
+            'data' => $data !== [] ? $data : null,
+            'dedupe_key' => $dedupeKey !== ''
+                ? $dedupeKey
+                : null,
+        ];
+
+        if ($attributes['dedupe_key'] !== null) {
+            return AccountNotification::query()->firstOrCreate(
+                [
+                    'account_id' => $accountId,
+                    'dedupe_key' => $attributes['dedupe_key'],
+                ],
+                $attributes
+            );
+        }
+
+        return AccountNotification::query()->create($attributes);
+    }
+}
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/app/Services/CreditRefundService.php
+STATUS=?? xampp/htdocs/app/Services/CreditRefundService.php
+SHA256=dfbeb7d37599b767e34c0d7e62d11c5df72b57818266457857db2b6aff0ea181
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Services;
+
+use App\Exceptions\CreditBridgeException;
+use App\Exceptions\CreditRefundException;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Throwable;
+
+class CreditRefundService
+{
+    private const LEASE_SECONDS = 300;
+
+    public function __construct(
+        private readonly CreditBridgeClient $bridge,
+        private readonly EmulatorPresenceService $presence
+    ) {
+    }
+
+    public function refund(
+        string $refundId,
+        string $originalPurchaseId,
+        int $amount,
+        string $reason,
+        array $metadata = []
+    ): array {
+        $reason = trim($reason);
+
+        $this->validateInput(
+            $refundId,
+            $originalPurchaseId,
+            $amount,
+            $reason
+        );
+
+        $fingerprint = $this->fingerprint(
+            $originalPurchaseId,
+            $amount,
+            $reason,
+            $metadata
+        );
+
+        $claim = $this->claimRefund(
+            $refundId,
+            $originalPurchaseId,
+            $amount,
+            $reason,
+            $metadata,
+            $fingerprint
+        );
+
+        if ($claim['completed']) {
+            return $claim['result'];
+        }
+
+        $attemptToken = $claim['attempt_token'];
+        $accountId = $claim['account_id'];
+        $userId = $claim['user_id'];
+
+        $recovered = $this->recoverAppliedBridgeCredit(
+            $refundId,
+            $originalPurchaseId,
+            $accountId,
+            $userId,
+            $amount,
+            $attemptToken
+        );
+
+        if ($recovered !== null) {
+            return $recovered;
+        }
+
+        $user = DB::table('users')
+            ->where('id', $userId)
+            ->first([
+                'id',
+                'credits',
+                'online',
+            ]);
+
+        if (! $user) {
+            throw new CreditRefundException(
+                'user_not_found',
+                'No se encontro el personaje que debe recibir el reembolso.'
+            );
+        }
+
+        $user->online =
+            $this->presence->effectiveOnlineState(
+                $userId,
+                $user->online
+            )
+                ? '1'
+                : '0';
+
+        if ((string) $user->online === '0') {
+            try {
+                return $this->refundOffline(
+                    $refundId,
+                    $originalPurchaseId,
+                    $accountId,
+                    $userId,
+                    $amount,
+                    $attemptToken
+                );
+            } catch (CreditRefundException $exception) {
+                if (
+                    $exception->reason !==
+                    'user_became_online'
+                ) {
+                    throw $exception;
+                }
+            }
+        }
+
+        return $this->refundOnline(
+            $refundId,
+            $originalPurchaseId,
+            $accountId,
+            $userId,
+            $amount,
+            $attemptToken
+        );
+    }
+
+    private function validateInput(
+        string $refundId,
+        string $originalPurchaseId,
+        int $amount,
+        string $reason
+    ): void {
+        if (! $this->validUuid($refundId)) {
+            throw new CreditRefundException(
+                'invalid_refund_id',
+                'El identificador del reembolso no es valido.'
+            );
+        }
+
+        if ($originalPurchaseId === '') {
+            throw new CreditRefundException(
+                'invalid_purchase_id',
+                'La compra original no es valida.'
+            );
+        }
+
+        if ($amount <= 0) {
+            throw new CreditRefundException(
+                'invalid_amount',
+                'El importe del reembolso debe ser mayor que cero.'
+            );
+        }
+
+        if (
+            mb_strlen($reason) < 3 ||
+            mb_strlen($reason) > 500
+        ) {
+            throw new CreditRefundException(
+                'invalid_reason',
+                'El motivo debe tener entre 3 y 500 caracteres.'
+            );
+        }
+    }
+
+    private function claimRefund(
+        string $refundId,
+        string $originalPurchaseId,
+        int $amount,
+        string $reason,
+        array $metadata,
+        string $fingerprint
+    ): array {
+        return DB::transaction(function () use (
+            $refundId,
+            $originalPurchaseId,
+            $amount,
+            $reason,
+            $metadata,
+            $fingerprint
+        ) {
+            $purchase = DB::table('purchase_operations')
+                ->where('id', $originalPurchaseId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $purchase) {
+                throw new CreditRefundException(
+                    'purchase_not_found',
+                    'No se encontro la compra original.'
+                );
+            }
+
+            $existing = DB::table('credit_refunds')
+                ->where('id', $refundId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                $this->assertFingerprint(
+                    $existing,
+                    $fingerprint
+                );
+
+                if (
+                    (string) $existing->status ===
+                    'completed'
+                ) {
+                    return [
+                        'completed' => true,
+                        'result' => $this->decodeResult(
+                            $existing->result_json
+                        ),
+                        'attempt_token' => null,
+                        'account_id' =>
+                            (int) $existing->account_id,
+                        'user_id' =>
+                            (int) $existing->user_id,
+                    ];
+                }
+
+                if (
+                    (string) $existing->status ===
+                    'manual_review'
+                ) {
+                    throw new CreditRefundException(
+                        'refund_manual_review',
+                        'Este reembolso requiere revision administrativa.'
+                    );
+                }
+            }
+
+            if ((string) $purchase->status !== 'completed') {
+                throw new CreditRefundException(
+                    'purchase_not_refundable',
+                    'La compra no esta en un estado reembolsable.'
+                );
+            }
+
+            $purchaseAmount = (int) $purchase->amount;
+
+            if ($purchaseAmount <= 0) {
+                throw new CreditRefundException(
+                    'invalid_purchase_amount',
+                    'La compra original no tiene un importe valido.'
+                );
+            }
+
+            $accountId = (int) $purchase->account_id;
+            $userId = (int) $purchase->user_id;
+
+            $reservedByOthers = (int) DB::table(
+                'credit_refunds'
+            )
+                ->where(
+                    'original_purchase_id',
+                    $originalPurchaseId
+                )
+                ->where('id', '<>', $refundId)
+                ->whereIn(
+                    'status',
+                    [
+                        'processing',
+                        'completed',
+                        'manual_review',
+                    ]
+                )
+                ->sum('amount');
+
+            if (
+                $reservedByOthers + $amount >
+                $purchaseAmount
+            ) {
+                $available =
+                    max(
+                        0,
+                        $purchaseAmount -
+                        $reservedByOthers
+                    );
+
+                throw new CreditRefundException(
+                    'refund_exceeds_purchase',
+                    "Solo quedan {$available} creditos reembolsables de esta compra."
+                );
+            }
+
+            $attemptToken = (string) Str::uuid();
+            $lease = now()->addSeconds(
+                self::LEASE_SECONDS
+            );
+
+            if (! $existing) {
+                DB::table('credit_refunds')->insert([
+                    'id' => $refundId,
+                    'original_purchase_id' =>
+                        $originalPurchaseId,
+                    'account_id' => $accountId,
+                    'user_id' => $userId,
+                    'amount' => $amount,
+                    'reason' => $reason,
+                    'fingerprint' => $fingerprint,
+                    'status' => 'processing',
+                    'attempt_token' => $attemptToken,
+                    'lease_expires_at' => $lease,
+                    'metadata' => json_encode(
+                        $metadata,
+                        JSON_THROW_ON_ERROR
+                    ),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                return [
+                    'completed' => false,
+                    'result' => null,
+                    'attempt_token' => $attemptToken,
+                    'account_id' => $accountId,
+                    'user_id' => $userId,
+                ];
+            }
+
+            if (
+                (string) $existing->status !==
+                'processing'
+            ) {
+                throw new CreditRefundException(
+                    'invalid_refund_status',
+                    'El reembolso tiene un estado no reconocido.'
+                );
+            }
+
+            $leaseActive = false;
+
+            if ($existing->lease_expires_at) {
+                $leaseActive = Carbon::parse(
+                    $existing->lease_expires_at
+                )->isFuture();
+            }
+
+            if ($leaseActive) {
+                throw new CreditRefundException(
+                    'refund_in_progress',
+                    'Este reembolso ya se esta procesando.'
+                );
+            }
+
+            DB::table('credit_refunds')
+                ->where('id', $refundId)
+                ->update([
+                    'attempt_token' => $attemptToken,
+                    'lease_expires_at' => $lease,
+                    'error_code' => null,
+                    'updated_at' => now(),
+                ]);
+
+            return [
+                'completed' => false,
+                'result' => null,
+                'attempt_token' => $attemptToken,
+                'account_id' => $accountId,
+                'user_id' => $userId,
+            ];
+        }, 5);
+    }
+
+    private function refundOffline(
+        string $refundId,
+        string $originalPurchaseId,
+        int $accountId,
+        int $userId,
+        int $amount,
+        string $attemptToken
+    ): array {
+        return DB::transaction(function () use (
+            $refundId,
+            $originalPurchaseId,
+            $accountId,
+            $userId,
+            $amount,
+            $attemptToken
+        ) {
+            $refund = $this->lockRefund($refundId);
+
+            if (
+                (string) $refund->status ===
+                'completed'
+            ) {
+                return $this->decodeResult(
+                    $refund->result_json
+                );
+            }
+
+            $this->assertAttempt(
+                $refund,
+                $attemptToken
+            );
+
+            $purchase = DB::table(
+                'purchase_operations'
+            )
+                ->where('id', $originalPurchaseId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $purchase) {
+                throw new CreditRefundException(
+                    'purchase_not_found',
+                    'No se encontro la compra original.'
+                );
+            }
+
+            $user = DB::table('users')
+                ->where('id', $userId)
+                ->lockForUpdate()
+                ->first([
+                    'id',
+                    'credits',
+                    'online',
+                ]);
+
+            if (! $user) {
+                throw new CreditRefundException(
+                    'user_not_found',
+                    'No se encontro el personaje del reembolso.'
+                );
+            }
+
+            if ((string) $user->online !== '0') {
+                throw new CreditRefundException(
+                    'user_became_online',
+                    'El personaje se conecto durante el reembolso.'
+                );
+            }
+
+            $balanceBefore = (int) $user->credits;
+            $balanceAfter =
+                $balanceBefore + $amount;
+
+            $updated = DB::table('users')
+                ->where('id', $userId)
+                ->increment('credits', $amount);
+
+            if ($updated !== 1) {
+                throw new CreditRefundException(
+                    'offline_credit_failed',
+                    'No se pudo aplicar el reembolso.'
+                );
+            }
+
+            $payment = [
+                'channel' => 'offline_db',
+                'transaction_id' =>
+                    'refund-' . $refundId,
+                'balance_before' => $balanceBefore,
+                'balance_after' => $balanceAfter,
+            ];
+
+            return $this->finishRefund(
+                $refundId,
+                $originalPurchaseId,
+                $accountId,
+                $userId,
+                $amount,
+                $attemptToken,
+                $payment
+            );
+        }, 5);
+    }
+
+    private function refundOnline(
+        string $refundId,
+        string $originalPurchaseId,
+        int $accountId,
+        int $userId,
+        int $amount,
+        string $attemptToken
+    ): array {
+        $bridgeTransactionId =
+            'credit-refund-' . $refundId;
+
+        try {
+            try {
+                $response = $this->bridge->credit(
+                    $userId,
+                    $amount,
+                    $bridgeTransactionId
+                );
+            } catch (CreditBridgeException) {
+                $response = $this->bridge->credit(
+                    $userId,
+                    $amount,
+                    $bridgeTransactionId
+                );
+            }
+
+            $payment = $this->resolveOnlineCredit(
+                $userId,
+                $amount,
+                $bridgeTransactionId,
+                $response
+            );
+        } catch (Throwable $exception) {
+            $bridge = DB::table(
+                'credit_bridge_transactions'
+            )
+                ->where(
+                    'transaction_id',
+                    $bridgeTransactionId
+                )
+                ->first();
+
+            if (
+                $bridge &&
+                (string) $bridge->status === 'pending'
+            ) {
+                $this->markManualReview(
+                    $refundId,
+                    $attemptToken,
+                    'bridge_credit_pending'
+                );
+
+                throw new CreditRefundException(
+                    'refund_manual_review',
+                    'El reembolso quedo pendiente de confirmar y requiere revision administrativa.'
+                );
+            }
+
+            throw $exception;
+        }
+
+        try {
+            return DB::transaction(function () use (
+                $refundId,
+                $originalPurchaseId,
+                $accountId,
+                $userId,
+                $amount,
+                $attemptToken,
+                $payment
+            ) {
+                $refund = $this->lockRefund(
+                    $refundId
+                );
+
+                if (
+                    (string) $refund->status ===
+                    'completed'
+                ) {
+                    return $this->decodeResult(
+                        $refund->result_json
+                    );
+                }
+
+                $this->assertAttempt(
+                    $refund,
+                    $attemptToken
+                );
+
+                DB::table('purchase_operations')
+                    ->where(
+                        'id',
+                        $originalPurchaseId
+                    )
+                    ->lockForUpdate()
+                    ->first();
+
+                $user = DB::table('users')
+                    ->where('id', $userId)
+                    ->lockForUpdate()
+                    ->first([
+                        'id',
+                        'credits',
+                    ]);
+
+                if (! $user) {
+                    throw new CreditRefundException(
+                        'user_not_found',
+                        'No se encontro el personaje del reembolso.'
+                    );
+                }
+
+                if (
+                    (int) $user->credits !==
+                    (int) $payment['balance_after']
+                ) {
+                    throw new CreditRefundException(
+                        'post_credit_balance_mismatch',
+                        'El saldo persistido no coincide con el reembolso confirmado.'
+                    );
+                }
+
+                return $this->finishRefund(
+                    $refundId,
+                    $originalPurchaseId,
+                    $accountId,
+                    $userId,
+                    $amount,
+                    $attemptToken,
+                    $payment
+                );
+            }, 5);
+        } catch (Throwable $exception) {
+            Log::critical(
+                'Credit refund was applied by CreditBridge but could not be finalized.',
+                [
+                    'refund_id' => $refundId,
+                    'original_purchase_id' =>
+                        $originalPurchaseId,
+                    'account_id' => $accountId,
+                    'user_id' => $userId,
+                    'amount' => $amount,
+                    'error' =>
+                        $exception->getMessage(),
+                ]
+            );
+
+            throw $exception;
+        }
+    }
+
+    private function recoverAppliedBridgeCredit(
+        string $refundId,
+        string $originalPurchaseId,
+        int $accountId,
+        int $userId,
+        int $amount,
+        string $attemptToken
+    ): ?array {
+        $bridgeTransactionId =
+            'credit-refund-' . $refundId;
+
+        $bridge = DB::table(
+            'credit_bridge_transactions'
+        )
+            ->where(
+                'transaction_id',
+                $bridgeTransactionId
+            )
+            ->first([
+                'user_id',
+                'amount',
+                'operation',
+                'balance_before',
+                'balance_after',
+                'status',
+            ]);
+
+        if (! $bridge) {
+            return null;
+        }
+
+        if (
+            (int) $bridge->user_id !== $userId ||
+            (int) $bridge->amount !== $amount ||
+            (string) $bridge->operation !== 'credit'
+        ) {
+            $this->markManualReview(
+                $refundId,
+                $attemptToken,
+                'bridge_transaction_conflict'
+            );
+
+            throw new CreditRefundException(
+                'bridge_transaction_conflict',
+                'El registro de CreditBridge no coincide con este reembolso.'
+            );
+        }
+
+        if ((string) $bridge->status === 'pending') {
+            $this->markManualReview(
+                $refundId,
+                $attemptToken,
+                'bridge_credit_pending'
+            );
+
+            throw new CreditRefundException(
+                'refund_manual_review',
+                'Existe un reembolso pendiente de confirmar.'
+            );
+        }
+
+        if ((string) $bridge->status !== 'applied') {
+            return null;
+        }
+
+        if (
+            (
+                (int) $bridge->balance_after -
+                (int) $bridge->balance_before
+            ) !== $amount
+        ) {
+            $this->markManualReview(
+                $refundId,
+                $attemptToken,
+                'bridge_balance_mismatch'
+            );
+
+            throw new CreditRefundException(
+                'bridge_balance_mismatch',
+                'El saldo registrado por CreditBridge no es coherente.'
+            );
+        }
+
+        $payment = [
+            'channel' => 'online_credit_bridge',
+            'transaction_id' =>
+                $bridgeTransactionId,
+            'balance_before' =>
+                (int) $bridge->balance_before,
+            'balance_after' =>
+                (int) $bridge->balance_after,
+        ];
+
+        return DB::transaction(function () use (
+            $refundId,
+            $originalPurchaseId,
+            $accountId,
+            $userId,
+            $amount,
+            $attemptToken,
+            $payment
+        ) {
+            $refund = $this->lockRefund(
+                $refundId
+            );
+
+            if (
+                (string) $refund->status ===
+                'completed'
+            ) {
+                return $this->decodeResult(
+                    $refund->result_json
+                );
+            }
+
+            $this->assertAttempt(
+                $refund,
+                $attemptToken
+            );
+
+            return $this->finishRefund(
+                $refundId,
+                $originalPurchaseId,
+                $accountId,
+                $userId,
+                $amount,
+                $attemptToken,
+                $payment
+            );
+        }, 5);
+    }
+
+    private function resolveOnlineCredit(
+        int $userId,
+        int $amount,
+        string $transactionId,
+        array $response
+    ): array {
+        $message =
+            (string) ($response['message'] ?? '');
+
+        $parts = explode('|', $message);
+
+        if (
+            (int) ($response['status'] ?? -1) === 0 &&
+            count($parts) === 3 &&
+            $parts[0] === 'credited' &&
+            is_numeric($parts[1]) &&
+            is_numeric($parts[2]) &&
+            (
+                (int) $parts[2] -
+                (int) $parts[1]
+            ) === $amount
+        ) {
+            return [
+                'channel' =>
+                    'online_credit_bridge',
+                'transaction_id' =>
+                    $transactionId,
+                'balance_before' =>
+                    (int) $parts[1],
+                'balance_after' =>
+                    (int) $parts[2],
+            ];
+        }
+
+        $bridge = DB::table(
+            'credit_bridge_transactions'
+        )
+            ->where(
+                'transaction_id',
+                $transactionId
+            )
+            ->first([
+                'user_id',
+                'amount',
+                'operation',
+                'balance_before',
+                'balance_after',
+                'status',
+            ]);
+
+        if (
+            $bridge &&
+            (int) $bridge->user_id === $userId &&
+            (int) $bridge->amount === $amount &&
+            (string) $bridge->operation === 'credit' &&
+            (string) $bridge->status === 'applied' &&
+            (
+                (int) $bridge->balance_after -
+                (int) $bridge->balance_before
+            ) === $amount
+        ) {
+            return [
+                'channel' =>
+                    'online_credit_bridge',
+                'transaction_id' =>
+                    $transactionId,
+                'balance_before' =>
+                    (int) $bridge->balance_before,
+                'balance_after' =>
+                    (int) $bridge->balance_after,
+            ];
+        }
+
+        throw new CreditRefundException(
+            'bridge_rejected',
+            'Morningstar no pudo confirmar el reembolso.'
+        );
+    }
+
+    private function finishRefund(
+        string $refundId,
+        string $originalPurchaseId,
+        int $accountId,
+        int $userId,
+        int $amount,
+        string $attemptToken,
+        array $payment
+    ): array {
+        $refund = DB::table('credit_refunds')
+            ->where('id', $refundId)
+            ->first();
+
+        if (! $refund) {
+            throw new CreditRefundException(
+                'refund_not_found',
+                'No se encontro el reembolso.'
+            );
+        }
+
+        $metadata = [];
+
+        if ($refund->metadata) {
+            $decoded = json_decode(
+                $refund->metadata,
+                true
+            );
+
+            if (is_array($decoded)) {
+                $metadata = $decoded;
+            }
+        }
+
+        $purchase = DB::table(
+            'purchase_operations'
+        )
+            ->where('id', $originalPurchaseId)
+            ->first();
+
+        $ledgerPurchaseId =
+            'refund-' . $refundId;
+
+        DB::table('credit_transactions')
+            ->insert([
+                'account_id' => $accountId,
+                'user_id' => $userId,
+                'purchase_id' =>
+                    $ledgerPurchaseId,
+                'type' => 'credit_refund',
+                'amount' => $amount,
+                'balance_before' =>
+                    $payment['balance_before'],
+                'balance_after' =>
+                    $payment['balance_after'],
+                'metadata' => json_encode(
+                    array_merge(
+                        $metadata,
+                        [
+                            'refund_id' =>
+                                $refundId,
+                            'original_purchase_id' =>
+                                $originalPurchaseId,
+                            'original_purchase_type' =>
+                                $purchase->type ?? null,
+                            'refund_reason' =>
+                                $refund->reason,
+                            'payment_channel' =>
+                                $payment['channel'],
+                            'transaction_id' =>
+                                $payment['transaction_id'],
+                        ]
+                    ),
+                    JSON_THROW_ON_ERROR
+                ),
+                'created_at' => now(),
+            ]);
+
+        $result = [
+            'refund_id' => $refundId,
+            'original_purchase_id' =>
+                $originalPurchaseId,
+            'amount' => $amount,
+            'balance_before' =>
+                (int) $payment['balance_before'],
+            'balance_after' =>
+                (int) $payment['balance_after'],
+            'channel' =>
+                $payment['channel'],
+        ];
+
+        $updated = DB::table('credit_refunds')
+            ->where('id', $refundId)
+            ->where('status', 'processing')
+            ->where(
+                'attempt_token',
+                $attemptToken
+            )
+            ->update([
+                'status' => 'completed',
+                'attempt_token' => null,
+                'lease_expires_at' => null,
+                'payment_channel' =>
+                    $payment['channel'],
+                'bridge_transaction_id' =>
+                    $payment['channel'] ===
+                    'online_credit_bridge'
+                        ? $payment['transaction_id']
+                        : null,
+                'balance_before' =>
+                    $payment['balance_before'],
+                'balance_after' =>
+                    $payment['balance_after'],
+                'result_json' => json_encode(
+                    $result,
+                    JSON_THROW_ON_ERROR
+                ),
+                'error_code' => null,
+                'completed_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        if ($updated !== 1) {
+            throw new CreditRefundException(
+                'refund_attempt_lost',
+                'El reembolso perdio su bloqueo de procesamiento.'
+            );
+        }
+
+        $this->markPurchaseRefundedIfComplete(
+            $originalPurchaseId
+        );
+
+        return $result;
+    }
+
+    private function markPurchaseRefundedIfComplete(
+        string $originalPurchaseId
+    ): void {
+        $purchase = DB::table(
+            'purchase_operations'
+        )
+            ->where('id', $originalPurchaseId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $purchase) {
+            return;
+        }
+
+        $refunded = (int) DB::table(
+            'credit_refunds'
+        )
+            ->where(
+                'original_purchase_id',
+                $originalPurchaseId
+            )
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        if (
+            $refunded >= (int) $purchase->amount &&
+            (string) $purchase->status ===
+            'completed'
+        ) {
+            DB::table('purchase_operations')
+                ->where('id', $originalPurchaseId)
+                ->where('status', 'completed')
+                ->update([
+                    'status' => 'refunded',
+                    'refunded_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        }
+    }
+
+    private function markManualReview(
+        string $refundId,
+        string $attemptToken,
+        string $errorCode
+    ): void {
+        DB::table('credit_refunds')
+            ->where('id', $refundId)
+            ->where('status', 'processing')
+            ->where(
+                'attempt_token',
+                $attemptToken
+            )
+            ->update([
+                'status' => 'manual_review',
+                'attempt_token' => null,
+                'lease_expires_at' => null,
+                'error_code' => $errorCode,
+                'updated_at' => now(),
+            ]);
+    }
+
+    private function lockRefund(
+        string $refundId
+    ): object {
+        $refund = DB::table('credit_refunds')
+            ->where('id', $refundId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $refund) {
+            throw new CreditRefundException(
+                'refund_not_found',
+                'No se encontro el reembolso.'
+            );
+        }
+
+        return $refund;
+    }
+
+    private function assertAttempt(
+        object $refund,
+        string $attemptToken
+    ): void {
+        if (
+            (string) $refund->status !==
+                'processing' ||
+            (string) $refund->attempt_token !==
+                $attemptToken
+        ) {
+            throw new CreditRefundException(
+                'refund_attempt_lost',
+                'El reembolso ya esta siendo procesado por otro intento.'
+            );
+        }
+    }
+
+    private function assertFingerprint(
+        object $refund,
+        string $fingerprint
+    ): void {
+        if (
+            ! hash_equals(
+                (string) $refund->fingerprint,
+                $fingerprint
+            )
+        ) {
+            throw new CreditRefundException(
+                'refund_conflict',
+                'Este identificador de reembolso ya fue usado con otros datos.'
+            );
+        }
+    }
+
+    private function fingerprint(
+        string $originalPurchaseId,
+        int $amount,
+        string $reason,
+        array $metadata
+    ): string {
+        $payload = [
+            'original_purchase_id' =>
+                $originalPurchaseId,
+            'amount' => $amount,
+            'reason' => $reason,
+            'metadata' =>
+                $this->canonicalize($metadata),
+        ];
+
+        return hash(
+            'sha256',
+            json_encode(
+                $payload,
+                JSON_THROW_ON_ERROR |
+                JSON_UNESCAPED_SLASHES
+            )
+        );
+    }
+
+    private function canonicalize(
+        mixed $value
+    ): mixed {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map(
+                fn ($item) =>
+                    $this->canonicalize($item),
+                $value
+            );
+        }
+
+        ksort($value);
+
+        foreach ($value as $key => $item) {
+            $value[$key] =
+                $this->canonicalize($item);
+        }
+
+        return $value;
+    }
+
+    private function validUuid(
+        string $value
+    ): bool {
+        return preg_match(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+            $value
+        ) === 1;
+    }
+
+    private function decodeResult(
+        ?string $json
+    ): array {
+        if (! $json) {
+            throw new CreditRefundException(
+                'refund_result_missing',
+                'El reembolso completado no tiene resultado almacenado.'
+            );
+        }
+
+        $decoded = json_decode(
+            $json,
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        if (! is_array($decoded)) {
+            throw new CreditRefundException(
+                'refund_result_invalid',
+                'El resultado almacenado del reembolso no es valido.'
+            );
+        }
+
+        return $decoded;
+    }
+}
+----- SOURCE END -----
+
+FILE=xampp/htdocs/app/Services/EmulatorPresenceService.php
+STATUS=?? xampp/htdocs/app/Services/EmulatorPresenceService.php
+SHA256=517485977a442e35c5b51f4129d965bf8b3e593a5f985769eca60dec62ca6787
+----- SOURCE BEGIN -----
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
+
+class EmulatorPresenceService
+{
+    private const HEARTBEAT_KEY = 'morningstar';
+    private const HEARTBEAT_TTL_SECONDS = 15;
+
+    private ?bool $emulatorAlive = null;
+
+    public function __construct(
+        private readonly CreditBridgeClient $bridge
+    ) {
+    }
+
+    public function isEmulatorAlive(): bool
+    {
+        if ($this->emulatorAlive !== null) {
+            return $this->emulatorAlive;
+        }
+
+        if ($this->heartbeatIsFresh()) {
+            return $this->emulatorAlive = true;
+        }
+
+        try {
+            $response = $this->bridge->ping();
+
+            if (
+                (int) ($response['status'] ?? -1) === 0 &&
+                str_starts_with(
+                    (string) ($response['message'] ?? ''),
+                    'creditbridge|'
+                )
+            ) {
+                return $this->emulatorAlive = true;
+            }
+        } catch (Throwable) {
+            // Heartbeat + ping ausentes: Morningstar se considera apagado.
+        }
+
+        return $this->emulatorAlive = false;
+    }
+
+    public function effectiveOnlineState(
+        int $userId,
+        mixed $reportedOnline
+    ): bool {
+        if ((string) $reportedOnline === '0') {
+            return false;
+        }
+
+        if ($this->isEmulatorAlive()) {
+            return true;
+        }
+
+        $this->clearStaleOnlineFlags();
+
+        return false;
+    }
+
+    public function normalizeGlobalPresence(): int
+    {
+        if ($this->isEmulatorAlive()) {
+            return 0;
+        }
+
+        return $this->clearStaleOnlineFlags();
+    }
+
+    public function onlineUserCount(): int
+    {
+        $this->normalizeGlobalPresence();
+
+        return DB::table('users')
+            ->where('online', '1')
+            ->count();
+    }
+
+    private function heartbeatIsFresh(): bool
+    {
+        if (! Schema::hasTable('emulator_heartbeats')) {
+            return false;
+        }
+
+        $lastSeen = DB::table('emulator_heartbeats')
+            ->where(
+                'heartbeat_key',
+                self::HEARTBEAT_KEY
+            )
+            ->value('last_seen_at');
+
+        if ($lastSeen === null) {
+            return false;
+        }
+
+        $age = time() - (int) $lastSeen;
+
+        return $age <= self::HEARTBEAT_TTL_SECONDS;
+    }
+
+    private function clearStaleOnlineFlags(): int
+    {
+        return DB::table('users')
+            ->where('online', '!=', '0')
+            ->update([
+                'online' => '0',
+            ]);
+    }
+}
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/database/migrations/2026_08_30_164800_create_credit_refunds_table.php
+STATUS=?? xampp/htdocs/database/migrations/2026_08_30_164800_create_credit_refunds_table.php
+SHA256=aa6a2399047c0ba226989732cae59f61439347cb5591e8a6b73204147a8c9391
+----- SOURCE BEGIN -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (Schema::hasTable('credit_refunds')) {
+            return;
+        }
+
+        Schema::create('credit_refunds', function (Blueprint $table) {
+            $table->string('id', 64)->primary();
+
+            $table->string('original_purchase_id', 64);
+
+            $table->unsignedInteger('account_id');
+            $table->integer('user_id');
+
+            $table->unsignedInteger('amount');
+            $table->string('reason', 500);
+
+            $table->char('fingerprint', 64);
+
+            $table->string('status', 24);
+            $table->string('attempt_token', 64)->nullable();
+            $table->timestamp('lease_expires_at')->nullable();
+
+            $table->string('payment_channel', 32)->nullable();
+            $table->string('bridge_transaction_id', 64)->nullable();
+
+            $table->integer('balance_before')->nullable();
+            $table->integer('balance_after')->nullable();
+
+            $table->json('metadata')->nullable();
+            $table->longText('result_json')->nullable();
+
+            $table->string('error_code', 64)->nullable();
+
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+
+            $table->index([
+                'original_purchase_id',
+                'status',
+            ]);
+
+            $table->index([
+                'account_id',
+                'created_at',
+            ]);
+
+            $table->index([
+                'user_id',
+                'created_at',
+            ]);
+
+            $table->unique(
+                'bridge_transaction_id',
+                'credit_refunds_bridge_transaction_unique'
+            );
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('credit_refunds');
+    }
+};
+----- SOURCE END -----
+
+FILE=xampp/htdocs/database/migrations/2026_08_31_072000_create_account_notifications_table.php
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_072000_create_account_notifications_table.php
+SHA256=ea3977e2f3b51da3c4643c6b8a86cc30f9c9a4602339679ee687c08cc7e2f7f1
+----- SOURCE BEGIN -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('account_notifications', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('account_id');
+            $table->string('type', 100);
+            $table->string('title', 160);
+            $table->text('message');
+            $table->string('url', 2048)->nullable();
+            $table->json('data')->nullable();
+            $table->string('dedupe_key', 191)->nullable();
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+
+            $table->index(
+                ['account_id', 'read_at'],
+                'account_notifications_account_read_idx'
+            );
+
+            $table->index(
+                ['account_id', 'created_at'],
+                'account_notifications_account_created_idx'
+            );
+
+            $table->unique(
+                ['account_id', 'dedupe_key'],
+                'account_notifications_account_dedupe_unique'
+            );
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('account_notifications');
+    }
+};
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/database/migrations/2026_08_31_082500_create_emulator_heartbeats_table.php
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_082500_create_emulator_heartbeats_table.php
+SHA256=35e70dc33decc1f060677a0f0c497a97b100ab9541c78903b822c4197afc77db
+----- SOURCE BEGIN -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create(
+            'emulator_heartbeats',
+            function (Blueprint $table) {
+                $table
+                    ->string('heartbeat_key', 64)
+                    ->primary();
+
+                $table
+                    ->unsignedBigInteger('last_seen_at')
+                    ->index();
+            }
+        );
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('emulator_heartbeats');
+    }
+};
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/database/migrations/2026_08_31_115500_make_website_teams_multi_role.php
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_115500_make_website_teams_multi_role.php
+SHA256=f4238d31772a4a9c6a397b1596bd3a5f87b1d0f2247cc542948390424906530a
+----- SOURCE BEGIN -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('website_teams', function (Blueprint $table) {
+            $table
+                ->string('system_key', 80)
+                ->nullable()
+                ->unique()
+                ->after('rank_name');
+        });
+
+        Schema::create('user_website_team', function (Blueprint $table) {
+            $table->id();
+            $table->integer('user_id');
+            $table->unsignedBigInteger('website_team_id');
+            $table->integer('assigned_by_user_id')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->nullable();
+
+            $table->unique(
+                ['user_id', 'website_team_id'],
+                'user_website_team_unique'
+            );
+
+            $table->index(
+                ['website_team_id', 'user_id'],
+                'user_website_team_team_user_idx'
+            );
+        });
+
+        if (Schema::hasColumn('users', 'team_id')) {
+            DB::table('users')
+                ->whereNotNull('team_id')
+                ->orderBy('id')
+                ->get([
+                    'id',
+                    'team_id',
+                ])
+                ->each(function ($user): void {
+                    DB::table('user_website_team')
+                        ->insertOrIgnore([
+                            'user_id' =>
+                                (int) $user->id,
+                            'website_team_id' =>
+                                (int) $user->team_id,
+                            'assigned_by_user_id' =>
+                                null,
+                            'created_at' => now(),
+                            'updated_at' => null,
+                        ]);
+                });
+        }
+
+        DB::table('website_housekeeping_permissions')
+            ->where(
+                'permission',
+                'manage_hotel_roles'
+            )
+            ->delete();
+
+        Schema::dropIfExists('user_hotel_roles');
+        Schema::dropIfExists('hotel_roles');
+    }
+
+    public function down(): void
+    {
+        if (
+            Schema::hasTable('user_website_team') &&
+            Schema::hasColumn('users', 'team_id')
+        ) {
+            DB::table('users')
+                ->update([
+                    'team_id' => null,
+                ]);
+
+            DB::table('user_website_team')
+                ->orderBy('user_id')
+                ->orderBy('website_team_id')
+                ->get()
+                ->groupBy('user_id')
+                ->each(
+                    function ($rows, $userId): void {
+                        $first = $rows->first();
+
+                        if (! $first) {
+                            return;
+                        }
+
+                        DB::table('users')
+                            ->where(
+                                'id',
+                                (int) $userId
+                            )
+                            ->update([
+                                'team_id' =>
+                                    (int)
+                                    $first->website_team_id,
+                            ]);
+                    }
+                );
+        }
+
+        Schema::dropIfExists('user_website_team');
+
+        if (
+            Schema::hasColumn(
+                'website_teams',
+                'system_key'
+            )
+        ) {
+            Schema::table(
+                'website_teams',
+                function (Blueprint $table) {
+                    $table->dropUnique(
+                        'website_teams_system_key_unique'
+                    );
+
+                    $table->dropColumn(
+                        'system_key'
+                    );
+                }
+            );
+        }
+
+        if (! Schema::hasTable('hotel_roles')) {
+            Schema::create('hotel_roles', function (Blueprint $table) {
+                $table->id();
+                $table->string('slug', 80)->unique();
+                $table->string('name', 100);
+                $table->string('description', 255)->nullable();
+                $table->string('badge_code', 32)->nullable();
+                $table->boolean('active')->default(true);
+                $table->unsignedInteger('sort_order')->default(0);
+                $table->timestamp('created_at')->useCurrent();
+                $table->timestamp('updated_at')->nullable();
+
+                $table->index(['active', 'sort_order']);
+            });
+        }
+
+        if (! Schema::hasTable('user_hotel_roles')) {
+            Schema::create(
+                'user_hotel_roles',
+                function (Blueprint $table) {
+                    $table->id();
+                    $table->integer('user_id');
+                    $table->unsignedBigInteger('hotel_role_id');
+                    $table->boolean('active')->default(true);
+                    $table->integer('granted_by_user_id')->nullable();
+                    $table->integer('revoked_by_user_id')->nullable();
+                    $table->timestamp('granted_at')->useCurrent();
+                    $table->timestamp('revoked_at')->nullable();
+                    $table->string('notes', 500)->nullable();
+                    $table->timestamp('created_at')->useCurrent();
+                    $table->timestamp('updated_at')->nullable();
+
+                    $table->unique(
+                        ['user_id', 'hotel_role_id'],
+                        'user_hotel_roles_user_role_unique'
+                    );
+
+                    $table->index(
+                        ['user_id', 'active'],
+                        'user_hotel_roles_user_active_idx'
+                    );
+
+                    $table->index(
+                        ['hotel_role_id', 'active'],
+                        'user_hotel_roles_role_active_idx'
+                    );
+                }
+            );
+        }
+
+        if (
+            DB::table('hotel_roles')->count() === 0
+        ) {
+            DB::table('hotel_roles')->insert([
+                [
+                    'slug' => 'badge_designer',
+                    'name' => 'DiseÃ±ador de Placas',
+                    'description' => null,
+                    'badge_code' => null,
+                    'active' => 1,
+                    'sort_order' => 10,
+                    'created_at' => now(),
+                    'updated_at' => null,
+                ],
+                [
+                    'slug' => 'clothing_designer',
+                    'name' => 'DiseÃ±ador de Ropa',
+                    'description' => null,
+                    'badge_code' => null,
+                    'active' => 1,
+                    'sort_order' => 20,
+                    'created_at' => now(),
+                    'updated_at' => null,
+                ],
+                [
+                    'slug' => 'dj',
+                    'name' => 'DJ',
+                    'description' => null,
+                    'badge_code' => null,
+                    'active' => 1,
+                    'sort_order' => 30,
+                    'created_at' => now(),
+                    'updated_at' => null,
+                ],
+                [
+                    'slug' => 'game_manager',
+                    'name' => 'Game Manager',
+                    'description' => null,
+                    'badge_code' => null,
+                    'active' => 1,
+                    'sort_order' => 40,
+                    'created_at' => now(),
+                    'updated_at' => null,
+                ],
+                [
+                    'slug' => 'croupier',
+                    'name' => 'Croupier',
+                    'description' => null,
+                    'badge_code' => null,
+                    'active' => 1,
+                    'sort_order' => 50,
+                    'created_at' => now(),
+                    'updated_at' => null,
+                ],
+            ]);
+        }
+
+        DB::table('website_housekeeping_permissions')
+            ->updateOrInsert(
+                [
+                    'permission' =>
+                        'manage_hotel_roles',
+                ],
+                [
+                    'min_rank' => 6,
+                    'description' =>
+                        'Gestionar cargos compatibles del hotel.',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+    }
+};
+
+----- SOURCE END -----
+
+FILE=xampp/htdocs/database/migrations/2026_08_31_121500_remove_team_system_key.php
+STATUS=?? xampp/htdocs/database/migrations/2026_08_31_121500_remove_team_system_key.php
+SHA256=53c4d3d8a26f4a409d9ddf1d61f69b6abaa267b7c85fc9f9fdb0f198021f7a1f
+----- SOURCE BEGIN -----
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (
+            Schema::hasColumn(
+                'website_teams',
+                'system_key'
+            )
+        ) {
+            Schema::table(
+                'website_teams',
+                function (Blueprint $table) {
+                    $table->dropUnique(
+                        'website_teams_system_key_unique'
+                    );
+
+                    $table->dropColumn(
+                        'system_key'
+                    );
+                }
+            );
+        }
+    }
+
+    public function down(): void
+    {
+        if (
+            ! Schema::hasColumn(
+                'website_teams',
+                'system_key'
+            )
+        ) {
+            Schema::table(
+                'website_teams',
+                function (Blueprint $table) {
+                    $table
+                        ->string(
+                            'system_key',
+                            80
+                        )
+                        ->nullable()
+                        ->unique()
+                        ->after(
+                            'rank_name'
+                        );
+                }
+            );
+        }
+    }
+};
+
+----- SOURCE END -----
+
+======================================================================
+RELEVANT VIEW / CONTROLLER DIRECTORIES
+======================================================================
+
+DIR=xampp/htdocs/app/Http/Controllers/Marketplace
+  ?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php | xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php
+  ?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeGiftController.php | xampp/htdocs/app/Http/Controllers/Marketplace/BadgeGiftController.php
+  ?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeHotelDistributionController.php | xampp/htdocs/app/Http/Controllers/Marketplace/BadgeHotelDistributionController.php
+  ?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplaceListingController.php | xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplaceListingController.php
+  ?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplacePurchaseController.php | xampp/htdocs/app/Http/Controllers/Marketplace/BadgeMarketplacePurchaseController.php
+  ?? xampp/htdocs/app/Http/Controllers/Marketplace/BadgeSellerApplicationController.php | xampp/htdocs/app/Http/Controllers/Marketplace/BadgeSellerApplicationController.php
+
+DIR=xampp/htdocs/app/Livewire/Filament
+  ?? xampp/htdocs/app/Livewire/Filament/BadgeApplicationsTable.php | xampp/htdocs/app/Livewire/Filament/BadgeApplicationsTable.php
+  ?? xampp/htdocs/app/Livewire/Filament/BadgeSellerApplicationsTable.php | xampp/htdocs/app/Livewire/Filament/BadgeSellerApplicationsTable.php
+
+DIR=xampp/htdocs/resources/views/livewire/filament
+  ?? xampp/htdocs/resources/views/livewire/filament/badge-applications-table.blade.php | xampp/htdocs/resources/views/livewire/filament/badge-applications-table.blade.php
+  ?? xampp/htdocs/resources/views/livewire/filament/badge-seller-applications-table.blade.php | xampp/htdocs/resources/views/livewire/filament/badge-seller-applications-table.blade.php
+
+DIR=xampp/htdocs/resources/themes/atom/views/notifications
+  ?? xampp/htdocs/resources/themes/atom/views/notifications/index.blade.php | xampp/htdocs/resources/themes/atom/views/notifications/index.blade.php
+
+DIR=xampp/htdocs/resources/themes/atom/views/marketplace
+  ?? xampp/htdocs/resources/themes/atom/views/marketplace/badges.blade.php | xampp/htdocs/resources/themes/atom/views/marketplace/badges.blade.php
+
+======================================================================
+REFERENCES TO GENERIC DEPENDENCIES FROM BADGE CODE
+======================================================================
+
+NEEDLE=AccountNotification
+  xampp/htdocs/app/Services/AccountNotificationService.php:5 use App\Models\AccountNotification;
+  xampp/htdocs/app/Services/AccountNotificationService.php:8 class AccountNotificationService
+  xampp/htdocs/app/Services/AccountNotificationService.php:18 ): AccountNotification {
+  xampp/htdocs/app/Services/AccountNotificationService.php:64 return AccountNotification::query()->firstOrCreate(
+  xampp/htdocs/app/Services/AccountNotificationService.php:73 return AccountNotification::query()->create($attributes);
+  xampp/htdocs/app/Services/BadgeGiftService.php:20 private readonly AccountNotificationService $notifications
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:21 private readonly AccountNotificationService $notifications,
+  xampp/htdocs/app/Services/BadgeSellerEligibilityService.php:18 private readonly AccountNotificationService $notifications
+  xampp/htdocs/app/Services/BadgeSubmissionModerationService.php:23 private readonly AccountNotificationService $notifications
+  xampp/htdocs/routes/web.php:352 [\App\Http\Controllers\AccountNotificationController::class, 'index']
+  xampp/htdocs/routes/web.php:357 [\App\Http\Controllers\AccountNotificationController::class, 'open']
+  xampp/htdocs/routes/web.php:362 [\App\Http\Controllers\AccountNotificationController::class, 'markAllRead']
+
+NEEDLE=CreditRefund
+  xampp/htdocs/app/Services/BadgeGiftService.php:17 private readonly CreditRefundService $creditRefunds,
+  xampp/htdocs/app/Services/BadgeGiftService.php:647 $this->creditRefunds->refund(
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:17 private readonly CreditRefundService $creditRefunds,
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:356 $this->creditRefunds->refund(
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:699 $this->creditRefunds->refund(
+  xampp/htdocs/app/Services/BadgeSubmissionModerationService.php:5 use App\Exceptions\CreditRefundException;
+  xampp/htdocs/app/Services/BadgeSubmissionModerationService.php:21 private readonly CreditRefundService $refunds,
+  xampp/htdocs/app/Services/BadgeSubmissionModerationService.php:312 } catch (CreditRefundException $exception) {
+  xampp/htdocs/app/Services/CreditRefundService.php:6 use App\Exceptions\CreditRefundException;
+  xampp/htdocs/app/Services/CreditRefundService.php:13 class CreditRefundService
+  xampp/htdocs/app/Services/CreditRefundService.php:85 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:109 } catch (CreditRefundException $exception) {
+  xampp/htdocs/app/Services/CreditRefundService.php:136 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:143 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:150 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:160 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:189 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:227 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:235 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:244 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:282 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:327 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:342 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:407 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:423 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:430 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:445 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:523 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:577 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:587 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:664 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:677 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:699 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:827 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:847 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:955 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:1038 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:1057 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:1074 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:1144 throw new CreditRefundException(
+  xampp/htdocs/app/Services/CreditRefundService.php:1158 throw new CreditRefundException(
+
+NEEDLE=EmulatorPresence
+  xampp/htdocs/app/Services/BadgeGiftService.php:18 private readonly EmulatorPresenceService $presence,
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:19 private readonly EmulatorPresenceService $presence,
+  xampp/htdocs/app/Services/CreditRefundService.php:19 private readonly EmulatorPresenceService $presence
+  xampp/htdocs/app/Services/CreditTransactionService.php:19 private readonly EmulatorPresenceService $presence
+  xampp/htdocs/app/Services/EmulatorPresenceService.php:9 class EmulatorPresenceService
+  xampp/htdocs/app/Services/User/UserApiService.php:6 use App\Services\EmulatorPresenceService;
+  xampp/htdocs/app/Services/User/UserApiService.php:12 private readonly EmulatorPresenceService $presence
+
+NEEDLE=CreditTransactionService
+  xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php:10 use App\Services\CreditTransactionService;
+  xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php:449 CreditTransactionService $creditTransactions
+  xampp/htdocs/app/Services/BadgeGiftService.php:16 private readonly CreditTransactionService $creditTransactions,
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:16 private readonly CreditTransactionService $creditTransactions,
+  xampp/htdocs/app/Services/CreditTransactionService.php:13 class CreditTransactionService
+
+NEEDLE=CreditBridgeClient
+  xampp/htdocs/app/Services/AdminCreditAdjustmentService.php:16 private readonly CreditBridgeClient $bridge
+  xampp/htdocs/app/Services/BadgeMarketplacePurchaseService.php:18 private readonly CreditBridgeClient $bridge,
+  xampp/htdocs/app/Services/CreditBridgeClient.php:9 class CreditBridgeClient
+  xampp/htdocs/app/Services/CreditRefundService.php:18 private readonly CreditBridgeClient $bridge,
+  xampp/htdocs/app/Services/CreditTransactionService.php:18 private readonly CreditBridgeClient $bridge,
+  xampp/htdocs/app/Services/EmulatorPresenceService.php:17 private readonly CreditBridgeClient $bridge
+
+NEEDLE=WebsiteTeam
+  xampp/htdocs/app/Services/Community/TeamService.php:5 use App\Models\Community\Staff\WebsiteTeam;
+  xampp/htdocs/app/Services/Community/TeamService.php:23 $employees = WebsiteTeam::select([
+  xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php:8 use App\Models\Community\Staff\WebsiteTeam;
+  xampp/htdocs/app/Filament/Resources/Atom/TeamResource.php:25 WebsiteTeam::class;
+  xampp/htdocs/routes/web.php:15 use App\Http\Controllers\Community\Staff\WebsiteTeamsController;
+  xampp/htdocs/routes/web.php:123 Route::get('/teams', WebsiteTeamsController::class)->name('teams.index');
+
+NEEDLE=TeamService
+  xampp/htdocs/app/Services/Community/TeamService.php:9 class TeamService
+
+NEEDLE=badge_designers
+
+NEEDLE=BadgeDesigner
+  xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php:156 $isBadgeDesigner =
+  xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php:158 ->isBadgeDesigner(
+  xampp/htdocs/app/Http/Controllers/Marketplace/BadgeCreatorController.php:327 'isBadgeDesigner' => $isBadgeDesigner,
+  xampp/htdocs/app/Http/Controllers/Marketplace/BadgeSellerApplicationController.php:21 $eligibility->isBadgeDesigner(
+  xampp/htdocs/app/Services/BadgeSellerEligibilityService.php:22 public function isBadgeDesigner(
+  xampp/htdocs/app/Services/BadgeSellerEligibilityService.php:116 return $this->isBadgeDesigner(
+  xampp/htdocs/app/Services/BadgeSellerEligibilityService.php:224 $this->isBadgeDesigner(
+  xampp/htdocs/app/Services/BadgeSellerEligibilityService.php:384 $this->isBadgeDesigner(
+  xampp/htdocs/resources/themes/atom/views/marketplace/badges.blade.php:949 @if ($isBadgeDesigner)
+
+======================================================================
+FULL LIST OF BADGE/CREATOR MIGRATIONS
+======================================================================
+xampp/htdocs/database/migrations/2022_11_29_145238_create_website_teams_table.php | 
+xampp/htdocs/database/migrations/2025_01_06_132851_create_website_badges_table.php | 
+xampp/htdocs/database/migrations/2026_08_30_164800_create_credit_refunds_table.php | ?? xampp/htdocs/database/migrations/2026_08_30_164800_create_credit_refunds_table.php
+xampp/htdocs/database/migrations/2026_08_30_171500_create_badge_creator_tables.php | ?? xampp/htdocs/database/migrations/2026_08_30_171500_create_badge_creator_tables.php
+xampp/htdocs/database/migrations/2026_08_31_063000_add_badge_submission_housekeeping_permission.php | ?? xampp/htdocs/database/migrations/2026_08_31_063000_add_badge_submission_housekeeping_permission.php
+xampp/htdocs/database/migrations/2026_08_31_072000_create_account_notifications_table.php | ?? xampp/htdocs/database/migrations/2026_08_31_072000_create_account_notifications_table.php
+xampp/htdocs/database/migrations/2026_08_31_074800_create_badge_gifts_table.php | ?? xampp/htdocs/database/migrations/2026_08_31_074800_create_badge_gifts_table.php
+xampp/htdocs/database/migrations/2026_08_31_082500_create_emulator_heartbeats_table.php | ?? xampp/htdocs/database/migrations/2026_08_31_082500_create_emulator_heartbeats_table.php
+xampp/htdocs/database/migrations/2026_08_31_091500_create_badge_seller_foundation_tables.php | ?? xampp/htdocs/database/migrations/2026_08_31_091500_create_badge_seller_foundation_tables.php
+xampp/htdocs/database/migrations/2026_08_31_113000_create_hotel_roles_and_replace_badge_designers.php | ?? xampp/htdocs/database/migrations/2026_08_31_113000_create_hotel_roles_and_replace_badge_designers.php
+xampp/htdocs/database/migrations/2026_08_31_115500_make_website_teams_multi_role.php | ?? xampp/htdocs/database/migrations/2026_08_31_115500_make_website_teams_multi_role.php
+xampp/htdocs/database/migrations/2026_08_31_121500_remove_team_system_key.php | ?? xampp/htdocs/database/migrations/2026_08_31_121500_remove_team_system_key.php
+xampp/htdocs/database/migrations/2026_08_31_124500_add_badge_marketplace_housekeeping_permission.php | ?? xampp/htdocs/database/migrations/2026_08_31_124500_add_badge_marketplace_housekeeping_permission.php
+xampp/htdocs/database/migrations/2026_08_31_130500_create_badge_marketplace_listings_table.php | ?? xampp/htdocs/database/migrations/2026_08_31_130500_create_badge_marketplace_listings_table.php
+xampp/htdocs/database/migrations/2026_08_31_133000_create_badge_marketplace_sales_table.php | ?? xampp/htdocs/database/migrations/2026_08_31_133000_create_badge_marketplace_sales_table.php
+xampp/htdocs/database/migrations/2026_08_31_143000_add_hotel_distribution_right_to_creator_badges.php | ?? xampp/htdocs/database/migrations/2026_08_31_143000_add_hotel_distribution_right_to_creator_badges.php
+
+======================================================================
+FINAL
+======================================================================
+AUDIT=OK
+READ_ONLY=YES
+PROJECT_FILES_CHANGED=NO
+DB_WRITES=NO
+GIT_CHANGED=NO
