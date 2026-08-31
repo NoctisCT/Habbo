@@ -8,6 +8,13 @@ use Socket;
 
 class CreditBridgeClient
 {
+    public function ping(): array
+    {
+        return $this->send('creditbridgeping', [
+            'ping' => 1,
+        ]);
+    }
+
     public function debit(
         int $userId,
         int $amount,

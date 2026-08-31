@@ -15,7 +15,8 @@ class CreditTransactionService
     private const PURCHASE_LEASE_SECONDS = 300;
 
     public function __construct(
-        private readonly CreditBridgeClient $bridge
+        private readonly CreditBridgeClient $bridge,
+        private readonly EmulatorPresenceService $presence
     ) {
     }
 
@@ -100,6 +101,14 @@ class CreditTransactionService
                 $accountId,
                 $userId
             );
+
+            $payer->online =
+                $this->presence->effectiveOnlineState(
+                    $userId,
+                    $payer->online
+                )
+                    ? '1'
+                    : '0';
 
             if (
                 (string) $payer->online === '0' &&
@@ -703,7 +712,7 @@ class CreditTransactionService
 
                 throw new CreditTransactionException(
                     'online_unavailable',
-                    "No se puede procesar el pago mientras {$username} esta conectado. Desconectalo e intentalo de nuevo."
+                    "CreditBridge no esta disponible para {$username}, que sigue conectado al hotel. No se ha realizado ningun cobro; intentalo de nuevo en unos segundos."
                 );
             }
         }

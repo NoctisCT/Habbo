@@ -220,3 +220,145 @@ if (Features::enabled(Features::twoFactorAuthentication())) {
             ])
         );
 }
+
+// HOLO-CREATOR-BADGES-ROUTES
+Route::middleware([
+    'maintenance',
+    'check.ban',
+    'force.staff.2fa',
+    'auth',
+])->prefix('marketplace')->as('marketplace.')->group(function () {
+    Route::get(
+        '/badges',
+        [\App\Http\Controllers\Marketplace\BadgeCreatorController::class, 'index']
+    )->name('badges.index');
+
+    Route::post(
+        '/badges/preview',
+        [\App\Http\Controllers\Marketplace\BadgeCreatorController::class, 'preview']
+    )->middleware('throttle:20,1')->name('badges.preview');
+
+    Route::post(
+        '/badges',
+        [\App\Http\Controllers\Marketplace\BadgeCreatorController::class, 'store']
+    )->middleware('throttle:10,1')->name('badges.store');
+});
+Route::post(
+    '/marketplace/badges/{creatorBadge}/gift',
+    [\App\Http\Controllers\Marketplace\BadgeGiftController::class, 'store']
+)
+    ->middleware([
+        'auth',
+        'throttle:10,1',
+    ])
+    ->name('marketplace.badges.gift');
+
+Route::post(
+    '/marketplace/badges/seller-license',
+    [
+        \App\Http\Controllers\Marketplace\BadgeSellerApplicationController::class,
+        'store',
+    ]
+)
+    ->middleware([
+        'auth',
+        'throttle:3,1',
+    ])
+    ->name(
+        'marketplace.badges.seller-license.apply'
+    );
+Route::post(
+    '/marketplace/badges/{creatorBadge}/listing',
+    [
+        \App\Http\Controllers\Marketplace\BadgeMarketplaceListingController::class,
+        'store',
+    ]
+)
+    ->middleware([
+        'auth',
+        'throttle:20,1',
+    ])
+    ->name(
+        'marketplace.badges.listing.store'
+    );
+
+Route::delete(
+    '/marketplace/badges/{creatorBadge}/listing',
+    [
+        \App\Http\Controllers\Marketplace\BadgeMarketplaceListingController::class,
+        'deactivate',
+    ]
+)
+    ->middleware([
+        'auth',
+        'throttle:20,1',
+    ])
+    ->name(
+        'marketplace.badges.listing.deactivate'
+    );
+
+Route::post(
+    '/marketplace/badges/{creatorBadge}/listing/reactivate',
+    [
+        \App\Http\Controllers\Marketplace\BadgeMarketplaceListingController::class,
+        'reactivate',
+    ]
+)
+    ->middleware([
+        'auth',
+        'throttle:20,1',
+    ])
+    ->name(
+        'marketplace.badges.listing.reactivate'
+    );
+Route::post(
+    '/marketplace/badges/listings/{listing}/purchase',
+    [
+        \App\Http\Controllers\Marketplace\BadgeMarketplacePurchaseController::class,
+        'store',
+    ]
+)
+    ->middleware([
+        'auth',
+        'throttle:10,1',
+    ])
+    ->name(
+        'marketplace.badges.purchase'
+    );
+Route::post(
+    '/marketplace/badges/{creatorBadge}/hotel-distribution',
+    [
+        \App\Http\Controllers\Marketplace\BadgeHotelDistributionController::class,
+        'store',
+    ]
+)
+    ->middleware([
+        'auth',
+        'throttle:5,1',
+    ])
+    ->name(
+        'marketplace.badges.hotel-distribution.grant'
+    );
+// /HOLO-CREATOR-BADGES-ROUTES
+
+/*
+|--------------------------------------------------------------------------
+| Notificaciones de cuenta
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::get(
+        '/notifications',
+        [\App\Http\Controllers\AccountNotificationController::class, 'index']
+    )->name('notifications.index');
+
+    Route::post(
+        '/notifications/{notification}/open',
+        [\App\Http\Controllers\AccountNotificationController::class, 'open']
+    )->name('notifications.open');
+
+    Route::post(
+        '/notifications/mark-all-read',
+        [\App\Http\Controllers\AccountNotificationController::class, 'markAllRead']
+    )->name('notifications.mark-all-read');
+});

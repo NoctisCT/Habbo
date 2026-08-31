@@ -53,11 +53,11 @@ class BadgeTextEditorResource extends Resource
                     ->label('Badge Image')
                     ->getStateUsing(function ($record) use ($badgesPath) {
                         $badgeName = str_replace('badge_desc_', '', $record->badge_key);
-                        $imageUrl = asset($badgesPath . $badgeName . '.gif');
+                        $imageUrl = asset(rtrim($badgesPath, '/\\') . '/' . $badgeName . '.gif');
                         return $imageUrl;
                     })
-                    ->width(50)
-                    ->height(50),
+                    ->width(40)
+                    ->height(40),
                 TextColumn::make('badge_name')
                     ->label('Badge Name')
                     ->searchable()

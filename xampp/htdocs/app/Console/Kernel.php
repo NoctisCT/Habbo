@@ -12,6 +12,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule
+            ->command(
+                'badge-marketplace:maintain-seller-licenses'
+            )
+            ->dailyAt('03:15')
+            ->withoutOverlapping();
+
         // $schedule->command('inspire')->hourly();
     }
 

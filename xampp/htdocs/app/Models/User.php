@@ -29,6 +29,7 @@ use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -214,9 +215,32 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->hasOne(WebsiteBetaCode::class);
     }
 
+    /**
+     * Relación legacy de un solo Team.
+     *
+     * @deprecated Usa teams() para los cargos compatibles.
+     */
     public function team(): BelongsTo
     {
-        return $this->belongsTo(WebsiteTeam::class, 'team_id');
+        return $this->belongsTo(
+            WebsiteTeam::class,
+            'team_id'
+        );
+    }
+
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            WebsiteTeam::class,
+            'user_website_team',
+            'user_id',
+            'website_team_id'
+        )
+            ->withPivot([
+                'assigned_by_user_id',
+                'created_at',
+                'updated_at',
+            ]);
     }
 
     public function applications(): HasMany

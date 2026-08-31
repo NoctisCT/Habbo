@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\User;
 
-use App\Models\Community\Staff\WebsiteTeam;
 use App\Models\Game\Permission;
 use App\Models\User;
 use Filament\Tables;
@@ -108,10 +107,25 @@ class UserResource extends Resource
                                     ->nullable()
                                     ->maxLength(15),
 
-                                Select::make('team_id')
+                                Select::make('teams')
                                     ->native(false)
-                                    ->label(__('filament::resources.inputs.team_id'))
-                                    ->options(WebsiteTeam::all()->pluck('rank_name', 'id'))
+                                    ->label('Teams / cargos')
+                                    ->helperText(
+                                        'Puedes asignar varios cargos compatibles. No modifican el rango de autoridad.'
+                                    )
+                                    ->relationship(
+                                        'teams',
+                                        'rank_name'
+                                    )
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->visible(
+                                        fn (): bool =>
+                                            hasHousekeepingPermission(
+                                                'manage_teams'
+                                            )
+                                    )
                                     ->columnSpanFull()
                             ])->columns(['sm' => 2]),
 
