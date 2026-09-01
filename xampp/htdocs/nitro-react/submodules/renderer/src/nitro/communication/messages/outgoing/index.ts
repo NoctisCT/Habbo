@@ -75,3 +75,4 @@ export * from './user/settings';
 export * from './userclassification';
 export * from './hologrid';
 export * from './rpgengine';
+export * from './tragaperras';

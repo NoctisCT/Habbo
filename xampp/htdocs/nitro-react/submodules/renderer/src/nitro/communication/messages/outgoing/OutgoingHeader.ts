@@ -488,4 +488,5 @@ export class OutgoingHeader
     public static CERRAR_SESION_INVENTARIO = 5036;
     public static GET_HOLO_GRID_WALKABILITY = 5040;
     public static RPG_ENGINE_COMMAND = 5050;
+    public static HOLO_SLOT_SPIN = 5042;
 }

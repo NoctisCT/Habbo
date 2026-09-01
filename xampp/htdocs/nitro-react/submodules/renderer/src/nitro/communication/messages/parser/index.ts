@@ -79,3 +79,4 @@ export * from './inventorylock';
 export * from './subastas';
 export * from './hologrid';
 export * from './rpgengine';
+export * from './tragaperras';

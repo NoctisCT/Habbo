@@ -5,6 +5,7 @@ import { Base, TransitionAnimation, TransitionAnimationTypes } from '../../commo
 import { useRoomSessionManagerEvent } from '../../hooks';
 import { AchievementsView } from '../achievements/AchievementsView';
 import { SubastasView } from '../subastas/SubastasView';
+import { SlotMachineView } from '../tragaperras/SlotMachineView';
 import { AvatarEditorView } from '../avatar-editor/AvatarEditorView';
 import { CameraWidgetView } from '../camera/CameraWidgetView';
 import { CampaignView } from '../campaign/CampaignView';
@@ -28,6 +29,7 @@ import { RoomView } from '../room/RoomView';
 import { ToolbarView } from '../toolbar/ToolbarView';
 import { UserProfileView } from '../user-profile/UserProfileView';
 import { UserSettingsView } from '../user-settings/UserSettingsView';
+import { RpgEngineView } from '../rpg-engine/RpgEngineView';
 import { WiredView } from '../wired/WiredView';
 import { YoutubeTvView } from '../youtube-tv/YoutubeTvView';
 
@@ -104,6 +106,7 @@ export const MainView: FC<{}> = props => {
             <AvatarEditorView />
             <AchievementsView />
  <SubastasView />
+            <SlotMachineView />
             <NavigatorView />
             <NitrobubbleHiddenView />
             <InventoryView />
@@ -111,6 +114,7 @@ export const MainView: FC<{}> = props => {
             <FriendsView />
             <RightSideView />
             <UserSettingsView />
+            <RpgEngineView />
             <UserProfileView />
             <GroupsView />
             <CameraWidgetView />

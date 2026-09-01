@@ -488,4 +488,8 @@ export class IncomingHeader {
     public static RESULTADO_CONFIGURAR_PATRON = 5035;
     public static HOLO_GRID_WALKABILITY = 5041;
     public static RPG_ENGINE_RESULT = 5051;
+    public static HOLO_SLOT_OPEN = 5043;
+    public static HOLO_SLOT_RESULT = 5044;
+    public static HOLO_SLOT_STATE = 5045;
+    public static HOLO_SLOT_CLOSE = 5046;
 }

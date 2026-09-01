@@ -1,3 +1,5 @@
+import { SpinSlotMachineComposer } from './messages/outgoing/tragaperras';
+import { SlotMachineCloseEvent, SlotMachineOpenEvent, SlotMachineResultEvent, SlotMachineStateEvent } from './messages/incoming/tragaperras';
 import { EstadoBloqueoInventarioEvent, ResultadoConfigurarPatronEvent, ResultadoPatronInventarioEvent } from './messages/incoming/inventorylock';
 import { HoloGridWalkabilityEvent } from './messages/incoming/hologrid';
 import { RpgEngineResultEvent } from './messages/incoming/rpgengine';
@@ -649,6 +651,11 @@ export class NitroMessages implements IMessageConfiguration {
         this._events.set(IncomingHeader.ESTADISTICAS_SUBASTAS, EstadisticasSubastasEvent);
         this._events.set(IncomingHeader.PROXIMA_SUBASTA, ProximaSubastaEvent);
         this._events.set(IncomingHeader.RECORDS_SUBASTAS, RecordsSubastasEvent);
+        this._events.set(IncomingHeader.HOLO_SLOT_OPEN, SlotMachineOpenEvent);
+
+        this._events.set(IncomingHeader.HOLO_SLOT_RESULT, SlotMachineResultEvent);
+        this._events.set(IncomingHeader.HOLO_SLOT_STATE, SlotMachineStateEvent);
+        this._events.set(IncomingHeader.HOLO_SLOT_CLOSE, SlotMachineCloseEvent);
     }
 
     private registerComposers(): void {
@@ -1272,6 +1279,7 @@ export class NitroMessages implements IMessageConfiguration {
         this._composers.set(OutgoingHeader.OBTENER_ESTADISTICAS_SUBASTAS, ObtenerEstadisticasSubastasComposer);
         this._composers.set(OutgoingHeader.OBTENER_PROXIMA_SUBASTA, ObtenerProximaSubastaComposer);
         this._composers.set(OutgoingHeader.OBTENER_RECORDS_SUBASTAS, ObtenerRecordsSubastasComposer);
+        this._composers.set(OutgoingHeader.HOLO_SLOT_SPIN, SpinSlotMachineComposer);
     }
 
     public get events(): Map<number, Function> {
