@@ -1014,3 +1014,16 @@ InventoryLock puede utilizarse como implementación de referencia para futuros p
 - estado de sesión;
 - UI Nitro;
 - integración backend/renderer/client.
+
+<!-- BIRIBIRI_ARCADE_INDEX_V1 -->
+## Biribiri Arcade
+
+El código, snapshots y convenciones de los juegos arcade exclusivos de Biribiri se centralizan en:
+
+`Desarrollo/Arcade/`
+
+Space Invaders y Duck Hunt son los _golden masters_ visuales. Block Drop y Pac-Man se conservan ahí como snapshots para comparación y adaptación.
+
+**Regla:** ninguna feature exclusiva de Biribiri Arcade debe quedar únicamente dentro de una ruta runtime de Nitro/renderer/plugin sin una referencia localizable en `Desarrollo/Arcade/`.
+<!-- /BIRIBIRI_ARCADE_INDEX_V1 -->
+

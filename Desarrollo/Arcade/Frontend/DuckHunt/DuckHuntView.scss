@@ -1,0 +1,953 @@
+.nitro-duck-hunt {
+    .duck-hunt-content {
+        padding: 6px;
+        background: #c8c1ad;
+    }
+
+    .duck-hunt-shell {
+        position: relative;
+        width: 100%;
+        padding: 10px;
+        overflow: hidden;
+        border: 2px solid #2c332b;
+        border-radius: 4px;
+        background:
+            linear-gradient(
+                to bottom,
+                #31463d 0%,
+                #1c3028 16%,
+                #101d19 100%
+            );
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .28),
+            inset -1px -1px 0 rgba(0, 0, 0, .58),
+            inset 0 0 24px rgba(98, 136, 82, .16);
+    }
+
+    .duck-cabinet-screw {
+        position: absolute;
+        z-index: 8;
+        width: 5px;
+        height: 5px;
+        border: 1px solid #6c7867;
+        background: #b2b9aa;
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .72),
+            inset -1px -1px 0 rgba(28, 39, 31, .42);
+
+        &.is-top-left {
+            top: 5px;
+            left: 5px;
+        }
+
+        &.is-top-right {
+            top: 5px;
+            right: 5px;
+        }
+
+        &.is-bottom-left {
+            bottom: 5px;
+            left: 5px;
+        }
+
+        &.is-bottom-right {
+            right: 5px;
+            bottom: 5px;
+        }
+    }
+
+    .duck-hunt-hud {
+        display: grid;
+        grid-template-columns: 1.25fr .65fr 1.05fr .75fr 1fr;
+        min-height: 76px;
+        overflow: hidden;
+        border: 2px solid #111a14;
+        border-radius: 4px;
+        background: #0d1712;
+        box-shadow:
+            inset 0 0 0 1px #4f6a59,
+            inset 0 0 18px rgba(0, 0, 0, .78),
+            0 1px 0 rgba(167, 190, 151, .15);
+    }
+
+    .duck-hud-cell {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        padding: 8px 8px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #314538;
+        background:
+            linear-gradient(
+                to bottom,
+                rgba(58, 79, 65, .78),
+                rgba(15, 28, 22, .92)
+            );
+        text-align: center;
+
+        &:last-child {
+            border-right: 0;
+        }
+    }
+
+    .duck-hud-label {
+        color: #a8bea8;
+        font-family: monospace;
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 1.25px;
+        line-height: 11px;
+        text-shadow: 1px 1px 0 #000;
+    }
+
+    .duck-score-value,
+    .duck-round-value,
+    .duck-hits-value {
+        display: block;
+        margin-top: 3px;
+        font-family: monospace;
+        font-weight: 900;
+        line-height: 1;
+        text-shadow:
+            1px 1px 0 #000,
+            0 0 8px currentColor;
+    }
+
+    .duck-score-value {
+        color: #f4da6b;
+        font-size: 26px;
+        letter-spacing: 2px;
+    }
+
+    .duck-round-value {
+        color: #78d8ff;
+        font-size: 25px;
+    }
+
+    .duck-hits-value {
+        color: #8de17f;
+        font-size: 22px;
+    }
+
+    .duck-ammo-row {
+        display: flex;
+        min-height: 31px;
+        margin-top: 4px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+    }
+
+    .duck-shell {
+        width: 15px;
+        height: 25px;
+        opacity: .34;
+        filter:
+            drop-shadow(1px 1px 0 #000)
+            drop-shadow(0 0 1px rgba(0, 0, 0, .85));
+        image-rendering: pixelated;
+
+        .shell-outline {
+            fill: #241a14;
+        }
+
+        .shell-crimp {
+            fill: #56362d;
+        }
+
+        .shell-crimp-notch {
+            fill: #241a14;
+        }
+
+        .shell-body {
+            fill: #5a4138;
+        }
+
+        .shell-shadow {
+            fill: #3b2c27;
+        }
+
+        .shell-light {
+            fill: #76594c;
+        }
+
+        .shell-brass {
+            fill: #796b49;
+        }
+
+        .shell-rim {
+            fill: #51452e;
+        }
+
+        .shell-primer {
+            fill: #322b20;
+        }
+
+        &.is-active {
+            opacity: 1;
+
+            .shell-outline {
+                fill: #4f1512;
+            }
+
+            .shell-crimp {
+                fill: #d34a3e;
+            }
+
+            .shell-crimp-notch {
+                fill: #7f211c;
+            }
+
+            .shell-body {
+                fill: #b92f29;
+            }
+
+            .shell-shadow {
+                fill: #7f211f;
+            }
+
+            .shell-light {
+                fill: #f26e5f;
+            }
+
+            .shell-brass {
+                fill: #d9ac45;
+            }
+
+            .shell-rim {
+                fill: #f0ca61;
+            }
+
+            .shell-primer {
+                fill: #8c681e;
+            }
+        }
+    }
+
+    .duck-hud-cell.is-status {
+        gap: 5px;
+        color: #91e58d;
+        font-family: monospace;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .7px;
+        text-shadow: 1px 1px 0 #000;
+
+        &.is-playing {
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(43, 91, 55, .78),
+                    rgba(15, 43, 25, .94)
+                );
+        }
+
+        &.is-paused {
+            color: #f2d66c;
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(104, 82, 33, .82),
+                    rgba(42, 31, 11, .94)
+                );
+        }
+
+        &.is-gameover {
+            color: #f47d71;
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(104, 48, 42, .82),
+                    rgba(43, 18, 15, .95)
+                );
+        }
+
+        &.is-ready {
+            color: #8eddf0;
+        }
+    }
+
+    .duck-status-icon {
+        width: 28px;
+        height: 22px;
+        filter: drop-shadow(1px 1px 0 #000);
+        image-rendering: pixelated;
+
+        .duck-icon-body {
+            fill: #956744;
+        }
+
+        .duck-icon-head {
+            fill: #3c956f;
+        }
+
+        .duck-icon-beak {
+            fill: #e7a13e;
+        }
+
+        .duck-icon-wing {
+            fill: #c49a62;
+        }
+
+        .duck-icon-leg {
+            fill: #d88731;
+        }
+
+        .duck-icon-eye {
+            fill: #12191a;
+        }
+    }
+
+    .duck-hunt-stage {
+        position: relative;
+        margin-top: 8px;
+        overflow: hidden;
+        border: 2px solid #111a14;
+        border-radius: 4px;
+        background: #72c7e5;
+        box-shadow:
+            0 0 0 1px #637b67,
+            inset 0 0 22px rgba(0, 0, 0, .18),
+            0 0 10px rgba(124, 170, 109, .12);
+
+        &::after {
+            position: absolute;
+            z-index: 3;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, .012) 0,
+                    rgba(255, 255, 255, .012) 1px,
+                    rgba(0, 0, 0, .026) 2px,
+                    rgba(0, 0, 0, .026) 3px
+                );
+            content: '';
+        }
+    }
+
+    .duck-hunt-canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        outline: none;
+        cursor: none;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        touch-action: none;
+    }
+
+    .duck-game-overlay {
+        position: absolute;
+        z-index: 5;
+        display: flex;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background:
+            radial-gradient(
+                circle at center,
+                rgba(41, 70, 55, .47),
+                rgba(9, 18, 14, .82)
+            );
+
+        &.is-pause {
+            background: rgba(10, 22, 17, .76);
+        }
+
+        &.is-gameover {
+            background:
+                radial-gradient(
+                    circle at center,
+                    rgba(90, 48, 34, .36),
+                    rgba(10, 17, 13, .88)
+                );
+        }
+    }
+
+    .duck-overlay-panel {
+        display: flex;
+        width: 375px;
+        max-width: 92%;
+        padding: 18px 22px 17px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #17261c;
+        border-radius: 4px;
+        background:
+            linear-gradient(
+                to bottom,
+                #385244,
+                #1d3027 58%,
+                #12221b
+            );
+        box-shadow:
+            inset 0 0 0 1px #78907b,
+            inset 0 0 18px rgba(0, 0, 0, .56),
+            0 5px 18px rgba(0, 0, 0, .46);
+        text-align: center;
+
+        &.is-compact {
+            width: 285px;
+        }
+    }
+
+    .duck-overlay-kicker {
+        color: #9ed7bc;
+        font-family: monospace;
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        line-height: 11px;
+        text-shadow: 1px 1px 0 #000;
+    }
+
+    .duck-overlay-title {
+        margin-top: 4px;
+        color: #fff3c4;
+        font-family: monospace;
+        font-size: 25px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        line-height: 30px;
+        text-shadow:
+            2px 2px 0 #172115,
+            0 0 8px rgba(255, 227, 127, .2);
+    }
+
+    .duck-overlay-copy {
+        max-width: 315px;
+        margin-top: 7px;
+        color: #d0ddd0;
+        font-size: 11px;
+        line-height: 15px;
+    }
+
+    .duck-overlay-hint {
+        margin-top: 8px;
+        color: #91a697;
+        font-size: 9px;
+        line-height: 11px;
+    }
+
+    .duck-primary-button {
+        min-width: 164px;
+        height: 39px;
+        margin-top: 14px;
+        padding: 0 18px;
+        border: 2px solid #35571d;
+        border-radius: 3px;
+        background:
+            linear-gradient(
+                to bottom,
+                #a9e16f 0%,
+                #7fbd4e 52%,
+                #548c31 100%
+            );
+        color: #193010;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .6px;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .48);
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .62),
+            inset -1px -1px 0 rgba(0, 0, 0, .32),
+            0 2px 0 #0f180c;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #c1ed8a,
+                    #92cd5f 52%,
+                    #639b3a
+                );
+        }
+
+        &:active:not(:disabled) {
+            padding-top: 2px;
+            box-shadow:
+                inset 1px 1px 0 rgba(0, 0, 0, .33),
+                inset -1px -1px 0 rgba(255, 255, 255, .23);
+        }
+
+        &:disabled {
+            opacity: .62;
+            cursor: default;
+        }
+    }
+
+    .duck-gameover-results {
+        display: grid;
+        width: 100%;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-top: 12px;
+
+        span {
+            display: flex;
+            min-height: 48px;
+            padding: 5px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #3d5947;
+            background: #122018;
+            color: #9bae9c;
+            font-family: monospace;
+            font-size: 8px;
+            font-weight: 900;
+            letter-spacing: .8px;
+            box-shadow:
+                inset 1px 1px 0 rgba(255, 255, 255, .06),
+                inset -1px -1px 0 rgba(0, 0, 0, .45);
+        }
+
+        b {
+            margin-top: 2px;
+            color: #f3d66a;
+            font-size: 16px;
+            line-height: 18px;
+        }
+    }
+
+    .duck-new-record {
+        margin-top: 9px;
+        padding: 5px 8px;
+        border: 1px solid #a6812d;
+        background: rgba(89, 65, 15, .72);
+        color: #ffe77f;
+        font-family: monospace;
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: .5px;
+        text-shadow: 1px 1px 0 #392705;
+    }
+
+    .duck-result-message {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+        padding: 5px 7px;
+        border: 1px solid #41624e;
+        background: rgba(18, 37, 27, .74);
+        color: #acd7b4;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 12px;
+
+        &.is-error {
+            border-color: #7a4742;
+            background: rgba(64, 27, 24, .7);
+            color: #f2aba3;
+        }
+
+        &.is-success {
+            border-color: #4d754e;
+            color: #a9e2ab;
+        }
+    }
+
+    .duck-hunt-console {
+        display: flex;
+        min-height: 59px;
+        margin-top: 8px;
+        gap: 8px;
+        align-items: stretch;
+        justify-content: space-between;
+    }
+
+    .duck-controls-panel {
+        display: flex;
+        min-width: 0;
+        flex: 1 1 auto;
+        padding: 7px 9px;
+        align-items: center;
+        gap: 9px;
+        overflow: hidden;
+        border: 2px solid #111a14;
+        border-radius: 3px;
+        background:
+            linear-gradient(
+                to bottom,
+                #293a31,
+                #17261f
+            );
+        box-shadow:
+            inset 0 0 0 1px #4c6454,
+            inset 0 0 10px rgba(0, 0, 0, .52);
+    }
+
+    .duck-control-group {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .duck-keycap,
+    .duck-mouse-icon {
+        display: inline-flex;
+        min-width: 26px;
+        height: 25px;
+        padding: 0 6px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #426342;
+        border-radius: 2px;
+        background:
+            linear-gradient(
+                to bottom,
+                #4d744c,
+                #2a4b31
+            );
+        color: #d8f1cf;
+        font-family: monospace;
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+        text-shadow: 1px 1px 0 #172216;
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .18),
+            inset -1px -1px 0 rgba(0, 0, 0, .34);
+
+        &.is-click {
+            min-width: 43px;
+            border-color: #775f2d;
+            background:
+                linear-gradient(
+                    to bottom,
+                    #9d7b3a,
+                    #60471f
+                );
+            color: #fff1b5;
+        }
+    }
+
+    .duck-mouse-icon {
+        min-width: 25px;
+        color: #edf6df;
+        font-size: 16px;
+    }
+
+    .duck-control-action {
+        color: #d0dbd0;
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: .55px;
+    }
+
+    .duck-console-divider {
+        width: 1px;
+        height: 27px;
+        flex: 0 0 1px;
+        background: #4c5f51;
+        box-shadow: 1px 0 0 rgba(0, 0, 0, .45);
+    }
+
+    .duck-console-actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 6px;
+        align-items: stretch;
+    }
+
+    .duck-sound-button {
+        display: flex;
+        width: 84px;
+        padding: 5px 7px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        border: 2px solid #39483d;
+        border-radius: 3px;
+        background:
+            linear-gradient(
+                to bottom,
+                #59665d,
+                #354239
+            );
+        color: #c7d0c7;
+        font-family: inherit;
+        font-size: 8px;
+        font-weight: 900;
+        line-height: 9px;
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .2),
+            inset -1px -1px 0 rgba(0, 0, 0, .38);
+        cursor: pointer;
+
+        b {
+            display: block;
+            margin-top: 1px;
+            color: #949f95;
+            font-size: 8px;
+        }
+
+        &.is-on {
+            border-color: #356a48;
+            background:
+                linear-gradient(
+                    to bottom,
+                    #4d8a64,
+                    #2b5c40
+                );
+            color: #e1ffea;
+
+            b {
+                color: #9cf2b9;
+            }
+        }
+
+        &:active {
+            padding-top: 7px;
+            padding-bottom: 3px;
+        }
+    }
+
+    .duck-sound-icon {
+        color: #f0d66a;
+        font-family: monospace;
+        font-size: 14px;
+        line-height: 14px;
+        text-shadow: 1px 1px 0 #000;
+    }
+
+    .duck-restart-button {
+        position: relative;
+        display: flex;
+        width: 126px;
+        padding: 0 13px;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 2px solid #74591f;
+        border-radius: 4px;
+        background:
+            linear-gradient(
+                to bottom,
+                #ffe27a 0%,
+                #e7b447 54%,
+                #b77a28 100%
+            );
+        color: #342407;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .4px;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .66),
+            inset -1px -1px 0 rgba(93, 48, 5, .48),
+            0 2px 0 #151006;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #ffed96,
+                    #f0c65b 54%,
+                    #c78c31
+                );
+        }
+
+        &:active:not(:disabled) {
+            padding-top: 2px;
+        }
+
+        &:disabled {
+            opacity: .62;
+            cursor: default;
+        }
+    }
+
+    .duck-restart-shine {
+        position: absolute;
+        top: 3px;
+        right: 7px;
+        left: 7px;
+        height: 2px;
+        background: rgba(255, 255, 255, .31);
+        pointer-events: none;
+    }
+
+    .duck-arcade-summary-bar {
+        display: flex;
+        min-height: 54px;
+        margin-top: 8px;
+        padding: 6px;
+        align-items: stretch;
+        gap: 6px;
+        overflow: hidden;
+        border: 2px solid #111a14;
+        border-radius: 4px;
+        background:
+            linear-gradient(
+                to bottom,
+                #27392f,
+                #14231c
+            );
+        box-shadow:
+            inset 0 0 0 1px #49624f,
+            inset 0 0 12px rgba(0, 0, 0, .57);
+    }
+
+    .duck-arcade-summary-brand {
+        display: flex;
+        min-width: 150px;
+        padding: 4px 9px;
+        flex-direction: column;
+        justify-content: center;
+        border: 1px solid #38503f;
+        background:
+            linear-gradient(
+                to bottom,
+                #385142,
+                #22372c
+            );
+
+        span {
+            color: #9bcdaa;
+            font-family: monospace;
+            font-size: 7px;
+            font-weight: 900;
+            letter-spacing: 1.25px;
+            line-height: 8px;
+        }
+
+        strong {
+            margin-top: 2px;
+            color: #f0f3df;
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: .5px;
+            line-height: 12px;
+            text-shadow: 1px 1px 0 #000;
+        }
+    }
+
+    .duck-arcade-summary-stats {
+        display: grid;
+        min-width: 0;
+        flex: 1 1 auto;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3px;
+
+        span {
+            display: flex;
+            min-width: 0;
+            padding: 3px 5px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #344a3b;
+            background: #132119;
+            color: #91a595;
+            font-family: monospace;
+            font-size: 7px;
+            font-weight: 900;
+            letter-spacing: .55px;
+            line-height: 8px;
+            white-space: nowrap;
+        }
+
+        b {
+            margin-top: 2px;
+            color: #f0d766;
+            font-size: 11px;
+            line-height: 12px;
+            letter-spacing: .5px;
+            text-shadow: 1px 1px 0 #000;
+        }
+    }
+
+    .duck-records-button {
+        display: flex;
+        width: 112px;
+        flex: 0 0 112px;
+        padding: 0 11px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: 2px solid #765919;
+        border-radius: 4px;
+        background:
+            linear-gradient(
+                to bottom,
+                #ffe47d 0%,
+                #eab446 55%,
+                #b97824 100%
+            );
+        color: #342207;
+        font-family: inherit;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: .5px;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .55);
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .66),
+            inset -1px -1px 0 rgba(93, 48, 5, .48),
+            0 2px 0 #151006;
+        cursor: pointer;
+
+        &:hover {
+            background:
+                linear-gradient(
+                    to bottom,
+                    #fff09a,
+                    #f3c95e 55%,
+                    #c9892c
+                );
+        }
+
+        &:active {
+            padding-top: 2px;
+        }
+    }
+
+    .duck-records-star {
+        color: #fff2a8;
+        font-size: 15px;
+        line-height: 15px;
+        text-shadow:
+            1px 1px 0 #7b5109,
+            0 0 4px rgba(255, 236, 121, .5);
+    }
+
+    @media (max-width: 810px) {
+        .duck-hunt-hud {
+            grid-template-columns: 1.2fr .7fr 1fr .8fr;
+        }
+
+        .duck-hud-cell.is-status {
+            display: none;
+        }
+
+        .duck-hunt-console {
+            flex-direction: column;
+        }
+
+        .duck-console-actions {
+            min-height: 48px;
+        }
+
+        .duck-restart-button {
+            flex: 1 1 auto;
+        }
+
+        .duck-arcade-summary-brand {
+            display: none;
+        }
+    }
+}

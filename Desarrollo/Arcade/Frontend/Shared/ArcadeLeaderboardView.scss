@@ -1,0 +1,275 @@
+.nitro-arcade-leaderboard {
+    .arcade-leaderboard-content {
+        padding: 6px;
+        background: #c8c1ad;
+    }
+
+    .arcade-leaderboard-shell {
+        overflow: hidden;
+        border: 2px solid #070d16;
+        border-radius: 4px;
+        background:
+            linear-gradient(
+                to bottom,
+                #17263a,
+                #091321
+            );
+        box-shadow:
+            inset 0 0 0 1px #365576,
+            inset 0 0 18px rgba(0, 0, 0, .72);
+    }
+
+    .arcade-leaderboard-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        border-bottom: 1px solid #314a67;
+        background: #07101c;
+
+        span {
+            display: flex;
+            min-height: 48px;
+            padding: 6px 4px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(
+                    to bottom,
+                    #203651,
+                    #102138
+                );
+            color: #8199b1;
+            font-family: monospace;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: .8px;
+            line-height: 9px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        b {
+            margin-top: 4px;
+            color: #65e7ff;
+            font-size: 14px;
+            line-height: 15px;
+            letter-spacing: 1px;
+        }
+    }
+
+    .arcade-leaderboard-heading {
+        display: flex;
+        min-height: 45px;
+        padding: 7px 11px;
+        flex-direction: column;
+        justify-content: center;
+        border-bottom: 1px solid #253d59;
+        background:
+            linear-gradient(
+                to bottom,
+                rgba(39, 65, 96, .92),
+                rgba(16, 31, 50, .94)
+            );
+
+        span {
+            color: #6edff5;
+            font-family: monospace;
+            font-size: 8px;
+            font-weight: 900;
+            letter-spacing: 1.6px;
+            line-height: 9px;
+        }
+
+        strong {
+            margin-top: 2px;
+            color: #fff;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: .8px;
+            line-height: 15px;
+            text-shadow: 1px 1px 0 #000;
+        }
+    }
+
+    .arcade-leaderboard-list {
+        display: flex;
+        padding: 6px;
+        flex-direction: column;
+        gap: 3px;
+        background: #07101c;
+    }
+
+    .arcade-leaderboard-row {
+        display: grid;
+        min-height: 34px;
+        grid-template-columns: 33px minmax(0, 1fr) 64px 64px;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 7px;
+        border: 1px solid #1e344d;
+        background:
+            linear-gradient(
+                to bottom,
+                #15263c,
+                #0d1a2c
+            );
+        font-family: monospace;
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .045),
+            inset -1px -1px 0 rgba(0, 0, 0, .34);
+
+        &.is-top-1 {
+            border-color: #8f6c1d;
+            background:
+                linear-gradient(
+                    to bottom,
+                    #50401a,
+                    #251d0b
+                );
+
+            .arcade-rank-badge {
+                border-color: #9b761c;
+                background: #dcae31;
+                color: #342404;
+            }
+
+            .arcade-rank-score {
+                color: #ffe273;
+            }
+        }
+
+        &.is-top-2 {
+            border-color: #667785;
+
+            .arcade-rank-badge {
+                border-color: #71818e;
+                background: #b9c5ce;
+                color: #27333b;
+            }
+        }
+
+        &.is-top-3 {
+            border-color: #815638;
+
+            .arcade-rank-badge {
+                border-color: #8d5a37;
+                background: #c98754;
+                color: #321c0c;
+            }
+        }
+    }
+
+    .arcade-rank-badge {
+        display: inline-flex;
+        width: 24px;
+        height: 24px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #26506d;
+        border-radius: 3px;
+        background:
+            linear-gradient(
+                to bottom,
+                #275b7a,
+                #15394f
+            );
+        color: #8cecff;
+        font-size: 10px;
+        font-weight: 900;
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .18),
+            inset -1px -1px 0 rgba(0, 0, 0, .35);
+    }
+
+    .arcade-rank-user {
+        min-width: 0;
+        overflow: hidden;
+        color: #e0e9f2;
+        font-size: 10px;
+        font-weight: 900;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .arcade-rank-level {
+        color: #748da7;
+        font-size: 8px;
+        font-weight: 800;
+        text-align: right;
+    }
+
+    .arcade-rank-score {
+        color: #68e9ff;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .5px;
+        text-align: right;
+        text-shadow: 1px 1px 0 #000;
+    }
+
+    .arcade-leaderboard-empty {
+        display: flex;
+        min-height: 135px;
+        padding: 20px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #07101c;
+        color: #70869c;
+        font-size: 9px;
+        font-weight: 700;
+        text-align: center;
+
+        strong {
+            margin: 5px 0 3px;
+            color: #d5e0e9;
+            font-family: monospace;
+            font-size: 11px;
+            letter-spacing: .6px;
+        }
+    }
+
+    .arcade-empty-star {
+        color: #f4cc55;
+        font-size: 24px;
+        line-height: 24px;
+        text-shadow:
+            1px 1px 0 #6c4d0c,
+            0 0 8px rgba(255, 208, 73, .25);
+    }
+
+    .arcade-personal-position {
+        display: grid;
+        min-height: 38px;
+        grid-template-columns: 1fr 58px 75px;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border-top: 1px solid #304963;
+        background:
+            linear-gradient(
+                to bottom,
+                #17354a,
+                #0c2231
+            );
+        color: #8da5bb;
+        font-family: monospace;
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: .6px;
+
+        strong {
+            color: #f1ce5d;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        span:last-child {
+            color: #65e7ff;
+            font-size: 11px;
+            font-weight: 900;
+            text-align: right;
+        }
+    }
+}
