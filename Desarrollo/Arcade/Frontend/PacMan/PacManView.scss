@@ -1152,3 +1152,199 @@
         color: #e1ffea;
     }
 }
+
+/* BIRIBIRI_PAC_MAN_V12_1_FIXES */
+.nitro-pac-man {
+    .pac-side-panel .pac-life-row,
+    .pac-side-panel .pac-lives,
+    .pac-side-panel .pac-lives-panel,
+    .pac-side-panel .pac-side-lives,
+    .pac-side-panel section.is-lives {
+        display: none !important;
+    }
+
+    .pac-status-dot::before {
+        clip-path:
+            polygon(
+                0 0,
+                100% 0,
+                72% 50%,
+                100% 100%,
+                0 100%
+            );
+    }
+
+    .pac-life-heart::before {
+        clip-path:
+            polygon(
+                0 0,
+                100% 0,
+                72% 50%,
+                100% 100%,
+                0 100%
+            );
+    }
+}
+
+/* BIRIBIRI_PAC_MAN_V12_3_EXACT_VISUALS */
+.nitro-pac-man {
+    .pac-hud-cell.is-lives {
+        --pac-icon-mouth-bg: #0b1835;
+    }
+
+    .pac-hud-cell.is-status {
+        --pac-status-mouth-bg: #0a1d3c;
+
+        &.is-ready {
+            --pac-status-mouth-bg: #0a1d3c;
+        }
+
+        &.is-playing {
+            --pac-status-mouth-bg: #0a2b1c;
+        }
+
+        &.is-paused {
+            --pac-status-mouth-bg: #332406;
+        }
+
+        &.is-gameover {
+            --pac-status-mouth-bg: #351019;
+        }
+    }
+
+    .pac-status-dot {
+        position: relative !important;
+        display: block !important;
+        width: 22px !important;
+        height: 22px !important;
+        flex: 0 0 22px !important;
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 50% !important;
+        background: #ffd52d !important;
+        box-shadow:
+            inset 0 -2px 0 rgba(125, 84, 0, .25),
+            0 0 6px rgba(255, 213, 45, .18) !important;
+        clip-path: none !important;
+        filter: drop-shadow(1px 1px 0 #000);
+    }
+
+    .pac-status-dot::before {
+        position: absolute !important;
+        top: 5px !important;
+        left: 11px !important;
+        width: 3px !important;
+        height: 3px !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #17130a !important;
+        box-shadow: none !important;
+        clip-path: none !important;
+        content: '' !important;
+    }
+
+    .pac-status-dot::after {
+        position: absolute !important;
+        top: 7px !important;
+        left: 11px !important;
+        width: 0 !important;
+        height: 0 !important;
+        border-top: 4px solid transparent !important;
+        border-bottom: 4px solid transparent !important;
+        border-left: 10px solid var(--pac-status-mouth-bg) !important;
+        background: transparent !important;
+        clip-path: none !important;
+        content: '' !important;
+    }
+
+    .pac-life-heart {
+        position: relative !important;
+        display: inline-block !important;
+        width: 20px !important;
+        height: 20px !important;
+        flex: 0 0 20px !important;
+        overflow: visible !important;
+        border-radius: 50% !important;
+        background: #3c4660 !important;
+        color: transparent !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        text-shadow: none !important;
+        clip-path: none !important;
+        filter: drop-shadow(1px 1px 0 #000);
+    }
+
+    .pac-life-heart.is-on {
+        background: #ffd52d !important;
+    }
+
+    .pac-life-heart::before {
+        position: absolute !important;
+        top: 5px !important;
+        left: 10px !important;
+        width: 2px !important;
+        height: 2px !important;
+        inset: auto !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #17130a !important;
+        box-shadow: none !important;
+        clip-path: none !important;
+        content: '' !important;
+    }
+
+    .pac-life-heart::after {
+        position: absolute !important;
+        top: 6px !important;
+        left: 10px !important;
+        width: 0 !important;
+        height: 0 !important;
+        border-top: 4px solid transparent !important;
+        border-bottom: 4px solid transparent !important;
+        border-left: 9px solid var(--pac-icon-mouth-bg) !important;
+        background: transparent !important;
+        clip-path: none !important;
+        content: '' !important;
+    }
+}
+
+/* BIRIBIRI_PAC_MAN_V12_4_HUD_ICON_STYLES */
+.nitro-pac-man {
+    .pac-hud-pac {
+        display: block;
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+        overflow: visible;
+        filter: drop-shadow(1px 1px 0 #000);
+    }
+
+    .pac-hud-pac-body {
+        fill: #46516b;
+    }
+
+    .pac-hud-pac.is-on .pac-hud-pac-body,
+    .pac-hud-pac.is-status-icon .pac-hud-pac-body {
+        fill: #ffd52d;
+    }
+
+    .pac-hud-pac-eye {
+        fill: #17130a;
+    }
+
+    .pac-hud-pac.is-status-icon {
+        width: 22px;
+        height: 22px;
+        flex-basis: 22px;
+    }
+
+    .pac-life-row {
+        min-height: 24px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pac-hud-cell.is-status {
+        gap: 5px;
+    }
+}

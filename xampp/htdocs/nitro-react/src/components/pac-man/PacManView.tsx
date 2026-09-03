@@ -76,7 +76,7 @@ interface GameModel
 }
 
 const GAME_KEY = 'pac_man';
-const UI_MARKER = 'BIRIBIRI_PAC_MAN_V12_CANONICAL';
+const UI_MARKER = 'BIRIBIRI_PAC_MAN_V12_4_HUD_ICON_FIX';
 
 const TILE = 24;
 const COLS = 19;
@@ -290,6 +290,35 @@ const frightenedDuration = (level: number): number =>
         3.8,
         6.8 - ((level - 1) * 0.18)
     );
+
+
+const PacHudIcon: FC<{
+    active?: boolean;
+    className?: string;
+}> = ({
+    active = true,
+    className = ''
+}) =>
+(
+    <svg
+        className={
+            `pac-hud-pac${ active ? ' is-on' : '' }${
+                className ? ` ${ className }` : ''
+            }`
+        }
+        viewBox="0 0 32 32"
+        aria-hidden="true"
+        focusable="false">
+        <path
+            className="pac-hud-pac-body"
+            d="M16 16 L29 11 A14 14 0 1 0 29 21 Z" />
+        <circle
+            className="pac-hud-pac-eye"
+            cx="18"
+            cy="8.5"
+            r="1.6" />
+    </svg>
+);
 
 const normalizedX = (x: number): number =>
 {
@@ -1491,11 +1520,16 @@ export const PacManView: FC<{}> = () =>
             context.closePath();
             context.fill();
 
+            const eyeAngle =
+                player.dir === 'left'
+                    ? angle + 1.0
+                    : angle - 1.0;
+
             context.fillStyle = '#17130a';
             context.beginPath();
             context.arc(
-                cx + Math.cos(angle - 1.0) * 4,
-                cy + Math.sin(angle - 1.0) * 4,
+                cx + Math.cos(eyeAngle) * 4,
+                cy + Math.sin(eyeAngle) * 4,
                 1.5,
                 0,
                 Math.PI * 2
@@ -1977,17 +2011,9 @@ export const PacManView: FC<{}> = () =>
                                     { Array.from(
                                         { length: 3 },
                                         (_, index) =>
-                                            <span
+                                            <PacHudIcon
                                                 key={ index }
-                                                className={
-                                                    `pac-life-heart${
-                                                        index < lives
-                                                            ? ' is-on'
-                                                            : ''
-                                                    }`
-                                                }>
-                                                ♥
-                                            </span>
+                                                active={ index < lives } />
                                     ) }
                                 </div>
                             </div>
@@ -1995,7 +2021,9 @@ export const PacManView: FC<{}> = () =>
                             <div className={
                                     `pac-hud-cell is-status is-${ phase }`
                                 }>
-                                <span className="pac-status-dot" />
+                                <PacHudIcon
+                                    active
+                                    className="is-status-icon" />
                                 <b>{ statusLabel }</b>
                             </div>
                         </div>
@@ -2145,23 +2173,6 @@ export const PacManView: FC<{}> = () =>
                                     </small>
                                 </section>
 
-                                <section>
-                                    <span className="pac-side-title">
-                                        VIDAS
-                                    </span>
-                                    <div className="pac-life-row">
-                                        { [ 0, 1, 2 ].map(index =>
-                                            <span
-                                                className={
-                                                    `pac-life${
-                                                        index < lives
-                                                            ? ' is-active'
-                                                            : ''
-                                                    }`
-                                                }
-                                                key={ index } />) }
-                                    </div>
-                                </section>
                             </div>
                         </div>
 

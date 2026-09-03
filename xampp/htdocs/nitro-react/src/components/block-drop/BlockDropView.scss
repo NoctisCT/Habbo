@@ -1000,3 +1000,37 @@
         color: #e1ffea;
     }
 }
+
+/* BIRIBIRI_BLOCK_DROP_V12_1_SCREW_FIX */
+.nitro-block-drop {
+    .block-cabinet-screw,
+    .block-screw,
+    .arcade-screw,
+    .cabinet-screw,
+    .shell-screw,
+    .corner-screw {
+        border-radius: 1px !important;
+    }
+}
+
+/* BIRIBIRI_BLOCK_DROP_V12_3_EXACT_SCREWS */
+.nitro-block-drop {
+    .block-cabinet-screw {
+        z-index: 6 !important;
+        width: 5px !important;
+        height: 5px !important;
+        min-width: 5px !important;
+        min-height: 5px !important;
+        border: 1px solid #617088 !important;
+        border-radius: 0 !important;
+        background: #a9b4bf !important;
+        box-shadow:
+            inset 1px 1px 0 rgba(255, 255, 255, .7),
+            inset -1px -1px 0 rgba(23, 34, 48, .45) !important;
+
+        &::after {
+            display: none !important;
+            content: none !important;
+        }
+    }
+}
