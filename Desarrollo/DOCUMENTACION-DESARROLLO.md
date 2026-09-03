@@ -1027,3 +1027,12 @@ Space Invaders y Duck Hunt son los _golden masters_ visuales. Block Drop y Pac-M
 **Regla:** ninguna feature exclusiva de Biribiri Arcade debe quedar únicamente dentro de una ruta runtime de Nitro/renderer/plugin sin una referencia localizable en `Desarrollo/Arcade/`.
 <!-- /BIRIBIRI_ARCADE_INDEX_V1 -->
 
+<!-- BIRIBIRI_VESTIDOR_INDEX_V1 -->
+## Vestidor Biribiri
+
+Roadmap y código exclusivo del vestidor:
+
+`Desarrollo/Vestidor/`
+
+Prioridades actuales: selector libre HEX/RGB, conjuntos guardados, randomizador con candados, favoritos, historial, búsqueda/filtros y compartir looks.
+<!-- /BIRIBIRI_VESTIDOR_INDEX_V1 -->

@@ -9,8 +9,8 @@ Branch: `rpg-engine-wip`
 | --- | --- | --- | ---: | --- |
 | Space Invaders | FINAL 100% · golden master | `arcade_c23_space` | 6100 | `space_invaders` |
 | Duck Hunt | FINAL 100% · golden master | `arcade_c23_duckhunt` | 6110 | `duck_hunt` |
-| Block Drop | Gameplay final · estética pendiente de adaptación | `arcade_c23_cyberpunk` | 6120 | `block_drop` |
-| Pac-Man | Gameplay base · estética + música power pendientes | `tokyo_c18_retroarcade` | 6130 | `pac_man` |
+| Block Drop | V1.2 canónica · pendiente de validación visual | `arcade_c23_cyberpunk` | 6120 | `block_drop` |
+| Pac-Man | V1.2 canónica + música power · pendiente de validación visual | `tokyo_c18_retroarcade` | 6130 | `pac_man` |
 
 ## Arcade Core
 
